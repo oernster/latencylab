@@ -201,3 +201,85 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     app.processEvents()
     assert called["shutdown"]
 
+
+def test_save_log_button_dumps_right_panel(monkeypatch, tmp_path: Path) -> None:
+    app = _ensure_qapp()
+
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QMessageBox, QPushButton
+
+    from PySide6.QtCore import QObject, Signal
+
+    from latencylab_ui.main_window import MainWindow
+
+    class _Controller(QObject):
+        started = Signal(int)
+        succeeded = Signal(int, object)
+        failed = Signal(int, str)
+        finished = Signal(int, float)
+
+        def is_running(self) -> bool:
+            return False
+
+        def is_cancelled(self, _token: int) -> bool:
+            return False
+
+        def shutdown(self) -> None:
+            return None
+
+    w = MainWindow(run_controller=_Controller())
+    w.show()
+    app.processEvents()
+
+    # Find the save button in the top bar (just below the menu).
+    matches = w.findChildren(QPushButton)
+    btns = [b for b in matches if "💾" in b.text()]
+    assert btns
+    btn = btns[0]
+
+    assert "💾" in btn.text()
+
+    # Seed right panel content.
+    w._summary_text.setPlainText("SUMMARY\nline2")
+    w._critical_path_text.setPlainText("CRIT\nlineB")
+
+    # Cancel path: no dialog, no write.
+    from PySide6.QtWidgets import QFileDialog
+
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a, **k: ("", ""))
+    crit_called = {"called": False}
+    monkeypatch.setattr(
+        QMessageBox,
+        "critical",
+        lambda *_a, **_k: crit_called.__setitem__("called", True),
+    )
+    btn.click()
+    assert not crit_called["called"]
+
+    # Success path: writes expected content.
+    out_path = tmp_path / "log.txt"
+    monkeypatch.setattr(
+        QFileDialog,
+        "getSaveFileName",
+        lambda *a, **k: (str(out_path), "txt"),
+    )
+    btn.click()
+    txt = out_path.read_text(encoding="utf-8")
+    assert "Summary" in txt
+    assert "SUMMARY" in txt
+    assert "Critical path" in txt
+    assert "CRIT" in txt
+
+    # Error path: shows error dialog.
+    from pathlib import Path as _P
+
+    monkeypatch.setattr(_P, "write_text", lambda *_a, **_k: (_ for _ in ()).throw(OSError("no")))
+    monkeypatch.setattr(
+        QFileDialog,
+        "getSaveFileName",
+        lambda *a, **k: (str(tmp_path / "err.txt"), "txt"),
+    )
+    btn.click()
+    assert crit_called["called"]
+
+

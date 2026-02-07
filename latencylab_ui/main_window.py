@@ -72,9 +72,33 @@ class MainWindow(QMainWindow):
         exit_action.triggered.connect(self.close)
 
     def _build_ui(self) -> None:
+        root = QWidget()
+        root_layout = QVBoxLayout(root)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+        self.setCentralWidget(root)
+
+        top_bar = QWidget()
+        top_bar_layout = QHBoxLayout(top_bar)
+        top_bar_layout.setContentsMargins(10, 2, 10, 2)
+        top_bar_layout.setSpacing(8)
+
+        self._save_log_btn = QPushButton("💾")
+        self._save_log_btn.setToolTip("Save log…")
+        self._save_log_btn.setProperty("role", "icon-action")
+        self._save_log_btn.clicked.connect(self._on_save_log_clicked)
+        top_bar_layout.addWidget(self._save_log_btn)
+        top_bar_layout.addStretch(1)
+
+        self._theme_toggle = ThemeToggle(default=Theme.DARK, parent=self)
+        self._theme_toggle.theme_changed.connect(self._on_theme_changed)
+        top_bar_layout.addWidget(self._theme_toggle)
+
+        root_layout.addWidget(top_bar)
+
         splitter = QSplitter()
         splitter.setChildrenCollapsible(False)
-        self.setCentralWidget(splitter)
+        root_layout.addWidget(splitter, 1)
 
         splitter.addWidget(self._build_left_panel())
         splitter.addWidget(self._build_right_panel())
@@ -95,10 +119,6 @@ class MainWindow(QMainWindow):
 
         self._elapsed_label = QLabel("")
         status.addPermanentWidget(self._elapsed_label)
-
-        self._theme_toggle = ThemeToggle(default=Theme.DARK, parent=self)
-        self._theme_toggle.theme_changed.connect(self._on_theme_changed)
-        self.menuBar().setCornerWidget(self._theme_toggle, Qt.Corner.TopRightCorner)
 
     def _build_left_panel(self) -> QWidget:
         root = QWidget()
@@ -254,6 +274,32 @@ class MainWindow(QMainWindow):
         if not path_str:
             return
         self._load_model(Path(path_str))
+
+    def _on_save_log_clicked(self) -> None:
+        path_str, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save log",
+            "",
+            "Text files (*.txt);;All files (*)",
+        )
+        if not path_str:
+            return
+
+        summary_txt = self._summary_text.toPlainText().strip()
+        crit_txt = self._critical_path_text.toPlainText().strip()
+        log_txt = (
+            "Summary\n"
+            "======\n"
+            f"{summary_txt}\n\n"
+            "Critical path\n"
+            "============\n"
+            f"{crit_txt}\n"
+        )
+
+        try:
+            Path(path_str).write_text(log_txt, encoding="utf-8")
+        except Exception as e:  # noqa: BLE001
+            QMessageBox.critical(self, "Save failed", f"Could not save log: {e}")
 
     def _load_model(self, path: Path) -> None:
         try:

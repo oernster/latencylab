@@ -80,6 +80,14 @@ QPushButton[role="theme-toggle"]:hover {{
   color: rgba(250, 250, 250, 0.98);
 }}
 
+QPushButton[role="icon-action"] {{
+  font-size: 18px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 2px 8px;
+  border-radius: 6px;
+}}
+
 QSpinBox,
 QComboBox,
 QPlainTextEdit {{
@@ -170,6 +178,14 @@ QPushButton[role="theme-toggle"]:checked {{
 QPushButton[role="theme-toggle"]:hover {{
   background-color: {_ACCENT_TEAL.name()};
   color: rgba(245, 245, 245, 0.98);
+}}
+
+QPushButton[role="icon-action"] {{
+  font-size: 18px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 2px 8px;
+  border-radius: 6px;
 }}
 
 QSpinBox,
