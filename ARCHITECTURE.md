@@ -138,6 +138,25 @@ Metadata is surfaced only in output summaries via [`latencylab.metrics.add_task_
 - Uses lazy import of NumPy and raises a clear error if not installed.
 - Treated as the correctness oracle for v1 output stability.
 
+#### Legacy v1 handling (LOCKED)
+
+Legacy v1 is intentionally retained as a **frozen behavioral oracle**, not as an
+active feature path.
+
+- **Frozen**: no new features, no refactors. Changes allowed only for critical
+  bug fixes, security issues, or test harness maintenance.
+- **Default**: v2 is the default for new models and `schema_version >= 2` at the
+  executor dispatch layer.
+- **Oracle**: migration correctness is validated by tests that assert invariants
+  between v1 execution and migrated v2 execution.
+
+Removal is **not planned** until:
+
+- v2 has shipped and been used in the wild
+- real-world models (e.g. Stellody-derived) have run successfully under v2
+- migration rules have remained stable across at least one release cycle
+- a deliberate breaking change / new major schema version is planned
+
 ### v2 engine (stdlib-only)
 
 - Located in [`latencylab/sim_v2.py`](latencylab/sim_v2.py:1)

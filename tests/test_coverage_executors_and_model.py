@@ -34,8 +34,19 @@ def test_runexecutor_protocol_method_is_not_implemented() -> None:
 
 
 def test_default_executor_rejects_unknown_model_version() -> None:
+    # Dispatch is future-proofed: any schema_version >= 2 uses the v2 executor.
+    ex = default_executor_for_model(_minimal_model(version=999))
+    assert ex.__class__.__name__ == "StdlibV2Executor"
+
+
+def test_default_executor_uses_legacy_only_for_v1() -> None:
+    ex = default_executor_for_model(_minimal_model(version=1))
+    assert ex.__class__.__name__ == "LegacyNumpyExecutor"
+
+
+def test_default_executor_rejects_unsupported_versions_lt_1() -> None:
     with pytest.raises(ValueError, match="Unsupported model version"):
-        default_executor_for_model(_minimal_model(version=999))
+        default_executor_for_model(_minimal_model(version=0))
 
 
 def test_model_parses_numeric_delay_dist_and_rejects_bad_types() -> None:

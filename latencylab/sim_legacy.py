@@ -1,5 +1,22 @@
 from __future__ import annotations
 
+"""Legacy v1 executor (NumPy-backed).
+
+FROZEN.
+
+This module is intentionally retained as a migration oracle for v1 semantics.
+
+Policy:
+- No new features.
+- No refactors / style alignment with v2.
+- Changes allowed only for: critical bug fixes, security issues, or test harness
+  maintenance.
+
+Rationale:
+- Provides a trusted behavioral baseline and regression oracle while v2 is
+  validated in the wild.
+"""
+
 # NumPy-backed legacy simulator, preserved for exact v1 output compatibility.
 
 from collections import deque

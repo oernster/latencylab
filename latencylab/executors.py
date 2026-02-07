@@ -65,8 +65,18 @@ class StdlibV2Executor:
 
 
 def default_executor_for_model(model: Model) -> RunExecutor:
+    """Select an execution strategy for a parsed model.
+
+    Dispatch policy:
+    - schema_version == 1 -> legacy NumPy-backed executor (frozen oracle path)
+    - schema_version >= 2 -> v2 stdlib executor (default for new models)
+
+    Note: validation currently only accepts schema_version in {1, 2}. The >= 2
+    rule is intentionally future-proof for in-memory Models constructed by code.
+    """
+
     if model.version == 1:
         return LegacyNumpyExecutor()
-    if model.version == 2:
+    if model.version >= 2:
         return StdlibV2Executor()
     raise ValueError(f"Unsupported model version: {model.version}")
