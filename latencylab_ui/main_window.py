@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -31,7 +31,9 @@ from latencylab.model import Model
 from latencylab.validate import ModelValidationError, validate_model
 
 from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
+from latencylab_ui.outputs_view import OutputsView
 from latencylab_ui.theme import Theme, apply_theme
+from latencylab_ui.theme_toggle import ThemeToggle
 
 
 @dataclass
@@ -69,12 +71,6 @@ class MainWindow(QMainWindow):
         exit_action = file_menu.addAction("Exit")
         exit_action.triggered.connect(self.close)
 
-        view_menu = self.menuBar().addMenu("View")
-        self._dark_theme_action = view_menu.addAction("Dark theme")
-        self._dark_theme_action.setCheckable(True)
-        self._dark_theme_action.setChecked(True)
-        self._dark_theme_action.toggled.connect(self._on_theme_toggled)
-
     def _build_ui(self) -> None:
         splitter = QSplitter()
         splitter.setChildrenCollapsible(False)
@@ -99,6 +95,10 @@ class MainWindow(QMainWindow):
 
         self._elapsed_label = QLabel("")
         status.addPermanentWidget(self._elapsed_label)
+
+        self._theme_toggle = ThemeToggle(default=Theme.DARK, parent=self)
+        self._theme_toggle.theme_changed.connect(self._on_theme_changed)
+        self.menuBar().setCornerWidget(self._theme_toggle, Qt.Corner.TopRightCorner)
 
     def _build_left_panel(self) -> QWidget:
         root = QWidget()
@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
         run_form.addRow("", btn_row)
 
         note = QLabel(
-            "Cancel discards results after completion (no mid-run stop in v1)."
+            "Cancel discards results after completion\n(no mid-run stop in v1)."
         )
         note.setWordWrap(True)
         run_form.addRow("", note)
@@ -170,6 +170,9 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(10, 10, 10, 10)
 
         summary_box = QGroupBox("Summary")
+        summary_policy = summary_box.sizePolicy()
+        summary_policy.setVerticalStretch(3)
+        summary_box.setSizePolicy(summary_policy)
         summary_layout = QVBoxLayout(summary_box)
         self._summary_text = QPlainTextEdit()
         self._summary_text.setReadOnly(True)
@@ -177,6 +180,9 @@ class MainWindow(QMainWindow):
         summary_layout.addWidget(self._summary_text)
 
         crit_box = QGroupBox("Critical path")
+        crit_policy = crit_box.sizePolicy()
+        crit_policy.setVerticalStretch(1)
+        crit_box.setSizePolicy(crit_policy)
         crit_layout = QVBoxLayout(crit_box)
 
         top_row = QWidget()
@@ -185,7 +191,6 @@ class MainWindow(QMainWindow):
         top_row_layout.addWidget(QLabel("Run"))
 
         self._run_select = QComboBox()
-        self._run_select.currentIndexChanged.connect(self._on_run_selected)
         top_row_layout.addWidget(self._run_select, 1)
         crit_layout.addWidget(top_row)
 
@@ -194,15 +199,29 @@ class MainWindow(QMainWindow):
         self._critical_path_text.setPlaceholderText("No critical path yet.")
         crit_layout.addWidget(self._critical_path_text)
 
+        self._outputs_view = OutputsView(
+            summary_text=self._summary_text,
+            run_select=self._run_select,
+            critical_path_text=self._critical_path_text,
+        )
+        self._run_select.currentIndexChanged.connect(self._outputs_view.on_run_selected)
+
+        summary_crit_splitter = QSplitter(Qt.Orientation.Vertical)
+        summary_crit_splitter.setChildrenCollapsible(False)
+        summary_crit_splitter.addWidget(summary_box)
+        summary_crit_splitter.addWidget(crit_box)
+        summary_crit_splitter.setStretchFactor(0, 3)
+        summary_crit_splitter.setStretchFactor(1, 1)
+        summary_crit_splitter.setCollapsible(0, False)
+        summary_crit_splitter.setCollapsible(1, False)
+
         # Make the right panel scrollable for small windows.
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         container = QWidget()
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.addWidget(summary_box)
-        container_layout.addWidget(crit_box)
-        container_layout.addStretch(1)
+        container_layout.addWidget(summary_crit_splitter, 1)
         scroll.setWidget(container)
 
         layout.addWidget(scroll)
@@ -220,8 +239,7 @@ class MainWindow(QMainWindow):
         self._controller.shutdown()
         super().closeEvent(event)
 
-    def _on_theme_toggled(self, checked: bool) -> None:
-        theme = Theme.DARK if checked else Theme.LIGHT
+    def _on_theme_changed(self, theme: Theme) -> None:
         app = QApplication.instance()
         if app is not None:
             apply_theme(app, theme)
@@ -297,7 +315,7 @@ class MainWindow(QMainWindow):
             # Discard per v1 cancel semantics.
             return
         if isinstance(outputs_obj, RunOutputs):
-            self._render_outputs(outputs_obj)
+            self._outputs_view.render(outputs_obj)
         self._status_label.setText("Completed")
 
     def _on_run_failed(self, run_token: int, error_text: str) -> None:
@@ -327,56 +345,4 @@ class MainWindow(QMainWindow):
             return
         elapsed = max(0.0, time.monotonic() - self._elapsed_started_at)
         self._elapsed_label.setText(f"{elapsed:0.1f}s")
-
-    def _render_outputs(self, outputs: RunOutputs) -> None:
-        s = outputs.summary
-        lines: list[str] = []
-        lines.append(f"Model schema_version: {outputs.model.version}")
-        lines.append(f"Runs requested: {s.get('runs_requested')}")
-        lines.append(f"Runs ok: {s.get('runs_ok')}  failed: {s.get('runs_failed')}")
-
-        lat = s.get("latency_ms", {})
-        for key in ("first_ui", "last_ui", "makespan"):
-            p = lat.get(key, {})
-            lines.append(
-                f"{key}: p50={p.get('p50')}, p90={p.get('p90')}, p95={p.get('p95')}, p99={p.get('p99')}"
-            )
-
-        crit = s.get("critical_path", {})
-        top = crit.get("top_paths", [])
-        lines.append("")
-        lines.append("Top critical paths:")
-        for item in top:
-            tasks = item.get("tasks")
-            count = item.get("count")
-            lines.append(f"- ({count}) {tasks}")
-
-        self._summary_text.setPlainText("\n".join(lines))
-
-        self._runs_cache = list(outputs.runs)
-        self._run_select.blockSignals(True)
-        self._run_select.clear()
-        for r in self._runs_cache:
-            status = "failed" if r.failed else "ok"
-            self._run_select.addItem(f"Run {r.run_id} ({status})", r.run_id)
-        self._run_select.blockSignals(False)
-        if self._runs_cache:
-            self._run_select.setCurrentIndex(0)
-            self._show_run_critical_path(0)
-
-    def _on_run_selected(self, idx: int) -> None:
-        if idx < 0:
-            return
-        self._show_run_critical_path(idx)
-
-    def _show_run_critical_path(self, idx: int) -> None:
-        if not hasattr(self, "_runs_cache"):
-            return
-        if idx >= len(self._runs_cache):
-            return
-        r = self._runs_cache[idx]
-        if r.critical_path_tasks:
-            self._critical_path_text.setPlainText(r.critical_path_tasks)
-        else:
-            self._critical_path_text.setPlainText("(no critical path)")
 
