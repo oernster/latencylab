@@ -1,6 +1,10 @@
-# Runtime dependencies for the stdlib-only core.
+# Runtime dependencies.
 #
-# NOTE: v1 legacy (NumPy-backed) execution is intentionally optional to keep the core
-# free of non-stdlib runtime deps. Install legacy support via requirements-dev.txt
-# (for development/testing) or `pip install numpy`.
+# NOTE: the LatencyLab *core engine* under `latencylab/` is stdlib-only.
+# This file includes the optional UI runtime dependency so `pip install -r
+# requirements.txt` is enough to run the GUI.
+#
+# Legacy v1 (NumPy-backed) execution remains optional. Install legacy support via
+# requirements-dev.txt (for development/testing) or `pip install numpy`.
 
+PySide6>=6.6

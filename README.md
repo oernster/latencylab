@@ -25,6 +25,28 @@ python -m pip install -e .[dev]
 - Core runtime: stdlib-only (see [`requirements.txt`](requirements.txt:1))
 - Dev/test tools + legacy v1 compatibility: [`requirements-dev.txt`](requirements-dev.txt:1)
 
+## UI (PySide6)
+
+The repo includes an optional desktop UI client in [`latencylab_ui/`](latencylab_ui/__init__.py:1).
+
+Install PySide6:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Run the UI from source:
+
+```powershell
+python -m latencylab_ui
+```
+
+Notes:
+
+- The UI is a *client* of the core: no Qt imports exist under [`latencylab/`](latencylab/__init__.py:1).
+- Simulations run in a background thread.
+- Cancel in v1 does **not** stop the simulation mid-run; it discards results when the run completes.
+
 Legacy note: v1 exact-output compatibility currently uses a NumPy-backed executor.
 v2 execution is stdlib-only.
 
