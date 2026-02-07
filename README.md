@@ -33,4 +33,3 @@ Outputs:
 - [`out/runs.csv`](out/runs.csv:1): one row per run with per-run metrics
 - [`out/trace.csv`](out/trace.csv:1): optional per-task-instance timestamps (enqueue/start/end) and causality pointers
 
-See the architectural draft in the project notes and the MVP specification in [`plans/mvp_spec.md`](plans/mvp_spec.md:1).
