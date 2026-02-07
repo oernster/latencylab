@@ -73,6 +73,16 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     w.show()
     app.processEvents()
 
+    # Top-center clock emoji should exist and be non-interactive.
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QLabel
+
+    clock = w.findChild(QLabel, "top_clock_emoji")
+    assert clock is not None
+    assert clock.text() == "⏱️"
+    assert clock.focusPolicy() == Qt.FocusPolicy.NoFocus
+    assert clock.minimumWidth() >= 36
+
     # Theme toggle route (ensure handler is callable).
     from latencylab_ui.theme import Theme
 

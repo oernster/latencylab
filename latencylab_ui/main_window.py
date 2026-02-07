@@ -36,10 +36,10 @@ from latencylab_ui.main_window_file_io import (
 from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
 from latencylab_ui.outputs_view import OutputsView
 from latencylab_ui.focus_cycle import FocusCycleController
-from latencylab_ui.main_window_bindings import connect_theme_toggle
 from latencylab_ui.main_window_menus import build_menus
 from latencylab_ui.theme import Theme, apply_theme
-from latencylab_ui.theme_toggle import ThemeToggle
+from latencylab_ui.main_window_top_bar import build_top_bar
+from latencylab_ui.main_window_panels import build_left_panel, build_right_panel
 
 
 @dataclass
@@ -90,25 +90,16 @@ class MainWindow(QMainWindow):
         root_layout.setSpacing(0)
         self.setCentralWidget(root)
 
-        top_bar = QWidget()
-        top_bar_layout = QHBoxLayout(top_bar)
-        top_bar_layout.setContentsMargins(10, 2, 10, 2)
-        top_bar_layout.setSpacing(8)
-
-        self._save_log_btn = QPushButton("💾")
-        self._save_log_btn.setToolTip("Save log…")
-        self._save_log_btn.setProperty("role", "icon-action")
-        self._save_log_btn.clicked.connect(self._on_save_log_clicked)
-        top_bar_layout.addWidget(self._save_log_btn)
-        top_bar_layout.addStretch(1)
-
-        self._theme_toggle = ThemeToggle(default=Theme.DARK, parent=self)
-        connect_theme_toggle(
-            theme_toggle=self._theme_toggle,
-            receiver=self,
+        (
+            top_bar,
+            self._save_log_btn,
+            self._top_clock,
+            self._theme_toggle,
+        ) = build_top_bar(
+            self,
             focus_cycle=self._focus_cycle,
+            on_save_log_clicked=self._on_save_log_clicked,
         )
-        top_bar_layout.addWidget(self._theme_toggle)
 
         root_layout.addWidget(top_bar)
 
@@ -116,8 +107,8 @@ class MainWindow(QMainWindow):
         splitter.setChildrenCollapsible(False)
         root_layout.addWidget(splitter, 1)
 
-        splitter.addWidget(self._build_left_panel())
-        splitter.addWidget(self._build_right_panel())
+        splitter.addWidget(build_left_panel(self))
+        splitter.addWidget(build_right_panel(self))
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setSizes([360, 740])
@@ -136,137 +127,7 @@ class MainWindow(QMainWindow):
         self._elapsed_label = QLabel("")
         status.addPermanentWidget(self._elapsed_label)
 
-    def _build_left_panel(self) -> QWidget:
-        root = QWidget()
-        layout = QVBoxLayout(root)
-        layout.setContentsMargins(10, 10, 10, 10)
-
-        model_box = QGroupBox("Model")
-        model_form = QFormLayout(model_box)
-        model_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
-
-        self._model_path_label = QLabel("(none)")
-        self._model_path_label.setWordWrap(True)
-        model_form.addRow("Path", self._model_path_label)
-
-        self._model_version_label = QLabel("-")
-        model_form.addRow("Schema version", self._model_version_label)
-
-        self._model_valid_label = QLabel("-")
-        model_form.addRow("Validation", self._model_valid_label)
-
-        open_btn = QPushButton("Open model…")
-        open_btn.clicked.connect(self._open_model_dialog)
-        model_form.addRow("", open_btn)
-
-        run_box = QGroupBox("Run")
-        run_form = QFormLayout(run_box)
-        run_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
-
-        self._runs_spin = QSpinBox()
-        self._runs_spin.setRange(1, 1_000_000)
-        self._runs_spin.setValue(200)
-        run_form.addRow("Runs", self._runs_spin)
-
-        self._seed_spin = QSpinBox()
-        self._seed_spin.setRange(0, 2**31 - 1)
-        self._seed_spin.setValue(1)
-        run_form.addRow("Seed", self._seed_spin)
-
-        btn_row = QWidget()
-        btn_row_layout = QHBoxLayout(btn_row)
-        btn_row_layout.setContentsMargins(0, 0, 0, 0)
-
-        self._run_btn = QPushButton("Run")
-        self._run_btn.clicked.connect(self._on_run_clicked)
-        btn_row_layout.addWidget(self._run_btn)
-
-        self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setToolTip(
-            "Cancel does not interrupt the simulation. Results will be discarded when it finishes."
-        )
-        self._cancel_btn.clicked.connect(self._on_cancel_clicked)
-        btn_row_layout.addWidget(self._cancel_btn)
-        run_form.addRow("", btn_row)
-
-        note = QLabel(
-            "Cancel discards results after completion\n(no mid-run stop in v1)."
-        )
-        note.setWordWrap(True)
-        run_form.addRow("", note)
-
-        layout.addWidget(model_box)
-        layout.addWidget(run_box)
-        layout.addStretch(1)
-        return root
-
-    def _build_right_panel(self) -> QWidget:
-        root = QWidget()
-        layout = QVBoxLayout(root)
-        layout.setContentsMargins(10, 10, 10, 10)
-
-        summary_box = QGroupBox("Summary")
-        summary_policy = summary_box.sizePolicy()
-        summary_policy.setVerticalStretch(3)
-        summary_box.setSizePolicy(summary_policy)
-        summary_layout = QVBoxLayout(summary_box)
-        self._summary_text = QPlainTextEdit()
-        self._summary_text.setReadOnly(True)
-        self._summary_text.setPlaceholderText("Run a simulation to see summary metrics.")
-        summary_layout.addWidget(self._summary_text)
-
-        crit_box = QGroupBox("Critical path")
-        crit_policy = crit_box.sizePolicy()
-        crit_policy.setVerticalStretch(1)
-        crit_box.setSizePolicy(crit_policy)
-        crit_layout = QVBoxLayout(crit_box)
-
-        top_row = QWidget()
-        top_row_layout = QHBoxLayout(top_row)
-        top_row_layout.setContentsMargins(0, 0, 0, 0)
-        top_row_layout.addWidget(QLabel("Run"))
-
-        self._run_select = QComboBox()
-        # Disabled until at least one run has been performed.
-        self._run_select.setEnabled(False)
-        # Keep keyboard focus on the combo itself when the popup opens.
-        self._run_select.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self._run_select.activated.connect(lambda _idx: self._run_select.setFocus())
-        top_row_layout.addWidget(self._run_select, 1)
-        crit_layout.addWidget(top_row)
-
-        self._critical_path_text = QPlainTextEdit()
-        self._critical_path_text.setReadOnly(True)
-        self._critical_path_text.setPlaceholderText("No critical path yet.")
-        crit_layout.addWidget(self._critical_path_text)
-
-        self._outputs_view = OutputsView(
-            summary_text=self._summary_text,
-            run_select=self._run_select,
-            critical_path_text=self._critical_path_text,
-        )
-        self._run_select.currentIndexChanged.connect(self._outputs_view.on_run_selected)
-
-        summary_crit_splitter = QSplitter(Qt.Orientation.Vertical)
-        summary_crit_splitter.setChildrenCollapsible(False)
-        summary_crit_splitter.addWidget(summary_box)
-        summary_crit_splitter.addWidget(crit_box)
-        summary_crit_splitter.setStretchFactor(0, 3)
-        summary_crit_splitter.setStretchFactor(1, 1)
-        summary_crit_splitter.setCollapsible(0, False)
-        summary_crit_splitter.setCollapsible(1, False)
-
-        # Make the right panel scrollable for small windows.
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        container = QWidget()
-        container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.addWidget(summary_crit_splitter, 1)
-        scroll.setWidget(container)
-
-        layout.addWidget(scroll)
-        return root
+    # Panel builders live in latencylab_ui/main_window_panels.py.
 
     def _wire_controller(self) -> None:
         self._controller.started.connect(self._on_run_started)

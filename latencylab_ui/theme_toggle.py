@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QButtonGroup, QHBoxLayout, QPushButton, QWidget
 
 from latencylab_ui.theme import Theme
@@ -18,6 +18,10 @@ class ThemeToggle(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
+        # When this widget is placed in a taller row (e.g. top bar contains a
+        # larger logo/emoji), keep the buttons aligned to the top edge rather
+        # than vertically centered.
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self._btn_light = QPushButton("☀")
         self._btn_light.setCheckable(True)
