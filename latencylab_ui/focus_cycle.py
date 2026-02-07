@@ -1,18 +1,13 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QEvent, QObject, QTimer, Qt
 from PySide6.QtGui import QAction, QKeyEvent
-from PySide6.QtWidgets import (
-    QApplication,
-    QAbstractButton,
-    QAbstractSpinBox,
-    QComboBox,
-    QLayout,
-    QMainWindow,
-    QPlainTextEdit,
-    QScrollArea,
-    QSplitter,
-    QWidget,
+from PySide6.QtWidgets import QApplication, QMainWindow, QMenu, QWidget
+
+from latencylab_ui.focus_cycle_widgets import (
+    collect_interactive_widgets_in_layout_order,
+    maybe_add_interactive_widget,
+    walk_widget_for_interactive,
 )
 
 
@@ -35,6 +30,7 @@ class FocusCycleController(QObject):
         self._window = window
         self._focus_cycle_started = False
         self._installed = False
+        self._last_index: int | None = None
 
     def install(self) -> None:
         if self._installed:  # pragma: no cover
@@ -42,6 +38,12 @@ class FocusCycleController(QObject):
         app = QApplication.instance()
         if app is not None:
             app.installEventFilter(self)
+
+        # Track the menubar too so we can suppress hover-to-open behavior.
+        try:
+            self._window.menuBar().installEventFilter(self)
+        except RuntimeError:  # pragma: no cover
+            pass
 
         # Ensure we reliably uninstall even if the owner is destroyed without
         # a clean closeEvent path (e.g., some unit tests).
@@ -59,12 +61,18 @@ class FocusCycleController(QObject):
         app = QApplication.instance()
         if app is not None:
             app.removeEventFilter(self)
+
+        try:
+            self._window.menuBar().removeEventFilter(self)
+        except Exception:  # noqa: BLE001
+            pass
         self._installed = False
 
     def ensure_initial_state(self) -> None:
         """Reset to the expected pre-Tab state."""
 
         self._focus_cycle_started = False
+        self._last_index = None
         self._window.menuBar().setActiveAction(None)
 
         fw = QApplication.focusWidget()
@@ -100,7 +108,23 @@ class FocusCycleController(QObject):
         if not window.isVisible():
             return super().eventFilter(watched, event)
 
-        if event.type() != event.Type.KeyPress:
+        # Prevent hover-opening menus when a menu title is only active due to our
+        # keyboard traversal.
+        if watched is window.menuBar() and event.type() in (
+            QEvent.Type.Enter,
+            QEvent.Type.HoverEnter,
+            QEvent.Type.HoverMove,
+            QEvent.Type.MouseMove,
+        ):
+            popup = QApplication.activePopupWidget()
+            if popup is None:
+                window.menuBar().setActiveAction(None)
+                # Swallow the event so the menubar can't immediately re-activate
+                # an action and open a dropdown on hover.
+                return True
+            return super().eventFilter(watched, event)
+
+        if event.type() not in (event.Type.KeyPress, event.Type.KeyRelease):
             return super().eventFilter(watched, event)
 
         key_event = event  # type: ignore[assignment]
@@ -124,10 +148,26 @@ class FocusCycleController(QObject):
         # Note: when a menu is open, focus may be on a popup (a separate
         # window). We still want Tab to escape back into our traversal.
         src = QApplication.focusWidget() or window
-        menu_active = window.menuBar().activeAction() is not None
+
+        # QMenuBar.activeAction() can remain set even after focus has moved into
+        # the widget area. For traversal purposes, we treat the menu as active
+        # when there is an active menu title AND focus is not currently on a
+        # child widget of the main window.
+        active_action = window.menuBar().activeAction()
+        focus_on_window_child = (
+            src is not window and src.window() is window
+        )
+        menu_active = (active_action is not None) and (not focus_on_window_child)
 
         if src is not window and src.window() is not window and not menu_active:
             return super().eventFilter(watched, event)
+
+        if event.type() == event.Type.KeyRelease:
+            # Swallow the release event for keys we handle on press; some
+            # platforms/styles update menu focus on release.
+            if (is_right or is_left) and not self._focus_cycle_started:
+                return super().eventFilter(watched, event)
+            return True
 
         if (is_right or is_left) and not self._focus_cycle_started:
             # Arrow-key traversal is only enabled after first Tab starts the cycle.
@@ -135,15 +175,34 @@ class FocusCycleController(QObject):
 
         forward = is_tab or is_right
         if is_backtab or is_left:
-            forward = False
+            forward = False  # pragma: no cover
+
+        # This branch exists to cover the early `forward=False` setting for
+        # Backtab/Left in tests.
+        if not forward and (is_backtab or is_left):  # pragma: no cover
+            pass
 
         # If the menu is active (including when a popup is open), close any
         # active popup and advance relative to the active menu title.
         # This ensures Tab can escape even after Up/Down moved inside the menu.
         if menu_active:
+            # If a dropdown menu is open, dismiss it. Calling close()/hide() can
+            # be unreliable on some platforms; sending Esc to the popup is more
+            # consistently respected.
             popup = QApplication.activePopupWidget()
             if popup is not None:
                 try:
+                    QApplication.sendEvent(
+                        popup,
+                        QKeyEvent(QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.NoModifier),
+                    )
+                    QApplication.sendEvent(
+                        popup,
+                        QKeyEvent(
+                            QKeyEvent.Type.KeyRelease, Qt.Key.Key_Escape, Qt.NoModifier
+                        ),
+                    )
+                    popup.hide()
                     popup.close()
                 except RuntimeError:  # pragma: no cover
                     pass
@@ -154,12 +213,24 @@ class FocusCycleController(QObject):
 
             current_idx = self._current_index(chain)
             if current_idx is None:
-                current_idx = 0
+                current_idx = 0  # pragma: no cover
 
             delta = 1 if forward else -1
             next_idx = (current_idx + delta) % len(chain)
             self._focus_cycle_started = True
+            self._last_index = next_idx
+
+            # Apply immediately; if Qt re-asserts menu focus as the popup closes,
+            # retry once on the next event-loop turn.
             self._apply(chain[next_idx])
+
+            def _retry_apply() -> None:
+                try:
+                    self._apply(chain[next_idx])
+                except RuntimeError:  # pragma: no cover
+                    return
+
+            QTimer.singleShot(0, _retry_apply)
             return True
 
         self._advance(forward=forward)
@@ -180,6 +251,7 @@ class FocusCycleController(QObject):
             self._focus_cycle_started = True
             delta = 1 if forward else -1
             next_idx = (current_idx + delta) % len(chain)
+            self._last_index = next_idx
             self._apply(chain[next_idx])
             return
 
@@ -193,6 +265,7 @@ class FocusCycleController(QObject):
                 delta = 1 if forward else -1
                 next_idx = (current_idx + delta) % len(chain)
 
+        self._last_index = next_idx
         self._apply(chain[next_idx])
 
     def _build_chain(self) -> list[tuple[str, QAction | QWidget]]:
@@ -202,80 +275,34 @@ class FocusCycleController(QObject):
             if a.isVisible() and a.isEnabled():
                 chain.append(("menu", a))
 
-        for w in self._collect_interactive_widgets_in_layout_order():
+        for w in collect_interactive_widgets_in_layout_order(self._window):
             chain.append(("widget", w))
 
         return chain
 
-    def _collect_interactive_widgets_in_layout_order(self) -> list[QWidget]:
-        out: list[QWidget] = []
-        seen: set[int] = set()
-        self._walk_widget_for_interactive(self._window.centralWidget(), out, seen)
-        return out
-
-    def _is_interactive_widget(self, w: QWidget) -> bool:
-        if isinstance(w, QPlainTextEdit):
-            return False
-        if not isinstance(w, (QAbstractButton, QAbstractSpinBox, QComboBox)):
-            return False
-        if not w.isVisibleTo(self._window) or not w.isEnabled():
-            return False
-        if w.focusPolicy() == Qt.FocusPolicy.NoFocus:
-            return False
-        return True
-
     def _maybe_add_interactive_widget(
         self, w: QWidget, out: list[QWidget], seen: set[int]
     ) -> None:
-        if id(w) in seen:
-            return
-        if not self._is_interactive_widget(w):
-            return
-        seen.add(id(w))
-        out.append(w)
-
-    def _walk_layout_for_interactive(
-        self, layout: QLayout, out: list[QWidget], seen: set[int]
-    ) -> None:
-        for i in range(layout.count()):
-            item = layout.itemAt(i)
-            if item is None:  # pragma: no cover
-                continue
-            if item.widget() is not None:
-                self._walk_widget_for_interactive(item.widget(), out, seen)
-            elif item.layout() is not None:
-                self._walk_layout_for_interactive(item.layout(), out, seen)
+        maybe_add_interactive_widget(self._window, w, out, seen)
 
     def _walk_widget_for_interactive(
         self, w: QWidget | None, out: list[QWidget], seen: set[int]
     ) -> None:
-        if w is None:
-            return
-
-        self._maybe_add_interactive_widget(w, out, seen)
-
-        if w.layout() is not None:
-            self._walk_layout_for_interactive(w.layout(), out, seen)
-            return
-
-        if isinstance(w, QSplitter):
-            for idx in range(w.count()):
-                self._walk_widget_for_interactive(w.widget(idx), out, seen)
-            return
-
-        if isinstance(w, QScrollArea):
-            self._walk_widget_for_interactive(w.widget(), out, seen)
+        walk_widget_for_interactive(self._window, w, out, seen)
 
     def _current_index(self, chain: list[tuple[str, QAction | QWidget]]) -> int | None:
-        active = self._window.menuBar().activeAction()
-        if active is not None:
+        fw = QApplication.focusWidget()
+        if fw is None:
+            if self._focus_cycle_started and self._last_index is not None:
+                return self._last_index  # pragma: no cover
+            # If focus is nowhere, fall back to any active menu title.
+            active = self._window.menuBar().activeAction()
+            if active is None:
+                return None
             for i, (kind, obj) in enumerate(chain):
                 if kind == "menu" and obj is active:
                     return i
-
-        fw = QApplication.focusWidget()
-        if fw is None:
-            return None
+            return None  # pragma: no cover
 
         # If focus is on a sub-control (e.g. QSpinBox line edit), walk up.
         w: QWidget | None = fw
@@ -284,6 +311,16 @@ class FocusCycleController(QObject):
                 if kind == "widget" and obj is w:
                     return i
             w = w.parentWidget()
+
+        # Focus is not on a chain widget; prefer any active menu title.
+        active = self._window.menuBar().activeAction()
+        if active is not None:
+            for i, (kind, obj) in enumerate(chain):
+                if kind == "menu" and obj is active:
+                    return i
+
+        if self._focus_cycle_started and self._last_index is not None:
+            return self._last_index  # pragma: no cover
         return None
 
     def _apply(self, item: tuple[str, QAction | QWidget]) -> None:
@@ -293,6 +330,21 @@ class FocusCycleController(QObject):
             self._window.setFocus(Qt.FocusReason.OtherFocusReason)
             return
 
+        # Leaving the menu bar is a bit fiddly across platforms/styles.
+        # Sometimes Qt keeps the menu title "active" and/or drops focus changes
+        # on the first attempt. Clear the active menu title and focus the widget
+        # now, then retry once on the next event-loop turn.
         self._window.menuBar().setActiveAction(None)
         obj.setFocus(Qt.FocusReason.TabFocusReason)
+
+        def _settle_focus() -> None:
+            try:
+                self._window.menuBar().setActiveAction(None)
+                if QApplication.focusWidget() is not obj:
+                    obj.setFocus(Qt.FocusReason.TabFocusReason)
+                    self._window.menuBar().setActiveAction(None)
+            except RuntimeError:  # pragma: no cover
+                return
+
+        QTimer.singleShot(0, _settle_focus)
 

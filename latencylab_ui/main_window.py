@@ -37,6 +37,7 @@ from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
 from latencylab_ui.outputs_view import OutputsView
 from latencylab_ui.focus_cycle import FocusCycleController
 from latencylab_ui.main_window_bindings import connect_theme_toggle
+from latencylab_ui.main_window_menus import build_menus
 from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.theme_toggle import ThemeToggle
 
@@ -76,12 +77,11 @@ class MainWindow(QMainWindow):
         self._set_running(False)
 
     def _build_actions(self) -> None:
-        file_menu = self.menuBar().addMenu("File")
-        open_action = file_menu.addAction("Open model…")
-        open_action.triggered.connect(self._open_model_dialog)
-        file_menu.addSeparator()
-        exit_action = file_menu.addAction("Exit")
-        exit_action.triggered.connect(self.close)
+        build_menus(
+            self,
+            on_open_model=self._open_model_dialog,
+            on_exit=self.close,
+        )
 
     def _build_ui(self) -> None:
         root = QWidget()

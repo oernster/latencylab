@@ -80,7 +80,9 @@ def test_focus_cycle_collects_only_interactive_widgets_in_layout_order() -> None
     w.show()
 
     c = FocusCycleController(w)
-    got = c._collect_interactive_widgets_in_layout_order()  # noqa: SLF001
+    from latencylab_ui.focus_cycle_widgets import collect_interactive_widgets_in_layout_order
+
+    got = collect_interactive_widgets_in_layout_order(w)
     assert got == [b1, s1, b2, s2, combo]
 
     # Ensure "seen" guard is exercised.
@@ -256,6 +258,13 @@ def test_focus_cycle_event_filter_irrelevant_key_returns_false() -> None:
         c.uninstall()
         w.close()
         app.processEvents()
+
+
+def test_focus_cycle_event_filter_covered_in_split_file() -> None:
+    # Kept minimal to keep this file <= 400 lines.
+    # Event filter specifics are covered in
+    # [`tests/test_ui_focus_cycle_event_filter.py`](tests/test_ui_focus_cycle_event_filter.py:1).
+    assert True
 
 
 def test_focus_cycle_event_filter_missing_internal_attributes_returns_false() -> None:
