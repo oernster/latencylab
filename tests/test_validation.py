@@ -25,4 +25,3 @@ def test_rejects_unknown_context() -> None:
     )
     with pytest.raises(ModelValidationError):
         validate_model(model)
-

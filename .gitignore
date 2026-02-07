@@ -209,3 +209,7 @@ __marimo__/
 # Utility rubbish
 ALL_SOURCES.txt
 generate_scripts.py
+
+# Output files
+out/*
+out/

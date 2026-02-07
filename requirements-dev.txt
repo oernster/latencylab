@@ -1,0 +1,10 @@
+-r requirements.txt
+
+pytest>=8
+pytest-cov>=5
+black>=24
+flake8>=7
+
+# Legacy v1 compatibility runtime (kept out of core requirements).
+numpy>=1.26
+

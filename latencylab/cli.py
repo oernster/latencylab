@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from latencylab.io import write_runs_csv, write_summary_json, write_trace_csv
-from latencylab.metrics import aggregate_runs
+from latencylab.metrics import add_task_metadata, aggregate_runs
 from latencylab.model import Model
 from latencylab.sim import simulate_many
 from latencylab.validate import validate_model
@@ -50,6 +50,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
         summary = aggregate_runs(model=model, runs=runs)
+        summary = add_task_metadata(summary, model=model)
         write_summary_json(args.out_summary, summary)
         write_runs_csv(args.out_runs, runs)
         if args.out_trace:
@@ -58,4 +59,3 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     raise AssertionError(f"Unhandled command: {args.cmd}")
-

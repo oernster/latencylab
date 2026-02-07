@@ -20,12 +20,60 @@ The MVP is a **CLI** that reads a JSON execution model and produces:
 python -m pip install -e .[dev]
 ```
 
+## Dependencies
+
+- Core runtime: stdlib-only (see [`requirements.txt`](requirements.txt:1))
+- Dev/test tools + legacy v1 compatibility: [`requirements-dev.txt`](requirements-dev.txt:1)
+
+Legacy note: v1 exact-output compatibility currently uses a NumPy-backed executor.
+v2 execution is stdlib-only.
+
 ## Run
 
 ```powershell
-latencylab simulate --model examples/interactive.json --runs 10000 --seed 123 \
-  --out-summary out/summary.json --out-runs out/runs.csv --out-trace out/trace.csv
+latencylab simulate --model examples/interactive.json --runs 10000 --seed 123 --out-summary out/summary.json --out-runs out/runs.csv --out-trace out/trace.csv
 ```
+
+## Model v2 (MVP extensions)
+
+v2 is additive-only and must not change the meaning/results of any valid v1 model.
+
+### Delayed wiring (synthetic delay nodes)
+
+In v2, wiring listeners may be either:
+
+- a task name (v1-compatible)
+- an object: `{ "task": "t1", "delay_ms": <dist or number> }`
+
+Example:
+
+```json
+{
+  "version": 2,
+  "wiring": {
+    "e1": [{"task": "t1", "delay_ms": {"dist": "fixed", "value": 5.0}}]
+  }
+}
+```
+
+Delay semantics:
+
+- the event still occurs at emission time
+- the downstream task is enqueued only after the delay completes
+- delays do **not** consume context capacity
+- delays are visible in traces and critical paths as synthetic nodes named
+  `delay(<event>-><task>)`
+
+### Task metadata (measurement-only)
+
+Tasks may optionally include:
+
+```json
+"meta": { "category": "input", "tags": ["hot"], "labels": {"team": "ui"} }
+```
+
+Metadata never affects scheduling; it is surfaced in `summary.json` under
+`task_metadata`.
 
 Outputs:
 

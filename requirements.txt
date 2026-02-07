@@ -1,0 +1,6 @@
+# Runtime dependencies for the stdlib-only core.
+#
+# NOTE: v1 legacy (NumPy-backed) execution is intentionally optional to keep the core
+# free of non-stdlib runtime deps. Install legacy support via requirements-dev.txt
+# (for development/testing) or `pip install numpy`.
+

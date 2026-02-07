@@ -10,9 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = [
-  "numpy>=1.26",
-]
+dependencies = []
 
 [project.scripts]
 latencylab = "latencylab.__main__:main"
@@ -20,10 +18,24 @@ latencylab = "latencylab.__main__:main"
 [project.optional-dependencies]
 dev = [
   "pytest>=8",
+  "pytest-cov>=5",
+  "black>=24",
+  "flake8>=7",
+  # Legacy v1 compat for exact-output regression tests.
+  "numpy>=1.26",
+]
+
+# Legacy (NumPy-backed) simulator execution path.
+legacy = [
+  "numpy>=1.26",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+
 
 [tool.setuptools.packages.find]
 include = ["latencylab*"]

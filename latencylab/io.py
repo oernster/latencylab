@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from latencylab.sim import RunResult, TaskInstance
+from latencylab.types import RunResult, TaskInstance
 
 
 def write_summary_json(path: Path, summary: dict[str, Any]) -> None:
@@ -81,4 +81,3 @@ def write_trace_csv(path: Path, trace: list[TaskInstance]) -> None:
                     ";".join(t.emitted_events),
                 ]
             )
-
