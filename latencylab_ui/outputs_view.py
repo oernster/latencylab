@@ -30,30 +30,7 @@ class OutputsView:
         self._runs: list[_RunItem] = []
 
     def render(self, outputs: RunOutputs) -> None:
-        s = outputs.summary
-        lines: list[str] = [
-            f"Model schema_version: {outputs.model.version}",
-            f"Runs requested: {s.get('runs_requested')}",
-            f"Runs ok: {s.get('runs_ok')}  failed: {s.get('runs_failed')}",
-        ]
-
-        lat = s.get("latency_ms", {})
-        for key in ("first_ui", "last_ui", "makespan"):
-            p = lat.get(key, {})
-            lines.append(
-                f"{key}: p50={p.get('p50')}, p90={p.get('p90')}, p95={p.get('p95')}, p99={p.get('p99')}"
-            )
-
-        crit = s.get("critical_path", {})
-        top = crit.get("top_paths", [])
-        lines.append("")
-        lines.append("Top critical paths:")
-        for item in top:
-            tasks = item.get("tasks")
-            count = item.get("count")
-            lines.append(f"- ({count}) {tasks}")
-
-        self._summary_text.setPlainText("\n".join(lines))
+        self._summary_text.setPlainText(format_summary_text(outputs))
 
         self._runs = [
             _RunItem(
@@ -89,4 +66,36 @@ class OutputsView:
             self._critical_path_text.setPlainText(r.critical_path_tasks)
         else:
             self._critical_path_text.setPlainText("(no critical path)")
+
+
+def format_summary_text(outputs: RunOutputs) -> str:
+    """Format the right-panel summary as plain text.
+
+    Kept Qt-free so it can also be reused by export code.
+    """
+
+    s = outputs.summary
+    lines: list[str] = [
+        f"Model schema_version: {outputs.model.version}",
+        f"Runs requested: {s.get('runs_requested')}",
+        f"Runs ok: {s.get('runs_ok')}  failed: {s.get('runs_failed')}",
+    ]
+
+    lat = s.get("latency_ms", {})
+    for key in ("first_ui", "last_ui", "makespan"):
+        p = lat.get(key, {})
+        lines.append(
+            f"{key}: p50={p.get('p50')}, p90={p.get('p90')}, p95={p.get('p95')}, p99={p.get('p99')}"
+        )
+
+    crit = s.get("critical_path", {})
+    top = crit.get("top_paths", [])
+    lines.append("")
+    lines.append("Top critical paths:")
+    for item in top:
+        tasks = item.get("tasks")
+        count = item.get("count")
+        lines.append(f"- ({count}) {tasks}")
+
+    return "\n".join(lines)
 

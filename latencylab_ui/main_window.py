@@ -57,6 +57,9 @@ class MainWindow(QMainWindow):
         self._active_run_token: int | None = None
         self._active_cancelled = False
 
+        # Last successful, non-cancelled outputs. Used by the top-bar export button.
+        self._last_outputs: RunOutputs | None = None
+
         # If the Run button had focus when a run started, restore focus to it
         # after completion so keyboard traversal continues from Run.
         self._restore_focus_to_run_btn = False
@@ -212,6 +215,7 @@ class MainWindow(QMainWindow):
             # Discard per v1 cancel semantics.
             return
         if isinstance(outputs_obj, RunOutputs):
+            self._last_outputs = outputs_obj
             self._outputs_view.render(outputs_obj)
             self._run_select.setEnabled(True)
         self._status_label.setText("Completed")

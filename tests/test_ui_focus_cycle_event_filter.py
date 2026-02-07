@@ -184,3 +184,32 @@ def test_menu_hover_does_not_clear_when_popup_is_open(monkeypatch) -> None:
         w.close()
         app.processEvents()
 
+
+def test_focus_cycle_uninstall_ignores_menubar_remove_event_filter_errors() -> None:
+    """Cover the defensive uninstall path (broad except) in FocusCycleController."""
+
+    app = _ensure_qapp()
+
+    from PySide6.QtWidgets import QMainWindow
+
+    from latencylab_ui.focus_cycle import FocusCycleController
+
+    w = QMainWindow()
+    w.menuBar().addMenu("File")
+    w.show()
+    app.processEvents()
+
+    c = FocusCycleController(w)
+    c.install()
+
+    class _BadMenuBar:
+        def removeEventFilter(self, *_a, **_k):  # noqa: ANN001
+            raise RuntimeError("boom")
+
+    # Force uninstall() to hit the broad except around menubar.removeEventFilter.
+    w.menuBar = lambda: _BadMenuBar()  # type: ignore[method-assign]
+
+    c.uninstall()
+    w.close()
+    app.processEvents()
+

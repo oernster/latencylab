@@ -24,7 +24,7 @@ def build_top_bar(
     layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
     save_log_btn = QPushButton("💾")
-    save_log_btn.setToolTip("Save log…")
+    save_log_btn.setToolTip("Export runs as zip…")
     save_log_btn.setProperty("role", "icon-action")
     save_log_btn.clicked.connect(on_save_log_clicked)
     layout.addWidget(save_log_btn, 0, Qt.AlignmentFlag.AlignTop)

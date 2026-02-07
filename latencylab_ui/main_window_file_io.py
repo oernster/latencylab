@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import zipfile
 from pathlib import Path
 
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from latencylab.model import Model
 from latencylab.validate import ModelValidationError, validate_model
+from latencylab_ui.outputs_view import format_summary_text
 
 
 def open_model_dialog(window) -> None:
@@ -24,30 +26,50 @@ def open_model_dialog(window) -> None:
 
 
 def on_save_log_clicked(window) -> None:
+    # Export all runs as a zip of per-run text files.
     path_str, _ = QFileDialog.getSaveFileName(
         window,
-        "Save log",
+        "Export runs",
         "",
-        "Text files (*.txt);;All files (*)",
+        "Zip files (*.zip);;All files (*)",
     )
     if not path_str:
         return
 
-    summary_txt = window._summary_text.toPlainText().strip()  # noqa: SLF001
-    crit_txt = window._critical_path_text.toPlainText().strip()  # noqa: SLF001
-    log_txt = (
-        "Summary\n"
-        "======\n"
-        f"{summary_txt}\n\n"
-        "Critical path\n"
-        "============\n"
-        f"{crit_txt}\n"
-    )
+    out_path = Path(path_str)
+    if out_path.suffix.lower() != ".zip":
+        out_path = out_path.with_suffix(".zip")
+
+    outputs = getattr(window, "_last_outputs", None)  # noqa: SLF001
+    if outputs is None:
+        QMessageBox.information(window, "Nothing to export", "Run a simulation first.")
+        return
+
+    runs = sorted(list(outputs.runs), key=lambda r: int(r.run_id))
+    summary_txt = format_summary_text(outputs).strip()
 
     try:
-        Path(path_str).write_text(log_txt, encoding="utf-8")
+        with zipfile.ZipFile(out_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("Summary.txt", f"{summary_txt}\n".encode("utf-8"))
+            for r in runs:
+                # User-facing filenames are 1-based, zero-padded.
+                file_name = f"Run{(int(r.run_id) + 1):04d}.txt"
+                status = "failed" if r.failed else "ok"
+                failure_reason = r.failure_reason or ""
+                header = (
+                    f"run_id: {r.run_id}\n"
+                    f"status: {status}\n"
+                    f"makespan_ms: {r.makespan_ms}\n"
+                    f"critical_path_ms: {r.critical_path_ms}\n"
+                    f"failure_reason: {failure_reason}\n"
+                )
+
+                crit = (r.critical_path_tasks or "").strip()
+
+                body = f"{header}\n{crit}\n"
+                zf.writestr(file_name, body.encode("utf-8"))
     except Exception as e:  # noqa: BLE001
-        QMessageBox.critical(window, "Save failed", f"Could not save log: {e}")
+        QMessageBox.critical(window, "Export failed", f"Could not export runs: {e}")
 
 
 def load_model(window, path: Path) -> None:
