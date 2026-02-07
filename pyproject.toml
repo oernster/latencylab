@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "latencylab"
+version = "0.1.0"
+description = "Design-time latency exploration tool for event-driven interactive systems"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+  "numpy>=1.26",
+]
+
+[project.scripts]
+latencylab = "latencylab.__main__:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["latencylab*"]
+exclude = ["plans*", "examples*", "tests*"]
+

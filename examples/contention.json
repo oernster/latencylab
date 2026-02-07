@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "entry_event": "user.click",
+  "contexts": {
+    "ui": { "concurrency": 1, "policy": "fifo" },
+    "bg": { "concurrency": 2, "policy": "fifo" }
+  },
+  "events": {
+    "user.click": { "tags": ["ui"] },
+    "fanout": { "tags": [] },
+    "render.requested": { "tags": ["ui"] }
+  },
+  "tasks": {
+    "handle_input": {
+      "context": "ui",
+      "duration_ms": { "dist": "fixed", "value": 1.0 },
+      "emit": ["fanout"]
+    },
+    "work_a": {
+      "context": "bg",
+      "duration_ms": { "dist": "lognormal", "mu": 3.2, "sigma": 0.7 },
+      "emit": ["render.requested"]
+    },
+    "work_b": {
+      "context": "bg",
+      "duration_ms": { "dist": "lognormal", "mu": 3.2, "sigma": 0.7 },
+      "emit": ["render.requested"]
+    },
+    "work_c": {
+      "context": "bg",
+      "duration_ms": { "dist": "lognormal", "mu": 3.2, "sigma": 0.7 },
+      "emit": ["render.requested"]
+    },
+    "work_d": {
+      "context": "bg",
+      "duration_ms": { "dist": "lognormal", "mu": 3.2, "sigma": 0.7 },
+      "emit": ["render.requested"]
+    },
+    "render": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 5.0, "std": 1.5, "min": 0.0 },
+      "emit": []
+    }
+  },
+  "wiring": {
+    "user.click": ["handle_input"],
+    "fanout": ["work_a", "work_b", "work_c", "work_d"],
+    "render.requested": ["render"]
+  }
+}
+

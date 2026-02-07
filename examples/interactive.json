@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "entry_event": "user.click",
+  "contexts": {
+    "ui": { "concurrency": 1, "policy": "fifo" },
+    "bg": { "concurrency": 4, "policy": "fifo" }
+  },
+  "events": {
+    "user.click": { "tags": ["ui"] },
+    "bg.fetch.start": { "tags": [] },
+    "render.requested": { "tags": ["ui"] }
+  },
+  "tasks": {
+    "handle_input": {
+      "context": "ui",
+      "duration_ms": { "dist": "fixed", "value": 2.0 },
+      "emit": ["bg.fetch.start"]
+    },
+    "do_fetch": {
+      "context": "bg",
+      "duration_ms": { "dist": "lognormal", "mu": 3.0, "sigma": 0.6 },
+      "emit": ["render.requested"]
+    },
+    "render": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 4.0, "std": 1.0, "min": 0.0 },
+      "emit": []
+    }
+  },
+  "wiring": {
+    "user.click": ["handle_input"],
+    "bg.fetch.start": ["do_fetch"],
+    "render.requested": ["render"]
+  }
+}
+
