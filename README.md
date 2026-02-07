@@ -34,6 +34,30 @@ v2 execution is stdlib-only.
 latencylab simulate --model examples/interactive.json --runs 10000 --seed 123 --out-summary out/summary.json --out-runs out/runs.csv --out-trace out/trace.csv
 ```
 
+## Application version vs model schema version
+
+The installed LatencyLab package has its own application version
+([`latencylab.version.__version__`](latencylab/version.py:1)).
+
+Separately, each model JSON declares a **model schema version**.
+Canonical field name: `schema_version`.
+
+- `schema_version: 1` = legacy (NumPy-backed executor for exact output stability)
+- `schema_version: 2` = MVP extensions (delayed wiring + task metadata)
+
+For compatibility, the loader also accepts legacy aliases `version` and
+`model_version`.
+
+Schema notes:
+
+- Tasks emit events via `emit` (list of event names)
+- Duration distributions use `duration_ms: {"dist": ..., ...}` with:
+  - `fixed`: `value`
+  - `normal`: `mean`, `std`, optional `min`
+  - `lognormal`: `mu`, `sigma`
+- Events are declared as a map: `events: {"event_name": {"tags": [...]}}`
+- Wiring is a map: `wiring: {"event_name": ["task", {"task": "...", "delay_ms": ...}]}`
+
 ## Model v2 (MVP extensions)
 
 v2 is additive-only and must not change the meaning/results of any valid v1 model.
@@ -49,7 +73,7 @@ Example:
 
 ```json
 {
-  "version": 2,
+  "schema_version": 2,
   "wiring": {
     "e1": [{"task": "t1", "delay_ms": {"dist": "fixed", "value": 5.0}}]
   }

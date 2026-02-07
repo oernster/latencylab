@@ -75,18 +75,24 @@ This is the insertion point for future batch optimizations, including GPU execut
 
 ## Model versions and schema
 
+Models declare a schema version via `schema_version` (preferred). Legacy aliases
+`version` and `model_version` are accepted for compatibility. This is separate
+from the application/package version [`latencylab.version.__version__`](latencylab/version.py:1).
+
 ### v1 (legacy)
 
-- `version: 1`
+- `schema_version: 1`
 - Wiring is event to list of task names.
 - Execution uses NumPy-backed RNG for exact output compatibility.
 
 ### v2 (MVP extensions)
 
-- `version: 2`
+- `schema_version: 2`
 - Wiring listeners may be either:
   - `"task_name"` (v1-compatible)
   - `{ "task": "task_name", "delay_ms": <number or dist> }`
+
+Note: In v1 models, lognormal.mean was interpreted as the arithmetic mean (ms). In v2, lognormal uses (mu, sigma); legacy models are converted using mu = ln(mean) - 0.5 * sigma^2.
 
 Parsed wiring edges are represented as [`latencylab.model.WiringEdge`](latencylab/model.py:53) and stored on [`Model.wiring_edges`](latencylab/model.py:62).
 

@@ -73,7 +73,19 @@ class Model:
 
     @staticmethod
     def from_json(obj: dict[str, Any]) -> "Model":
-        version = int(obj["version"])
+        if "schema_version" in obj:
+            version_raw = obj["schema_version"]
+        elif "version" in obj:
+            version_raw = obj["version"]
+        elif "model_version" in obj:
+            version_raw = obj["model_version"]
+        else:
+            raise ValueError(
+                "Model is missing schema version. Expected 'schema_version' "
+                "(preferred), or legacy aliases 'version'/'model_version'."
+            )
+
+        version = int(version_raw)
         entry_event = str(obj["entry_event"])
 
         contexts: dict[str, ContextDef] = {}

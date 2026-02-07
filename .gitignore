@@ -213,3 +213,5 @@ generate_scripts.py
 # Output files
 out/*
 out/
+runs.csv
+summary.json
