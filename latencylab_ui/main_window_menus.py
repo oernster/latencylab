@@ -33,6 +33,12 @@ def build_menus(
     about_action = help_menu.addAction("About…")
     about_action.triggered.connect(lambda: show_about_dialog(window))
 
+    licence_action = help_menu.addAction("UI Licence…")
+    licence_action.triggered.connect(lambda: show_licence_dialog(window))
+
+    main_licence_action = help_menu.addAction("Main Licence…")
+    main_licence_action.triggered.connect(lambda: show_main_licence_dialog(window))
+
 
 def show_about_dialog(parent: QWidget) -> None:
     # IMPORTANT: do not use `exec()` (modal event loop). It can be fragile
@@ -46,6 +52,22 @@ def show_about_dialog(parent: QWidget) -> None:
     # immediately after showing.
     setattr(parent, "_about_dialog", dlg)
 
+    dlg.open()
+
+
+def show_licence_dialog(parent: QWidget) -> None:
+    from latencylab_ui.licence_dialog import LicenceDialog
+
+    dlg = LicenceDialog(parent)
+    setattr(parent, "_licence_dialog", dlg)
+    dlg.open()
+
+
+def show_main_licence_dialog(parent: QWidget) -> None:
+    from latencylab_ui.main_licence_dialog import MainLicenceDialog
+
+    dlg = MainLicenceDialog(parent)
+    setattr(parent, "_main_licence_dialog", dlg)
     dlg.open()
 
 
