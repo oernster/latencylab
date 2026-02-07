@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,7 +8,6 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
-    QFileDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -28,10 +26,17 @@ from PySide6.QtWidgets import (
 )
 
 from latencylab.model import Model
-from latencylab.validate import ModelValidationError, validate_model
+
+from latencylab_ui.main_window_file_io import (
+    load_model as _load_model,
+    on_save_log_clicked as _on_save_log_clicked,
+    open_model_dialog as _open_model_dialog,
+)
 
 from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
 from latencylab_ui.outputs_view import OutputsView
+from latencylab_ui.focus_cycle import FocusCycleController
+from latencylab_ui.main_window_bindings import connect_theme_toggle
 from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.theme_toggle import ThemeToggle
 
@@ -51,10 +56,17 @@ class MainWindow(QMainWindow):
         self._active_run_token: int | None = None
         self._active_cancelled = False
 
+        # If the Run button had focus when a run started, restore focus to it
+        # after completion so keyboard traversal continues from Run.
+        self._restore_focus_to_run_btn = False
+
         self._elapsed_timer = QTimer(self)
         self._elapsed_timer.setInterval(200)
         self._elapsed_timer.timeout.connect(self._update_elapsed)
         self._elapsed_started_at: float | None = None
+
+        self._focus_cycle = FocusCycleController(self)
+        self._focus_cycle.install()
 
         self._build_actions()
         self._build_ui()
@@ -91,7 +103,11 @@ class MainWindow(QMainWindow):
         top_bar_layout.addStretch(1)
 
         self._theme_toggle = ThemeToggle(default=Theme.DARK, parent=self)
-        self._theme_toggle.theme_changed.connect(self._on_theme_changed)
+        connect_theme_toggle(
+            theme_toggle=self._theme_toggle,
+            receiver=self,
+            focus_cycle=self._focus_cycle,
+        )
         top_bar_layout.addWidget(self._theme_toggle)
 
         root_layout.addWidget(top_bar)
@@ -211,6 +227,11 @@ class MainWindow(QMainWindow):
         top_row_layout.addWidget(QLabel("Run"))
 
         self._run_select = QComboBox()
+        # Disabled until at least one run has been performed.
+        self._run_select.setEnabled(False)
+        # Keep keyboard focus on the combo itself when the popup opens.
+        self._run_select.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self._run_select.activated.connect(lambda _idx: self._run_select.setFocus())
         top_row_layout.addWidget(self._run_select, 1)
         crit_layout.addWidget(top_row)
 
@@ -256,6 +277,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # type: ignore[override]
         # If a simulation is active, wait for completion to avoid:
         #   QThread: Destroyed while thread '' is still running
+        self._focus_cycle.uninstall()
         self._controller.shutdown()
         super().closeEvent(event)
 
@@ -265,66 +287,34 @@ class MainWindow(QMainWindow):
             apply_theme(app, theme)
 
     def _open_model_dialog(self) -> None:
-        path_str, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open LatencyLab model",
-            "",
-            "JSON files (*.json);;All files (*)",
-        )
-        if not path_str:
-            return
-        self._load_model(Path(path_str))
+        _open_model_dialog(self)
 
     def _on_save_log_clicked(self) -> None:
-        path_str, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save log",
-            "",
-            "Text files (*.txt);;All files (*)",
-        )
-        if not path_str:
-            return
-
-        summary_txt = self._summary_text.toPlainText().strip()
-        crit_txt = self._critical_path_text.toPlainText().strip()
-        log_txt = (
-            "Summary\n"
-            "======\n"
-            f"{summary_txt}\n\n"
-            "Critical path\n"
-            "============\n"
-            f"{crit_txt}\n"
-        )
-
-        try:
-            Path(path_str).write_text(log_txt, encoding="utf-8")
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.critical(self, "Save failed", f"Could not save log: {e}")
+        _on_save_log_clicked(self)
 
     def _load_model(self, path: Path) -> None:
-        try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            model = Model.from_json(raw)
-            validate_model(model)
-        except ModelValidationError as e:
-            self._loaded_model = None
-            self._model_path_label.setText(str(path))
-            self._model_version_label.setText("-")
-            self._model_valid_label.setText(f"Invalid: {e}")
-            return
-        except Exception as e:  # noqa: BLE001
-            self._loaded_model = None
-            self._model_path_label.setText(str(path))
-            self._model_version_label.setText("-")
-            self._model_valid_label.setText(f"Error: {e}")
-            return
+        _load_model(self, path)
 
+    def _set_model_load_failed(
+        self, path: Path, *, version_text: str, validation_text: str
+    ) -> None:
+        self._loaded_model = None
+        self._model_path_label.setText(str(path))
+        self._model_version_label.setText(version_text)
+        self._model_valid_label.setText(validation_text)
+
+    def _set_model_load_ok(self, path: Path, model: Model) -> None:
         self._loaded_model = _LoadedModel(path=path, model=model)
         self._model_path_label.setText(str(path))
         self._model_version_label.setText(str(model.version))
         self._model_valid_label.setText("OK")
 
     def _on_run_clicked(self) -> None:
+        # If the run was initiated via the Run button (mouse/keyboard), restore
+        # focus to it once the run finishes so keyboard traversal continues
+        # from the expected control.
+        self._restore_focus_to_run_btn = self.sender() is self._run_btn
+
         if self._loaded_model is None:
             QMessageBox.warning(self, "No model", "Open a model JSON file first.")
             return
@@ -362,6 +352,7 @@ class MainWindow(QMainWindow):
             return
         if isinstance(outputs_obj, RunOutputs):
             self._outputs_view.render(outputs_obj)
+            self._run_select.setEnabled(True)
         self._status_label.setText("Completed")
 
     def _on_run_failed(self, run_token: int, error_text: str) -> None:
@@ -385,6 +376,10 @@ class MainWindow(QMainWindow):
         self._cancel_btn.setEnabled(running)
         self._runs_spin.setEnabled(not running)
         self._seed_spin.setEnabled(not running)
+
+        if not running and self._restore_focus_to_run_btn:
+            self._restore_focus_to_run_btn = False
+            self._run_btn.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _update_elapsed(self) -> None:
         if not self._controller.is_running() or self._elapsed_started_at is None:

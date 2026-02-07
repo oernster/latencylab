@@ -44,9 +44,13 @@ QGroupBox::title {{
 QPushButton {{
   background-color: {_PRIMARY_PURPLE.name()};
   color: rgba(250, 250, 250, 0.98);
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.10);
+  border-radius: 10px;
   padding: 6px 10px;
+}}
+
+QPushButton:focus {{
+  border: 2px solid white;
 }}
 
 QPushButton:hover {{
@@ -56,23 +60,27 @@ QPushButton:hover {{
 QPushButton:disabled {{
   background-color: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 2px solid rgba(0, 0, 0, 0.06);
 }}
 
 QPushButton[role="theme-toggle"] {{
   background-color: palette(button);
   color: palette(buttonText);
-  border: 1px solid palette(mid);
+  border: 2px solid palette(mid);
   font-size: 18px;
   min-width: 34px;
   min-height: 34px;
   padding: 2px 8px;
 }}
 
+QPushButton[role="theme-toggle"]:focus {{
+  border: 2px solid white;
+}}
+
 QPushButton[role="theme-toggle"]:checked {{
   background-color: {_PRIMARY_PURPLE.name()};
   color: rgba(250, 250, 250, 0.98);
-  border: 1px solid rgba(0, 0, 0, 0.10);
+  border: 2px solid rgba(0, 0, 0, 0.10);
 }}
 
 QPushButton[role="theme-toggle"]:hover {{
@@ -85,7 +93,7 @@ QPushButton[role="icon-action"] {{
   min-width: 34px;
   min-height: 34px;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: 10px;
 }}
 
 QSpinBox,
@@ -144,9 +152,13 @@ QGroupBox::title {{
 QPushButton {{
   background-color: {_PRIMARY_PURPLE.name()};
   color: rgba(245, 245, 245, 0.98);
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
   padding: 6px 10px;
+}}
+
+QPushButton:focus {{
+  border: 2px solid white;
 }}
 
 QPushButton:hover {{
@@ -156,23 +168,27 @@ QPushButton:hover {{
 QPushButton:disabled {{
   background-color: rgba(255, 255, 255, 0.06);
   color: rgba(245, 245, 245, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.06);
 }}
 
 QPushButton[role="theme-toggle"] {{
   background-color: rgba(255, 255, 255, 0.06);
   color: rgba(245, 245, 245, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 2px solid rgba(255, 255, 255, 0.10);
   font-size: 18px;
   min-width: 34px;
   min-height: 34px;
   padding: 2px 8px;
 }}
 
+QPushButton[role="theme-toggle"]:focus {{
+  border: 2px solid white;
+}}
+
 QPushButton[role="theme-toggle"]:checked {{
   background-color: {_PRIMARY_PURPLE.name()};
   color: rgba(245, 245, 245, 0.98);
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(0, 0, 0, 0.35);
 }}
 
 QPushButton[role="theme-toggle"]:hover {{
@@ -185,7 +201,7 @@ QPushButton[role="icon-action"] {{
   min-width: 34px;
   min-height: 34px;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: 10px;
 }}
 
 QSpinBox,

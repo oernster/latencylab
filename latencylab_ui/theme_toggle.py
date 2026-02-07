@@ -10,6 +10,7 @@ class ThemeToggle(QWidget):
     """Two-button Light/Dark toggle."""
 
     theme_changed = Signal(Theme)
+    focus_advance_requested = Signal(object)
 
     def __init__(self, *, default: Theme = Theme.DARK, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -53,9 +54,41 @@ class ThemeToggle(QWidget):
             self._btn_dark.setChecked(True)
         else:
             self._btn_light.setChecked(True)
+        self._update_enabled_state(theme)
+
+    def _update_enabled_state(self, theme: Theme) -> None:
+        """Disable the currently-selected theme button so it isn't tabbable."""
+
+        if theme == Theme.DARK:
+            self._btn_dark.setEnabled(False)
+            self._btn_light.setEnabled(True)
+        else:
+            self._btn_light.setEnabled(False)
+            self._btn_dark.setEnabled(True)
 
     def _emit_if_checked(self, theme: Theme, checked: bool) -> None:
         if checked:
+            # Keep enabled/disabled state in sync even when user toggles via
+            # keyboard (space) or mouse.
+            #
+            if theme == Theme.DARK:
+                # Request focus to advance to the next UI control (e.g.
+                # "Open model…") when dark is selected.
+                #
+                # This must happen *before* we disable the button, so the
+                # focus-cycle controller can advance relative to it.
+                self.focus_advance_requested.emit(self._btn_dark)
+
+            self._update_enabled_state(theme)
+
+            # Focus behavior:
+            # - Selecting Light keeps focus within the toggle by moving focus
+            #   to Dark (the next option).
+            # - Selecting Dark advances focus out of the toggle group.
+            if theme == Theme.LIGHT:
+                # After enabling Dark, move focus to it.
+                self._btn_dark.setFocus()
+
             self.theme_changed.emit(theme)
 
 

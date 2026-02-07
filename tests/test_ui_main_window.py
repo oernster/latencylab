@@ -283,3 +283,10 @@ def test_save_log_button_dumps_right_panel(monkeypatch, tmp_path: Path) -> None:
     assert crit_called["called"]
 
 
+def test_ui_focus_cycle_covered_elsewhere() -> None:
+    # Kept intentionally minimal: focus-cycle behavior tests moved to
+    # [`tests/test_ui_main_window_focus_cycle.py`](tests/test_ui_main_window_focus_cycle.py:1)
+    # to keep each file <= 400 lines.
+    assert True
+
+
