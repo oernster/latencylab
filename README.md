@@ -13,7 +13,7 @@ It is **not** a profiler, tracer or runtime observer. Instead it simulates many 
 
 LatencyLab exists to support design-time reasoning about latency rather than post-hoc analysis. The motivation, philosophy and trade-offs behind the tool are described in more detail in the accompanying blog post:
 
-https://www.crankthecode.com/posts/latencylab
+[LatencyLab guide](https://www.crankthecode.com/posts/latencylab)
 
 Reading that is not required to use the tool, but it explains the problems LatencyLab is intended to make visible.
 
