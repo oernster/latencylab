@@ -1,44 +1,67 @@
 # LatencyLab Architecture
 
-This document describes the current LatencyLab architecture, with emphasis on:
+This document describes the *current* LatencyLab architecture as implemented in this repository.
 
-- v1 semantic stability (legacy compatibility)
-- v2 additive-only model extensions (MVP: delayed wiring + task metadata)
-- strict dependency boundaries (stdlib-only core, optional legacy NumPy path)
-- executor abstraction boundary for future CPU/GPU batch execution strategies
+Scope:
 
-## Non-negotiable invariants
+1. **Core simulator** under [`latencylab/`](latencylab/__init__.py:1): model parsing/validation, executor dispatch, simulation engines, metrics, and file outputs.
+2. **Optional GUI** under [`latencylab_ui/`](latencylab_ui/__init__.py:1): Qt widgets + threaded run controller that consumes the core APIs.
 
-1. **Any valid v1 model must preserve meaning and results** when executed through the v1 legacy path.
-   - Golden output regression is enforced in [`tests.test_determinism.test_v1_outputs_are_stable_golden_snapshot()`](tests/test_determinism.py:31).
-2. **The simulation facade is stdlib-only**.
-   - Public entrypoint [`latencylab.sim.simulate_many()`](latencylab/sim.py:14) is stdlib-only and chooses an executor.
-3. **GPU awareness is an execution strategy, not a domain concept**.
-   - Core simulation logic never branches on CPU vs GPU.
-   - GPU can be introduced by adding another executor implementing the same protocol.
-4. **Delayed events are visible and attributable**.
-   - v2 delays appear in trace output and in critical-path strings as synthetic delay nodes.
+The intent is to keep the core deterministic, stdlib-only, and testable; and keep the GUI as a thin shell over the core.
 
-## High-level shape
+## Non-negotiable invariants (enforced by tests)
 
-The system is organized into:
+1. **Core must never import Qt**.
+   - Enforced by a source scan in [`tests.test_ui_dependency_boundaries.test_no_qt_imports_in_core_latencylab_package()`](tests/test_ui_dependency_boundaries.py:10).
+2. **Core must never depend on `latencylab_ui`**.
+   - Enforced by [`tests.test_ui_dependency_boundaries.test_core_does_not_reference_latencylab_ui_package()`](tests/test_ui_dependency_boundaries.py:27).
+3. **Simulation is deterministic for a given model + seed**.
+   - Enforced by [`tests.test_determinism.test_simulation_is_deterministic_for_seed()`](tests/test_determinism.py:11).
+4. **v1 execution is a frozen behavioral oracle** (legacy compatibility path).
+   - Golden output snapshot is enforced by [`tests.test_determinism.test_v1_outputs_are_stable_golden_snapshot()`](tests/test_determinism.py:32).
+5. **Delayed wiring (v2) must be visible and attributable**.
+   - Enforced by [`tests.test_v2_delays.test_v2_delay_creates_synthetic_delay_nodes_in_trace_and_critical_path()`](tests/test_v2_delays.py:8).
 
-- Model parsing/types: [`latencylab.model.Model.from_json()`](latencylab/model.py:70)
-- Validation: [`latencylab.validate.validate_model()`](latencylab/validate.py:10)
-- Simulation facade: [`latencylab.sim.simulate_many()`](latencylab/sim.py:14)
-- Executors (strategy boundary): [`latencylab.executors.RunExecutor`](latencylab/executors.py:10)
-- Execution engines:
-  - v1 legacy (NumPy-backed): [`latencylab.sim_legacy.simulate_many()`](latencylab/sim_legacy.py:62)
-  - v2 stdlib-only: [`latencylab.sim_v2.simulate_many()`](latencylab/sim_v2.py:43)
-- Metrics aggregation: [`latencylab.metrics.aggregate_runs()`](latencylab/metrics.py:36)
-- I/O writers: [`latencylab.io.write_trace_csv()`](latencylab/io.py:47)
-- CLI orchestration: [`latencylab.cli.main()`](latencylab/cli.py:35)
+## High-level component map
 
-### Mermaid overview
+### Core package (`latencylab/`)
+
+- **Entry points**
+  - `python -m latencylab` -> [`latencylab.__main__`](latencylab/__main__.py:1) -> [`latencylab.cli.main()`](latencylab/cli.py:35)
+- **Model**
+  - JSON parsing -> [`latencylab.model.Model.from_json()`](latencylab/model.py:75)
+  - Validation -> [`latencylab.validate.validate_model()`](latencylab/validate.py:10)
+- **Simulation facade** (stdlib-only)
+  - [`latencylab.sim.simulate_many()`](latencylab/sim.py:14)
+- **Executor strategy boundary**
+  - Protocol -> [`latencylab.executors.RunExecutor`](latencylab/executors.py:10)
+  - Dispatch -> [`latencylab.executors.default_executor_for_model()`](latencylab/executors.py:67)
+- **Execution engines**
+  - Legacy v1 (NumPy-backed, frozen) -> [`latencylab.sim_legacy.simulate_many()`](latencylab/sim_legacy.py:75)
+  - v2 stdlib engine (delayed wiring) -> [`latencylab.sim_v2.simulate_many()`](latencylab/sim_v2.py:37)
+- **Metrics + outputs**
+  - Aggregation -> [`latencylab.metrics.aggregate_runs()`](latencylab/metrics.py:37)
+  - Task metadata injection (v2 only) -> [`latencylab.metrics.add_task_metadata()`](latencylab/metrics.py:70)
+  - Writers -> [`latencylab.io.write_summary_json()`](latencylab/io.py:11), [`latencylab.io.write_runs_csv()`](latencylab/io.py:16), [`latencylab.io.write_trace_csv()`](latencylab/io.py:47)
+
+### GUI package (`latencylab_ui/`)
+
+- **Entry points**
+  - `python -m latencylab_ui` -> [`latencylab_ui.__main__.main()`](latencylab_ui/__main__.py:6) -> [`latencylab_ui.app.run_app()`](latencylab_ui/app.py:12)
+- **Main window and widgets**
+  - Top-level window -> [`latencylab_ui.main_window.MainWindow`](latencylab_ui/main_window.py:52)
+- **Threaded run lifecycle**
+  - Controller -> [`latencylab_ui.run_controller.RunController`](latencylab_ui/run_controller.py:72)
+  - Worker object -> [`latencylab_ui.run_controller.RunWorker`](latencylab_ui/run_controller.py:35)
+
+## Overview diagrams
+
+### CLI call flow and executor selection
 
 ```mermaid
 flowchart TD
-  CLI[latencylab.cli.main] --> Parse[latencylab.model.Model.from_json]
+  CLIEntry[python -m latencylab] --> CLI[latencylab.cli.main]
+  CLI --> Parse[latencylab.model.Model.from_json]
   CLI --> Validate[latencylab.validate.validate_model]
   CLI --> Sim[latencylab.sim.simulate_many]
   Sim --> Pick[latencylab.executors.default_executor_for_model]
@@ -47,170 +70,236 @@ flowchart TD
   Legacy --> LSim[latencylab.sim_legacy.simulate_many]
   V2 --> V2Sim[latencylab.sim_v2.simulate_many]
   CLI --> Metrics[latencylab.metrics.aggregate_runs]
-  Metrics --> Out[latencylab.io.write_summary_json]
+  Metrics --> Summary[latencylab.io.write_summary_json]
+  CLI --> Runs[latencylab.io.write_runs_csv]
   CLI --> Trace[latencylab.io.write_trace_csv]
+```
+
+### GUI threading model (worker emits signals to UI thread)
+
+```mermaid
+flowchart TD
+  UIEntry[python -m latencylab_ui] --> App[latencylab_ui.app.run_app]
+  App --> MW[latencylab_ui.main_window.MainWindow]
+
+  MW -->|start(request)| RC[latencylab_ui.run_controller.RunController]
+  RC -->|owns| QT[QThread]
+  RC -->|moves| RW[latencylab_ui.run_controller.RunWorker]
+
+  QT -->|started| RW
+  RW -->|calls| CoreSim[latencylab.sim.simulate_many]
+  RW -->|emits| SigOK[succeeded(run_token, outputs)]
+  RW -->|emits| SigFail[failed(run_token, error_text)]
+  RW -->|emits| SigDone[finished(run_token)]
+
+  SigOK --> MW
+  SigFail --> MW
+  SigDone --> MW
+```
+
+### Dependency boundary (core is Qt-free; GUI consumes core)
+
+```mermaid
+flowchart LR
+  subgraph Core[latencylab/ (stdlib-only)]
+    M[model/validate] --> S[sim/executors]
+    S --> E[sim_legacy or sim_v2]
+    E --> Out[metrics/io]
+  end
+
+  subgraph UI[latencylab_ui/ (PySide6)]
+    W[widgets] --> C[RunController/QThread]
+    C --> R[render outputs]
+  end
+
+  UI -->|imports/calls| Core
+  Core -. must NOT import .-> UI
 ```
 
 ## SOLID boundaries (what depends on what)
 
 ### Dependency inversion at the executor boundary
 
-- The rest of the application calls the simulation facade [`latencylab.sim.simulate_many()`](latencylab/sim.py:14).
-- The facade selects an executor using [`latencylab.executors.default_executor_for_model()`](latencylab/executors.py:69).
-- Executors implement the protocol [`latencylab.executors.RunExecutor`](latencylab/executors.py:10) and can be swapped without changing model semantics.
+- The rest of the core calls the simulation facade [`latencylab.sim.simulate_many()`](latencylab/sim.py:14).
+- The facade selects an execution strategy via [`latencylab.executors.default_executor_for_model()`](latencylab/executors.py:67).
+- Executors implement [`latencylab.executors.RunExecutor`](latencylab/executors.py:10) and can be swapped without changing the model semantics.
 
-This is the insertion point for future batch optimizations, including GPU execution.
+This is the insertion point for future batch optimizations (including GPU / vectorized execution) without infecting the domain model.
 
 ### Single responsibility
 
-- Parsing/types in [`latencylab/model.py`](latencylab/model.py:1) do not run simulation.
-- Executors in [`latencylab/executors.py`](latencylab/executors.py:1) only select and delegate.
-- Engines in [`latencylab/sim_legacy.py`](latencylab/sim_legacy.py:1) and [`latencylab/sim_v2.py`](latencylab/sim_v2.py:1) implement run semantics.
-- Metrics in [`latencylab/metrics.py`](latencylab/metrics.py:1) do not influence scheduling.
+- Parsing/types in [`latencylab.model.Model.from_json()`](latencylab/model.py:75) do not run simulation.
+- Executors in [`latencylab.executors.default_executor_for_model()`](latencylab/executors.py:67) only choose and delegate.
+- Engines in [`latencylab.sim_legacy.simulate_many()`](latencylab/sim_legacy.py:75) and [`latencylab.sim_v2.simulate_many()`](latencylab/sim_v2.py:37) implement run semantics.
+- Metrics in [`latencylab.metrics.aggregate_runs()`](latencylab/metrics.py:37) do not influence scheduling.
 
 ### Open/closed
 
-- New execution strategies (future GPU executor) are added by implementing [`latencylab.executors.RunExecutor`](latencylab/executors.py:10) and extending executor selection.
-- v2 model additions must be additive: new optional fields with defaults that preserve v1 meaning.
+- New execution strategies are added by implementing [`latencylab.executors.RunExecutor`](latencylab/executors.py:10) and extending selection.
+- Schema evolution is intended to be additive (new optional fields with defaults) to preserve old meaning.
 
-## Model versions and schema
+## Model schema (what the simulator consumes)
 
-Models declare a schema version via `schema_version` (preferred). Legacy aliases
-`version` and `model_version` are accepted for compatibility. This is separate
-from the application/package version [`latencylab.version.__version__`](latencylab/version.py:1).
+### Versioning
 
-### v1 (legacy)
+- The schema version is stored on [`latencylab.model.Model.version`](latencylab/model.py:63).
+- JSON version keys accepted by [`latencylab.model.Model.from_json()`](latencylab/model.py:75):
+  - `schema_version` (preferred)
+  - `version` (legacy alias)
+  - `model_version` (legacy alias)
+- Validation currently accepts **only** versions `{1, 2}` via [`latencylab.validate.validate_model()`](latencylab/validate.py:10).
+- Executor dispatch is future-proofed for in-memory models with `version >= 2` via [`latencylab.executors.default_executor_for_model()`](latencylab/executors.py:67).
 
-- `schema_version: 1`
-- Wiring is event to list of task names.
-- Execution uses NumPy-backed RNG for exact output compatibility.
+### Core entities
 
-### v2 (MVP extensions)
+- Contexts: [`latencylab.model.ContextDef`](latencylab/model.py:7)
+  - `concurrency` (>= 1)
+  - `policy` is currently MVP-locked to `'fifo'` (validated in [`latencylab.validate.validate_model()`](latencylab/validate.py:10))
+- Events: [`latencylab.model.EventDef`](latencylab/model.py:13)
+  - Optional `tags`; `"ui"` is used to compute `first_ui_event_time_ms` / `last_ui_event_time_ms`.
+- Tasks: [`latencylab.model.TaskDef`](latencylab/model.py:54)
+  - `context`, `duration_ms`, `emit` (+ optional `meta` in v2)
 
-- `schema_version: 2`
-- Wiring listeners may be either:
-  - `"task_name"` (v1-compatible)
-  - `{ "task": "task_name", "delay_ms": <number or dist> }`
+### Duration distributions
 
-Note: In v1 models, lognormal.mean was interpreted as the arithmetic mean (ms). In v2, lognormal uses (mu, sigma); legacy models are converted using mu = ln(mean) - 0.5 * sigma^2.
+Durations (and delay distributions) are represented by [`latencylab.model.DurationDist`](latencylab/model.py:21) and validated by [`latencylab.validate.validate_model()`](latencylab/validate.py:10).
 
-Parsed wiring edges are represented as [`latencylab.model.WiringEdge`](latencylab/model.py:53) and stored on [`Model.wiring_edges`](latencylab/model.py:62).
+Supported dists:
+
+- `fixed`: `{ "dist": "fixed", "value": <>=0 }`
+- `normal`: `{ "dist": "normal", "mean": <>, "std": <>=0, "min": <>=0? }`
+- `lognormal`: `{ "dist": "lognormal", "mu": <>, "sigma": <>=0 }`
+
+Note: there is **no** implemented "v1 lognormal.mean" migration/conversion in this codebase. Both engines sample lognormal via `mu/sigma` (see [`latencylab.sim_v2._sample_ms()`](latencylab/sim_v2.py:16) and [`latencylab.sim_legacy._sample_duration_ms()`](latencylab/sim_legacy.py:60)).
+
+### Wiring and delayed wiring
+
+The input JSON uses a single `wiring` object (event -> listeners). Parsing expands that into two forms:
+
+- v1-compatible wiring (event -> task names) stored on [`latencylab.model.Model.wiring`](latencylab/model.py:63)
+- v2 wiring edges (event -> edges w/ optional delays) stored on [`latencylab.model.Model.wiring_edges`](latencylab/model.py:63)
+
+Edges are represented by [`latencylab.model.WiringEdge`](latencylab/model.py:48).
+
+Listener forms accepted by [`latencylab.model.Model.from_json()`](latencylab/model.py:75):
+
+- `"task_name"`
+- `{ "task": "task_name" }`
+- `{ "task": "task_name", "delay_ms": <number | dist> }`
+
+If `delay_ms` is a number, it is parsed as `fixed` with that value (see parsing helper inside [`latencylab.model.Model.from_json()`](latencylab/model.py:118)).
+
+## Simulation architecture
+
+### Facade + executor dispatch
+
+- Public entrypoint: [`latencylab.sim.simulate_many()`](latencylab/sim.py:14)
+- Strategy selection: [`latencylab.executors.default_executor_for_model()`](latencylab/executors.py:67)
+  - `version == 1` -> [`latencylab.executors.LegacyNumpyExecutor`](latencylab/executors.py:23)
+  - `version >= 2` -> [`latencylab.executors.StdlibV2Executor`](latencylab/executors.py:45)
+
+### v1 legacy engine (NumPy-backed, frozen oracle)
+
+- Implementation: [`latencylab.sim_legacy`](latencylab/sim_legacy.py:1)
+- Policy is explicitly documented as *FROZEN* in-module (see header comments in [`latencylab.sim_legacy`](latencylab/sim_legacy.py:1)).
+- NumPy import is lazy and errors are made explicit by [`latencylab.sim_legacy._require_numpy()`](latencylab/sim_legacy.py:41).
+
+### v2 stdlib engine (delayed wiring + synthetic delay tasks)
+
+- Implementation: [`latencylab.sim_v2`](latencylab/sim_v2.py:1)
+- Synthetic delays use a dedicated context constant [`latencylab.sim_v2.DELAY_CONTEXT`](latencylab/sim_v2.py:13) set to `"__delay__"`.
 
 #### Delayed wiring semantics
 
-When an event occurs at time `t_emit`:
+When an event `e` occurs at time `t_emit`:
 
-- If an edge has no delay, the target task is enqueued at `t_emit`.
-- If an edge has a delay, a **synthetic delay task instance** is created:
-  - It starts at `t_emit` and ends at `t_emit + delay`.
-  - It uses context `__delay__` (non-capacity-constrained).
-  - It is named deterministically as `delay(<event>-><task>)`.
-  - On completion, it enqueues the target task.
+- For an edge with no delay: enqueue the target task at `t_emit`.
+- For an edge with `delay_ms`: create a synthetic delay task instance named `delay(e->task)`:
+  - start = `t_emit`
+  - end = `t_emit + sampled_delay`
+  - context = `__delay__` (not capacity constrained)
+  - `parent_task_instance_id` is set to the emitting task instance id (if any)
+  - on completion: enqueue the target task
 
-This ensures delays are:
+This is implemented by [`latencylab.sim_v2.schedule_delay()`](latencylab/sim_v2.py:115) and verified by [`tests.test_v2_delays.test_v2_delay_creates_synthetic_delay_nodes_in_trace_and_critical_path()`](tests/test_v2_delays.py:8).
 
-- visible in trace output
-- attributable via `parent_task_instance_id`
-- included in critical path reconstruction
+## Outputs and data contracts
 
-Implementation reference: [`latencylab.sim_v2.schedule_delay()`](latencylab/sim_v2.py:102).
+### In-memory result types
+
+- Per task-instance trace rows: [`latencylab.types.TaskInstance`](latencylab/types.py:6)
+- Per-run results: [`latencylab.types.RunResult`](latencylab/types.py:22)
+
+Important trace causality fields:
+
+- `parent_task_instance_id`: event/delay causality ("who caused me to be enqueued")
+- `capacity_parent_instance_id`: slot causality ("who last occupied the slot I ran on")
+
+### File outputs
+
+- `summary.json`: [`latencylab.io.write_summary_json()`](latencylab/io.py:11)
+- `runs.csv`: [`latencylab.io.write_runs_csv()`](latencylab/io.py:16)
+- `trace.csv` (optional): [`latencylab.io.write_trace_csv()`](latencylab/io.py:47)
+
+### Metrics aggregation
+
+- Aggregation is performed by [`latencylab.metrics.aggregate_runs()`](latencylab/metrics.py:37).
+- Task metadata is injected into the summary **only for v2** by [`latencylab.metrics.add_task_metadata()`](latencylab/metrics.py:70).
 
 #### Task metadata (measurement-only)
 
-Tasks may include optional `meta`:
+Tasks may include optional `meta` parsed by [`latencylab.model.TaskMeta.from_json()`](latencylab/model.py:34) into [`latencylab.model.TaskMeta`](latencylab/model.py:27) and stored on [`latencylab.model.TaskDef.meta`](latencylab/model.py:54).
 
-- `category: str`
-- `tags: list[str]`
-- `labels: dict[str, str]`
+Invariant: metadata must never affect scheduling; it is only surfaced in summary output.
 
-Parsed into [`latencylab.model.TaskMeta`](latencylab/model.py:29) and stored as [`TaskDef.meta`](latencylab/model.py:60).
+## GUI architecture (how the UI consumes the core)
 
-Metadata is surfaced only in output summaries via [`latencylab.metrics.add_task_metadata()`](latencylab/metrics.py:78) and must never affect scheduling.
+### Run lifecycle
 
-## Execution engines
+- The user clicks Run in [`latencylab_ui.main_window.MainWindow`](latencylab_ui/main_window.py:52), which builds a [`latencylab_ui.run_controller.RunRequest`](latencylab_ui/run_controller.py:19) and calls [`latencylab_ui.run_controller.RunController.start()`](latencylab_ui/run_controller.py:108).
+- The controller constructs a [`PySide6.QtCore.QThread`](latencylab_ui/run_controller.py:117) and moves a [`latencylab_ui.run_controller.RunWorker`](latencylab_ui/run_controller.py:35) onto it.
+- The worker:
+  - reads JSON -> [`latencylab.model.Model.from_json()`](latencylab/model.py:75)
+  - validates -> [`latencylab.validate.validate_model()`](latencylab/validate.py:10)
+  - simulates -> [`latencylab.sim.simulate_many()`](latencylab/sim.py:14)
+  - aggregates -> [`latencylab.metrics.aggregate_runs()`](latencylab/metrics.py:37)
+  - (v2) adds metadata -> [`latencylab.metrics.add_task_metadata()`](latencylab/metrics.py:70)
+  - emits Qt signals back to the UI thread
 
-### v1 legacy engine (NumPy-backed)
+### Cancellation semantics (v1)
 
-- Located in [`latencylab/sim_legacy.py`](latencylab/sim_legacy.py:1)
-- Provides:
-  - [`latencylab.sim_legacy.simulate_many()`](latencylab/sim_legacy.py:62)
-  - [`latencylab.sim_legacy.simulate_one()`](latencylab/sim_legacy.py:94)
-- Uses lazy import of NumPy and raises a clear error if not installed.
-- Treated as the correctness oracle for v1 output stability.
+Cancellation does **not** interrupt the core simulation. It marks the active token cancelled; completion results are discarded.
 
-#### Legacy v1 handling (LOCKED)
+- Documented on [`latencylab_ui.run_controller.RunController`](latencylab_ui/run_controller.py:72)
+- Enforced in UI handlers like [`latencylab_ui.main_window.MainWindow._on_run_succeeded()`](latencylab_ui/main_window.py:268)
 
-Legacy v1 is intentionally retained as a **frozen behavioral oracle**, not as an
-active feature path.
+### Shutdown semantics
 
-- **Frozen**: no new features, no refactors. Changes allowed only for critical
-  bug fixes, security issues, or test harness maintenance.
-- **Default**: v2 is the default for new models and `schema_version >= 2` at the
-  executor dispatch layer.
-- **Oracle**: migration correctness is validated by tests that assert invariants
-  between v1 execution and migrated v2 execution.
+On app shutdown, the controller waits for the worker thread to finish to avoid Qt warnings (see [`latencylab_ui.run_controller.RunController.shutdown()`](latencylab_ui/run_controller.py:143)).
 
-Removal is **not planned** until:
+## Dependency management and packaging
 
-- v2 has shipped and been used in the wild
-- real-world models (e.g. Stellody-derived) have run successfully under v2
-- migration rules have remained stable across at least one release cycle
-- a deliberate breaking change / new major schema version is planned
+### Runtime dependencies
 
-### v2 engine (stdlib-only)
+- Core engine: stdlib-only by design (see import surface around [`latencylab.sim.simulate_many()`](latencylab/sim.py:14)).
+- GUI runtime: depends on PySide6 via [`requirements.txt`](requirements.txt:1).
+- Legacy v1 execution: NumPy is optional and lazily imported by [`latencylab.sim_legacy._require_numpy()`](latencylab/sim_legacy.py:41).
 
-- Located in [`latencylab/sim_v2.py`](latencylab/sim_v2.py:1)
-- Adds delayed wiring and synthetic delay nodes.
-- Uses Python stdlib RNG and math.
+### Packaging notes (current repository state)
 
-## Trace and critical path
-
-- Task instances are represented by [`latencylab.types.TaskInstance`](latencylab/types.py:7).
-- Trace CSV is produced by [`latencylab.io.write_trace_csv()`](latencylab/io.py:47).
-- Critical path is serialized as `RunResult.critical_path_tasks` in [`latencylab.types.RunResult`](latencylab/types.py:24).
-
-In v2, the synthetic delay task instances must appear in both:
-
-- trace output rows (context `__delay__`)
-- critical path strings (e.g. `t0>delay(e1->t1)>t1`)
-
-Test reference: [`tests.test_v2_delays.test_v2_delay_creates_synthetic_delay_nodes_in_trace_and_critical_path()`](tests/test_v2_delays.py:8).
-
-## Dependency management
-
-### Runtime
-
-- Core runtime dependencies: none (stdlib-only)
-- See [`requirements.txt`](requirements.txt:1)
-
-### Dev/test and legacy
-
-- Dev/test tools (pytest, black, flake8) and legacy NumPy are in [`requirements-dev.txt`](requirements-dev.txt:1)
-
-### Packaging
-
-[`pyproject.toml`](pyproject.toml:1) keeps runtime dependencies empty and exposes optional extras for development and legacy execution.
-
-## Code quality constraints
-
-- Formatting: black (`line-length = 88`) configured in [`pyproject.toml`](pyproject.toml:1)
-- Linting: flake8 configured in [`.flake8`](.flake8:1)
-- Maintainability: modules are kept small and focused (target <= 400 lines per module)
+- The packaged distribution is configured in [`pyproject.toml`](pyproject.toml:5).
+- Only the `latencylab*` packages are included by setuptools find rules (see [`pyproject.toml`](pyproject.toml:40)); `latencylab_ui/` is not packaged.
+- A console script is exposed for the CLI only via [`pyproject.toml`](pyproject.toml:15).
 
 ## Future extension points
 
-### GPU executor (future)
+### New executors (CPU/GPU/batch)
 
-GPU acceleration must be implemented only by adding a new executor implementing [`latencylab.executors.RunExecutor`](latencylab/executors.py:10) and selecting it outside the simulation engines.
+Add a new executor by implementing [`latencylab.executors.RunExecutor`](latencylab/executors.py:10) and selecting it inside [`latencylab.executors.default_executor_for_model()`](latencylab/executors.py:67).
 
-The GPU executor may:
+Rules for new executors:
 
-- execute many independent runs
-- optimize sampling/aggregation
-- disable per-run traces by configuration
-
-It must not:
-
-- change event-queue semantics
-- embed GPU branching into the simulation engines
+- Must preserve event-queue semantics (no domain branching on CPU/GPU).
+- May optimize execution of many independent runs.
+- May offer configuration to disable trace materialization for speed.
 
