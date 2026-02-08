@@ -178,3 +178,39 @@ def test_show_how_to_read_dialog_sets_parent_ref() -> None:
     assert dlg.width() >= 608
     assert dlg.height() >= 700
 
+
+def test_top_bar_how_to_read_button_opens_same_dialog_via_main_window() -> None:
+    from PySide6.QtCore import QObject, Signal
+    from PySide6.QtWidgets import QApplication
+
+    from latencylab_ui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    class _Controller(QObject):
+        started = Signal(int)
+        succeeded = Signal(int, object)
+        failed = Signal(int, str)
+        finished = Signal(int, float)
+
+        def is_running(self) -> bool:
+            return False
+
+        def is_cancelled(self, _token: int) -> bool:
+            return False
+
+        def shutdown(self) -> None:
+            return None
+
+    w = MainWindow(run_controller=_Controller())
+    w.show()
+    app.processEvents()
+
+    # The top-bar info button should exist and be clickable; clicking should
+    # create the same parent-held dialog ref as the Help menu action.
+    w._how_to_read_btn.click()
+    assert getattr(w, "_how_to_read_dialog") is not None
+
+    w.close()
+    app.processEvents()
+

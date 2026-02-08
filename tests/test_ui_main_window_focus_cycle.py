@@ -85,12 +85,15 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     _send(Qt.Key_Down)
     _send(Qt.Key_Tab)
     # Export is disabled until first successful run, so focus skips it.
-    _wait_for_focus_text("☀")
+    _wait_for_focus_text("ℹ️")
 
     # Distributions button exists but is disabled until a successful run
     # completes, so it is intentionally skipped by the focus-cycle.
 
     # Theme toggle is a single focus stop; it is toggled with Space, not Tab.
+    _send(Qt.Key_Tab)
+    _wait_for_focus_text("☀")
+
     _send(Qt.Key_Tab)
     assert _focused_widget_text() == "Open model…"
 
@@ -115,6 +118,9 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     assert w.menuBar().activeAction().text() == "Help"
 
     _send(Qt.Key_Tab)
+    assert _focused_widget_text() == "ℹ️"
+
+    _send(Qt.Key_Tab)
     assert _focused_widget_text() == "☀"
 
     # Ensure a Help menu exists (covered earlier: File -> Help).
@@ -123,6 +129,54 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     # forward traversal rules and menu-escape behavior.
 
     # Ensure clean teardown (uninstall event filter via closeEvent).
+    w.close()
+    app.processEvents()
+
+
+def test_enter_key_activates_focused_button_but_not_spinbox() -> None:
+    app = _ensure_qapp()
+
+    from PySide6.QtCore import QObject, Qt, Signal
+    from PySide6.QtTest import QTest
+
+    from latencylab_ui.main_window import MainWindow
+
+    class _Controller(QObject):
+        started = Signal(int)
+        succeeded = Signal(int, object)
+        failed = Signal(int, str)
+        finished = Signal(int, float)
+
+        def is_running(self) -> bool:
+            return False
+
+        def is_cancelled(self, _token: int) -> bool:
+            return False
+
+        def shutdown(self) -> None:
+            return None
+
+    w = MainWindow(run_controller=_Controller())
+    w.show()
+    w.activateWindow()
+    w.setFocus()
+    app.processEvents()
+
+    # Focus a known button and ensure Enter/Return triggers activation.
+    w._how_to_read_btn.setFocus()
+    app.processEvents()
+    QTest.keyClick(w._how_to_read_btn, Qt.Key_Return)
+    app.processEvents()
+    assert getattr(w, "_how_to_read_dialog") is not None
+
+    # Now focus a spinbox; Enter should *not* trigger a button click.
+    dlg_before = getattr(w, "_how_to_read_dialog")
+    w._runs_spin.setFocus()
+    app.processEvents()
+    QTest.keyClick(w._runs_spin, Qt.Key_Return)
+    app.processEvents()
+    assert getattr(w, "_how_to_read_dialog") is dlg_before
+
     w.close()
     app.processEvents()
 

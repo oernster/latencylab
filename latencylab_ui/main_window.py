@@ -36,7 +36,7 @@ from latencylab_ui.main_window_file_io import (
 from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
 from latencylab_ui.outputs_view import OutputsView
 from latencylab_ui.focus_cycle import FocusCycleController
-from latencylab_ui.main_window_menus import build_menus
+from latencylab_ui.main_window_menus import build_menus, show_how_to_read_dialog
 from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.main_window_top_bar import build_top_bar
 from latencylab_ui.main_window_panels import build_left_panel
@@ -108,6 +108,7 @@ class MainWindow(QMainWindow):
             top_bar,
             self._save_log_btn,
             self._distributions_btn,
+            self._how_to_read_btn,
             self._top_clock,
             self._theme_toggle,
         ) = build_top_bar(
@@ -115,6 +116,7 @@ class MainWindow(QMainWindow):
             focus_cycle=self._focus_cycle,
             on_save_log_clicked=self._on_save_log_clicked,
             on_show_distributions_clicked=self._on_show_distributions_clicked,
+            on_show_how_to_read_clicked=lambda: show_how_to_read_dialog(self),
         )
 
         root_layout.addWidget(top_bar)

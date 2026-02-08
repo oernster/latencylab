@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QObject, QTimer, Qt
 from PySide6.QtGui import QAction, QKeyEvent
-from PySide6.QtWidgets import QApplication, QMainWindow, QMenu, QWidget
+from PySide6.QtWidgets import (
+    QAbstractButton,
+    QAbstractSpinBox,
+    QApplication,
+    QComboBox,
+    QMainWindow,
+    QMenu,
+    QWidget,
+)
 
 from latencylab_ui.focus_cycle_widgets import (
     collect_interactive_widgets_in_layout_order,
@@ -133,6 +141,26 @@ class FocusCycleController(QObject):
 
         key = key_event.key()
         mods = key_event.modifiers()
+
+        # Activation keys:
+        # - Space already triggers QPushButton click by default.
+        # - Enter/Return do *not* consistently trigger click for all buttons on all
+        #   platforms/styles, so we normalize it here.
+        #
+        # Important: never override input widgets like QComboBox / spin boxes.
+        if event.type() == event.Type.KeyPress and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            fw = QApplication.focusWidget()
+            if fw is not None and fw.window() is window:
+                if _focus_within_any(fw, (QComboBox, QAbstractSpinBox)):
+                    return super().eventFilter(watched, event)
+
+                btn = _nearest_ancestor(fw, QAbstractButton)
+                if btn is not None and btn.isEnabled() and btn.isVisibleTo(window):
+                    try:
+                        btn.click()
+                    except RuntimeError:  # pragma: no cover
+                        return True  # pragma: no cover
+                    return True
 
         is_tab = key == Qt.Key.Key_Tab
         is_backtab = key == Qt.Key.Key_Backtab or (
@@ -347,4 +375,22 @@ class FocusCycleController(QObject):
                 return
 
         QTimer.singleShot(0, _settle_focus)
+
+
+def _nearest_ancestor(w: QWidget, cls: type[QWidget]) -> QWidget | None:
+    cur: QWidget | None = w
+    while cur is not None:
+        if isinstance(cur, cls):
+            return cur
+        cur = cur.parentWidget()
+    return None
+
+
+def _focus_within_any(w: QWidget, classes: tuple[type[QWidget], ...]) -> bool:
+    cur: QWidget | None = w
+    while cur is not None:
+        if isinstance(cur, classes):
+            return True
+        cur = cur.parentWidget()
+    return False
 

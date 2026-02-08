@@ -15,40 +15,26 @@ HOW_TO_READ_TEXT = """How to Read LatencyLab Output
 LatencyLab does not tell you what is slow.
 It tells you why the user waited.
 
-1) Why multiple runs exist
-Real systems are stochastic.
-Contention, scheduling, cache state, and external dependencies are not “noise.”
-They are the system.
+LatencyLab exists to make latency behavior visible before code hardens and before intuition becomes political. It does this by running explicit models many times and showing how often different outcomes occur. The goal is not prediction. The goal is understanding.
 
-2) Why percentiles matter more than averages
-Users do not experience averages.
-Percentiles show typical experience (p50) and risk (p90/p95/p99).
+Real systems are stochastic. Contention, scheduling, cache state, coordination delays, and external dependencies are not “noise” that can be averaged away. They are the system. Multiple runs exist because a single run is not representative of user experience.
 
-3) What a critical path represents
-The critical path is the chain of work that determines end-to-end latency in a run.
-If work is not on the critical path, it did not delay the user in that run.
+Users do not experience averages. Averages hide risk. Percentiles describe experience and exposure: p50 reflects what typically happens, while p90, p95, and p99 describe how often the system behaves badly. The shape of the distribution matters more than any single percentile. If you are arguing about whether p90 or p95 matters more, you are already past the point where this tool helps.
 
-4) Dominant paths, behavioral modes, and the long tail
-Dominant Path:
-  A critical path that appears in a significant fraction of runs (typically >20%).
+The makespan distribution shows how long end-to-end work takes across many runs. It should be read as a shape, not a target. Percentile markers annotate the distribution; they are not goals to optimise toward. Lowering one percentile without understanding the shape usually shifts cost elsewhere.
 
-Behavioral Mode:
-  A distinct dominant path representing a recurring coordination pattern in the system.
-  Example modes:
-    - Mode A: recommendations-first
-    - Mode B: playlist-build-first
+A critical path is not “what was slow”. It is the chain of work that prevented progress in a single run. If work is not on the critical path, it did not delay the user in that run, regardless of how expensive or visible it appears in isolation. Expensive work that does not block progress is often irrelevant to perceived latency.
 
-Long Tail:
-  Rare critical paths that occur infrequently and do not materially affect typical user experience.
+Some critical paths appear repeatedly. These are dominant paths: critical paths that occur in a significant fraction of runs, typically more than twenty percent. Dominant paths represent behavioral modes: recurring coordination patterns that describe how the system usually behaves. They are not bugs by default. They are structure.
 
-Representative Run:
-  A single run selected to illustrate a behavioral mode (usually median or p95 within that mode).
+Rare critical paths form a long tail. The long tail usually does not influence typical user experience and can be ignored unless you are designing for strict worst-case guarantees. Fixing long-tail behavior often has no effect on how the system feels to users.
 
-5) Guidance
-- Do not read every run.
-- Name dominant behaviors before proposing fixes.
-- If a task is never on a dominant path, it does not matter.
-- Fixing rare worst cases often does nothing for perceived latency.
+A representative run is a single run chosen to illustrate a behavioral mode, commonly the median or p95 run within that mode. Representative runs exist to make dominant behavior concrete, not to explain every outcome.
+
+Do not read every run. Name dominant behaviors before proposing fixes. If a task never appears on a dominant path, it does not matter. Optimising rare worst cases often makes systems more complex without making them feel faster.
+
+LatencyLab does not optimise systems.
+It exposes structure.
 """
 
 

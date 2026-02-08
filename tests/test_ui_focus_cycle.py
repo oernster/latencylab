@@ -329,3 +329,35 @@ def test_focus_cycle_walk_widget_none_is_ok() -> None:
     c._walk_widget_for_interactive(None, out, seen)  # noqa: SLF001
     assert out == []
 
+
+def test_focus_cycle_nearest_ancestor_helper() -> None:
+    _ensure_qapp()
+
+    from PySide6.QtWidgets import QMainWindow, QPushButton, QWidget
+
+    from latencylab_ui.focus_cycle import _nearest_ancestor
+
+    w = QMainWindow()
+    parent = QWidget(w)
+    btn = QPushButton("x", parent)
+
+    assert _nearest_ancestor(btn, QPushButton) is btn
+    assert _nearest_ancestor(btn, QWidget) is btn
+
+    # Miss path: walk parents and return None when no matching ancestor exists.
+    other = QWidget(parent)
+    assert _nearest_ancestor(other, QPushButton) is None
+
+
+def test_focus_cycle_focus_within_any_helper() -> None:
+    _ensure_qapp()
+
+    from PySide6.QtWidgets import QComboBox, QMainWindow
+
+    from latencylab_ui.focus_cycle import _focus_within_any
+
+    w = QMainWindow()
+    combo = QComboBox(w)
+
+    assert _focus_within_any(combo, (QComboBox,)) is True
+

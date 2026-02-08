@@ -17,7 +17,8 @@ def build_top_bar(
     focus_cycle: FocusCycleController,
     on_save_log_clicked: Callable[[], None],
     on_show_distributions_clicked: Callable[[], None],
-) -> tuple[QWidget, QPushButton, QPushButton, QLabel, ThemeToggle]:
+    on_show_how_to_read_clicked: Callable[[], None],
+) -> tuple[QWidget, QPushButton, QPushButton, QPushButton, QLabel, ThemeToggle]:
     top_bar = QWidget(parent)
     layout = QHBoxLayout(top_bar)
     layout.setContentsMargins(10, 0, 10, 0)
@@ -35,6 +36,13 @@ def build_top_bar(
     distributions_btn.setProperty("role", "icon-action")
     distributions_btn.clicked.connect(on_show_distributions_clicked)
     layout.addWidget(distributions_btn, 0, Qt.AlignmentFlag.AlignTop)
+
+    how_to_read_btn = QPushButton("ℹ️")
+    how_to_read_btn.setObjectName("how_to_read_btn")
+    how_to_read_btn.setToolTip("How to Read LatencyLab Output")
+    how_to_read_btn.setProperty("role", "icon-action")
+    how_to_read_btn.clicked.connect(on_show_how_to_read_clicked)
+    layout.addWidget(how_to_read_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     clock = QLabel("⏱️")
     clock.setObjectName("top_clock_emoji")
@@ -59,5 +67,5 @@ def build_top_bar(
     )
     layout.addWidget(theme_toggle, 0, Qt.AlignmentFlag.AlignTop)
 
-    return top_bar, save_log_btn, distributions_btn, clock, theme_toggle
+    return top_bar, save_log_btn, distributions_btn, how_to_read_btn, clock, theme_toggle
 

@@ -83,6 +83,14 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     assert clock.focusPolicy() == Qt.FocusPolicy.NoFocus
     assert clock.minimumWidth() >= 36
 
+    # Top bar: How-to-read info button should exist and be enabled.
+    from PySide6.QtWidgets import QPushButton
+
+    info_btn = w.findChild(QPushButton, "how_to_read_btn")
+    assert info_btn is not None
+    assert "ℹ️" in info_btn.text()
+    assert info_btn.isEnabled() is True
+
     # Theme toggle route (ensure handler is callable).
     from latencylab_ui.theme import Theme
 
