@@ -158,6 +158,10 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     w._on_run_succeeded(1, outputs)
     assert w._status_label.text() == "Completed"
 
+    # Distributions button remains disabled until we have last successful outputs
+    # *and* we are not running. Succeeded alone should not enable it.
+    assert w._distributions_btn.isEnabled() is False
+
     # Cancel semantics: success after cancel is discarded.
     controller._running = True
     w._on_cancel_clicked()
@@ -188,6 +192,9 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     # Finished resets running state.
     w._on_run_finished(1, 0.1)
     assert not w._busy_bar.isVisible()
+
+    # After finish, the distributions button becomes enabled for inspection.
+    assert w._distributions_btn.isEnabled() is True
 
     # Finished after cancel: updates status.
     w._active_cancelled = True
@@ -252,11 +259,14 @@ def test_save_log_button_dumps_right_panel(monkeypatch, tmp_path: Path) -> None:
 
     assert "💾" in btn.text()
 
+    # v1 requirement: export disabled until first successful run.
+    assert btn.isEnabled() is False
+
     # Seed right panel content.
     w._summary_text.setPlainText("SUMMARY\nline2")
     w._critical_path_text.setPlainText("CRIT\nlineB")
 
-    # Cancel path: no dialog, no write.
+    # Cancel path: button disabled, click should do nothing.
     from PySide6.QtWidgets import QFileDialog
 
     monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a, **k: ("", ""))
@@ -314,6 +324,9 @@ def test_save_log_button_dumps_right_panel(monkeypatch, tmp_path: Path) -> None:
             ),
         ],
     )
+
+    # Enable export now that we have outputs.
+    w._save_log_btn_refresh_enabled_state(running=False)
 
     btn.click()
 

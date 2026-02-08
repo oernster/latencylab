@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextOption
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -76,21 +77,8 @@ def build_left_panel(window) -> QWidget:
     note.setWordWrap(True)
     run_form.addRow("", note)
 
-    layout.addWidget(model_box)
-    layout.addWidget(run_box)
-    layout.addStretch(1)
-    return root
-
-
-def build_right_panel(window) -> QWidget:
-    root = QWidget()
-    layout = QVBoxLayout(root)
-    layout.setContentsMargins(10, 10, 10, 10)
-
+    # Outputs (moved here to avoid truncation when the Distributions dock is open).
     summary_box = QGroupBox("Summary")
-    summary_policy = summary_box.sizePolicy()
-    summary_policy.setVerticalStretch(3)
-    summary_box.setSizePolicy(summary_policy)
     summary_layout = QVBoxLayout(summary_box)
     window._summary_text = QPlainTextEdit()
     window._summary_text.setReadOnly(True)
@@ -98,9 +86,6 @@ def build_right_panel(window) -> QWidget:
     summary_layout.addWidget(window._summary_text)
 
     crit_box = QGroupBox("Critical path")
-    crit_policy = crit_box.sizePolicy()
-    crit_policy.setVerticalStretch(1)
-    crit_box.setSizePolicy(crit_policy)
     crit_layout = QVBoxLayout(crit_box)
 
     top_row = QWidget()
@@ -118,6 +103,10 @@ def build_right_panel(window) -> QWidget:
     window._critical_path_text = QPlainTextEdit()
     window._critical_path_text.setReadOnly(True)
     window._critical_path_text.setPlaceholderText("No critical path yet.")
+    # Wrap long lines so critical-path text is not horizontally truncated.
+    window._critical_path_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+    window._critical_path_text.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
+    window._critical_path_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     crit_layout.addWidget(window._critical_path_text)
 
     window._outputs_view = OutputsView(
@@ -127,23 +116,21 @@ def build_right_panel(window) -> QWidget:
     )
     window._run_select.currentIndexChanged.connect(window._outputs_view.on_run_selected)
 
-    summary_crit_splitter = QSplitter(Qt.Orientation.Vertical)
-    summary_crit_splitter.setChildrenCollapsible(False)
-    summary_crit_splitter.addWidget(summary_box)
-    summary_crit_splitter.addWidget(crit_box)
-    summary_crit_splitter.setStretchFactor(0, 3)
-    summary_crit_splitter.setStretchFactor(1, 1)
-    summary_crit_splitter.setCollapsible(0, False)
-    summary_crit_splitter.setCollapsible(1, False)
+    outputs_row = QWidget()
+    outputs_layout = QHBoxLayout(outputs_row)
+    outputs_layout.setContentsMargins(0, 0, 0, 0)
+    outputs_layout.setSpacing(10)
+    outputs_layout.addWidget(summary_box, 1)
+    outputs_layout.addWidget(crit_box, 1)
 
-    scroll = QScrollArea()
-    scroll.setWidgetResizable(True)
-    container = QWidget()
-    container_layout = QVBoxLayout(container)
-    container_layout.setContentsMargins(0, 0, 0, 0)
-    container_layout.addWidget(summary_crit_splitter, 1)
-    scroll.setWidget(container)
-
-    layout.addWidget(scroll)
+    layout.addWidget(model_box)
+    layout.addWidget(run_box)
+    layout.addWidget(outputs_row, 1)
     return root
+
+
+def build_right_panel(window) -> QWidget:
+    # Kept for backward compatibility with older tests/imports.
+    # The main window no longer adds this panel.
+    return QWidget()  # pragma: no cover
 

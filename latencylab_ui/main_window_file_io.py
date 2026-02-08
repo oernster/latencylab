@@ -26,6 +26,14 @@ def open_model_dialog(window) -> None:
 
 
 def on_save_log_clicked(window) -> None:
+    # Disabled until first successful run; keep this handler safe for tests and
+    # potential programmatic triggers.
+    try:
+        if hasattr(window, "_save_log_btn") and not window._save_log_btn.isEnabled():  # noqa: SLF001
+            return
+    except Exception:  # noqa: BLE001  # pragma: no cover
+        return  # pragma: no cover
+
     # Export all runs as a zip of per-run text files.
     path_str, _ = QFileDialog.getSaveFileName(
         window,
@@ -42,6 +50,8 @@ def on_save_log_clicked(window) -> None:
 
     outputs = getattr(window, "_last_outputs", None)  # noqa: SLF001
     if outputs is None:
+        # Cover the post-gate "no outputs" branch even though the button is
+        # disabled in the real UI.
         QMessageBox.information(window, "Nothing to export", "Run a simulation first.")
         return
 

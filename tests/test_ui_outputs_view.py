@@ -93,3 +93,89 @@ def test_outputs_view_render_and_switch() -> None:
     view.on_run_selected(999)
     assert crit.toPlainText() == "(no critical path)"
 
+
+def test_outputs_view_formats_critical_path_for_display() -> None:
+    _ensure_qapp()
+
+    from PySide6.QtWidgets import QComboBox, QPlainTextEdit
+
+    from latencylab.model import Model
+    from latencylab.types import RunResult
+    from latencylab_ui.outputs_view import OutputsView
+    from latencylab_ui.run_controller import RunOutputs
+
+    summary = QPlainTextEdit()
+    run_select = QComboBox()
+    crit = QPlainTextEdit()
+
+    view = OutputsView(
+        summary_text=summary,
+        run_select=run_select,
+        critical_path_text=crit,
+    )
+
+    model = Model.from_json(
+        {
+            "schema_version": 1,
+            "entry_event": "e0",
+            "contexts": {"ui": {"concurrency": 1}},
+            "events": {"e0": {"tags": ["ui"]}},
+            "tasks": {},
+        }
+    )
+
+    outputs = RunOutputs(
+        model=model,
+        runs=[
+            RunResult(
+                run_id=0,
+                first_ui_event_time_ms=None,
+                last_ui_event_time_ms=None,
+                makespan_ms=1.0,
+                critical_path_ms=1.0,
+                critical_path_tasks="a>b,c) d",
+                failed=False,
+                failure_reason=None,
+            )
+        ],
+        summary={
+            "runs_requested": 1,
+            "runs_ok": 1,
+            "runs_failed": 0,
+            "latency_ms": {"makespan": {"p50": 1, "p90": 1, "p95": 1, "p99": 1}},
+            "critical_path": {"top_paths": []},
+        },
+    )
+
+    view.render(outputs)
+    view.on_run_selected(0)
+
+    assert crit.toPlainText() == "a>\nb,\nc)\nd"
+
+    # Ensure we do not split the common arrow token "->".
+    outputs2 = RunOutputs(
+        model=model,
+        runs=[
+            RunResult(
+                run_id=0,
+                first_ui_event_time_ms=None,
+                last_ui_event_time_ms=None,
+                makespan_ms=1.0,
+                critical_path_ms=1.0,
+                critical_path_tasks="t0 -> t1",
+                failed=False,
+                failure_reason=None,
+            )
+        ],
+        summary={
+            "runs_requested": 1,
+            "runs_ok": 1,
+            "runs_failed": 0,
+            "latency_ms": {"makespan": {"p50": 1, "p90": 1, "p95": 1, "p99": 1}},
+            "critical_path": {"top_paths": []},
+        },
+    )
+    view.render(outputs2)
+    view.on_run_selected(0)
+    assert crit.toPlainText() == "t0 -> t1"
+

@@ -58,6 +58,8 @@ def test_export_runs_appends_zip_suffix_and_writes(monkeypatch, tmp_path: Path) 
         pass
 
     w = _Window()
+    # Enable export handler gate.
+    w._save_log_btn = type("_Btn", (), {"isEnabled": lambda self: True})()  # type: ignore[attr-defined]
     # UI export accesses the window's last outputs.
     w._last_outputs = RunOutputs(model=model, runs=runs, summary={})  # type: ignore[attr-defined]
 
@@ -71,6 +73,44 @@ def test_export_runs_appends_zip_suffix_and_writes(monkeypatch, tmp_path: Path) 
 
     with zipfile.ZipFile(out_zip, "r") as zf:
         assert sorted(zf.namelist()) == ["Run0001.txt", "Summary.txt"]
+
+
+def test_export_runs_gate_returns_if_button_disabled(monkeypatch, tmp_path: Path) -> None:
+    from PySide6.QtWidgets import QApplication, QFileDialog, QWidget
+
+    from latencylab_ui.main_window_file_io import on_save_log_clicked
+
+    _ = QApplication.instance() or QApplication([])
+
+    out_path = tmp_path / "runs.zip"
+    monkeypatch.setattr(
+        QFileDialog,
+        "getSaveFileName",
+        lambda *_a, **_k: (str(out_path), "zip"),
+    )
+
+    w = QWidget()
+    w._save_log_btn = type("_Btn", (), {"isEnabled": lambda self: False})()  # type: ignore[attr-defined]
+    on_save_log_clicked(w)
+    assert not out_path.exists()
+
+
+def test_export_runs_cancel_dialog_returns_without_writing(monkeypatch, tmp_path: Path) -> None:
+    from PySide6.QtWidgets import QApplication, QFileDialog, QWidget
+
+    from latencylab_ui.main_window_file_io import on_save_log_clicked
+
+    _ = QApplication.instance() or QApplication([])
+
+    # User cancels the save dialog -> handler must return early.
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *_a, **_k: ("", ""))
+
+    out_path = tmp_path / "runs.zip"
+    w = QWidget()
+    w._save_log_btn = type("_Btn", (), {"isEnabled": lambda self: True})()  # type: ignore[attr-defined]
+    w._last_outputs = object()  # type: ignore[attr-defined]
+    on_save_log_clicked(w)
+    assert not out_path.exists()
 
 
 def test_export_runs_shows_info_if_no_outputs(monkeypatch, tmp_path: Path) -> None:
@@ -94,7 +134,15 @@ def test_export_runs_shows_info_if_no_outputs(monkeypatch, tmp_path: Path) -> No
         lambda *_a, **_k: called.__setitem__("info", True),
     )
 
+    # Cover the handler's disabled-button gate branch.
+    w_disabled = QWidget()
+    w_disabled._save_log_btn = type("_Btn", (), {"isEnabled": lambda self: False})()  # type: ignore[attr-defined]
+    on_save_log_clicked(w_disabled)
+    assert not called["info"]
+
     w = QWidget()
+    # Enable export handler gate.
+    w._save_log_btn = type("_Btn", (), {"isEnabled": lambda self: True})()  # type: ignore[attr-defined]
     # No _last_outputs attribute => treated as None.
     on_save_log_clicked(w)
     assert called["info"]
@@ -113,4 +161,20 @@ def test_show_license_dialogs_set_parent_refs() -> None:
 
     menus.show_main_licence_dialog(parent)
     assert getattr(parent, "_main_licence_dialog") is not None
+
+
+def test_show_how_to_read_dialog_sets_parent_ref() -> None:
+    from PySide6.QtWidgets import QApplication, QWidget
+
+    import latencylab_ui.main_window_menus as menus
+
+    _ = QApplication.instance() or QApplication([])
+
+    parent = QWidget()
+    menus.show_how_to_read_dialog(parent)
+    dlg = getattr(parent, "_how_to_read_dialog")
+    assert dlg is not None
+    # Human-readable default size (9/10 of the previous 3/4-width setting).
+    assert dlg.width() >= 608
+    assert dlg.height() >= 700
 

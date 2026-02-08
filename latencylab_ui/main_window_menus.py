@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget
 from latencylab.version import __version__
 
 from latencylab_ui.about_dialog import AboutDialog, AboutDialogContent
+from latencylab_ui.how_to_read_dialog import HowToReadDialog
 
 
 def build_menus(
@@ -30,6 +31,10 @@ def build_menus(
     exit_action.triggered.connect(on_exit)
 
     help_menu = window.menuBar().addMenu("Help")
+
+    how_to_read_action = help_menu.addAction("How to Read LatencyLab Output")
+    how_to_read_action.triggered.connect(lambda: show_how_to_read_dialog(window))
+
     about_action = help_menu.addAction("About…")
     about_action.triggered.connect(lambda: show_about_dialog(window))
 
@@ -68,6 +73,12 @@ def show_main_licence_dialog(parent: QWidget) -> None:
 
     dlg = MainLicenceDialog(parent)
     setattr(parent, "_main_licence_dialog", dlg)
+    dlg.open()
+
+
+def show_how_to_read_dialog(parent: QWidget) -> None:
+    dlg = HowToReadDialog(parent)
+    setattr(parent, "_how_to_read_dialog", dlg)
     dlg.open()
 
 

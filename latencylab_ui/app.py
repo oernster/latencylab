@@ -19,7 +19,9 @@ def run_app(argv: list[str] | None = None) -> int:
     # Ensure we don't tear down while a simulation worker thread is still running.
     app.aboutToQuit.connect(controller.shutdown)
     window = MainWindow(run_controller=controller)
-    window.resize(1100, 720)
+    # Default width provides enough horizontal space for the docked Distributions
+    # panel while keeping the left-side Run/Summary/Critical Path panel readable.
+    window.resize(1400, 720)
     window.show()
 
     return app.exec()

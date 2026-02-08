@@ -39,7 +39,8 @@ from latencylab_ui.focus_cycle import FocusCycleController
 from latencylab_ui.main_window_menus import build_menus
 from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.main_window_top_bar import build_top_bar
-from latencylab_ui.main_window_panels import build_left_panel, build_right_panel
+from latencylab_ui.main_window_panels import build_left_panel
+from latencylab_ui.distributions_dock import DistributionsDock
 
 
 @dataclass
@@ -60,6 +61,14 @@ class MainWindow(QMainWindow):
         # Last successful, non-cancelled outputs. Used by the top-bar export button.
         self._last_outputs: RunOutputs | None = None
 
+        # If the user closes the Distributions dock while a run is active, do not
+        # auto-reopen it when the run completes.
+        self._dist_dock_closed_during_run = False
+
+        # Auto-open trigger is set on success and executed on `finished` after the
+        # UI has transitioned out of the running state.
+        self._auto_open_distributions_on_finish = False
+
         # If the Run button had focus when a run started, restore focus to it
         # after completion so keyboard traversal continues from Run.
         self._restore_focus_to_run_btn = False
@@ -78,6 +87,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("LatencyLab")
         self._set_running(False)
+        # v1 requirement: export button disabled until first successful run.
+        self._save_log_btn_refresh_enabled_state(running=False)
 
     def _build_actions(self) -> None:
         build_menus(
@@ -96,25 +107,29 @@ class MainWindow(QMainWindow):
         (
             top_bar,
             self._save_log_btn,
+            self._distributions_btn,
             self._top_clock,
             self._theme_toggle,
         ) = build_top_bar(
             self,
             focus_cycle=self._focus_cycle,
             on_save_log_clicked=self._on_save_log_clicked,
+            on_show_distributions_clicked=self._on_show_distributions_clicked,
         )
 
         root_layout.addWidget(top_bar)
 
-        splitter = QSplitter()
-        splitter.setChildrenCollapsible(False)
-        root_layout.addWidget(splitter, 1)
+        # Right-side distributions panel (dockable, non-modal).
+        self._distributions_dock = DistributionsDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._distributions_dock)
+        self._distributions_dock.setVisible(False)
+        self._distributions_dock.visibilityChanged.connect(self._on_distributions_visibility_changed)
 
-        splitter.addWidget(build_left_panel(self))
-        splitter.addWidget(build_right_panel(self))
-        splitter.setStretchFactor(0, 0)
-        splitter.setStretchFactor(1, 1)
-        splitter.setSizes([360, 740])
+        # Main content.
+        #
+        # Summary + Critical path are intentionally colocated with Run (left panel)
+        # so they stay readable when the Distributions dock is open.
+        root_layout.addWidget(build_left_panel(self), 1)
 
         status = QStatusBar()
         self.setStatusBar(status)
@@ -129,6 +144,9 @@ class MainWindow(QMainWindow):
 
         self._elapsed_label = QLabel("")
         status.addPermanentWidget(self._elapsed_label)
+
+        # v1 requirement: distributions button disabled until first successful run.
+        self._distributions_btn_refresh_enabled_state(running=False)
 
     # Panel builders live in latencylab_ui/main_window_panels.py.
 
@@ -155,6 +173,39 @@ class MainWindow(QMainWindow):
 
     def _on_save_log_clicked(self) -> None:
         _on_save_log_clicked(self)
+
+    def _on_show_distributions_clicked(self) -> None:
+        if not self._distributions_btn_is_enabled():
+            return
+        self._show_distributions_dock()
+
+    def _show_distributions_dock(self) -> None:
+        try:
+            self._distributions_dock.show()
+            self._distributions_dock.raise_()
+        except RuntimeError:  # pragma: no cover
+            return  # pragma: no cover
+
+    def _on_distributions_visibility_changed(self, visible: bool) -> None:
+        if self._controller.is_running() and not visible:
+            self._dist_dock_closed_during_run = True
+
+    def _distributions_btn_is_enabled(self) -> bool:
+        try:
+            return bool(self._distributions_btn.isEnabled())
+        except Exception:  # noqa: BLE001  # pragma: no cover
+            return False  # pragma: no cover
+
+    def _distributions_btn_refresh_enabled_state(self, *, running: bool) -> None:
+        # Enabled iff we have a last successful output AND no run is currently active.
+        enabled = (self._last_outputs is not None) and (not running)
+        self._distributions_btn.setEnabled(enabled)
+
+    def _save_log_btn_refresh_enabled_state(self, *, running: bool) -> None:
+        # Enabled iff we have a last successful output AND no run is currently active.
+        # This prevents exporting an empty/placeholder state before the first run.
+        enabled = (self._last_outputs is not None) and (not running)
+        self._save_log_btn.setEnabled(enabled)
 
     def _load_model(self, path: Path) -> None:
         _load_model(self, path)
@@ -204,6 +255,8 @@ class MainWindow(QMainWindow):
 
     def _on_run_started(self, run_token: int) -> None:
         self._active_run_token = run_token
+        self._dist_dock_closed_during_run = False
+        self._auto_open_distributions_on_finish = False
         self._set_running(True)
         self._status_label.setText("Running…")
         self._elapsed_started_at = time.monotonic()
@@ -218,7 +271,18 @@ class MainWindow(QMainWindow):
             self._last_outputs = outputs_obj
             self._outputs_view.render(outputs_obj)
             self._run_select.setEnabled(True)
+
+            # Post-run actions now become available.
+            self._save_log_btn_refresh_enabled_state(running=False)
+
+            # Render distributions from the same deterministic outputs.
+            self._distributions_dock.render(outputs_obj)
         self._status_label.setText("Completed")
+
+        # Auto-open exactly once per successful completion, unless the user closed
+        # the dock during the active run. We delay the open until `finished` so the
+        # UI is no longer in the running state.
+        self._auto_open_distributions_on_finish = not self._dist_dock_closed_during_run
 
     def _on_run_failed(self, run_token: int, error_text: str) -> None:
         if self._controller.is_cancelled(run_token) or self._active_cancelled:
@@ -226,6 +290,8 @@ class MainWindow(QMainWindow):
             return
         self._status_label.setText("Failed")
         QMessageBox.critical(self, "Simulation failed", error_text)
+        self._auto_open_distributions_on_finish = False
+        self._save_log_btn_refresh_enabled_state(running=False)
 
     def _on_run_finished(self, run_token: int, elapsed_seconds: float) -> None:
         self._elapsed_timer.stop()
@@ -234,6 +300,12 @@ class MainWindow(QMainWindow):
         self._set_running(False)
         if self._controller.is_cancelled(run_token) or self._active_cancelled:
             self._status_label.setText("Cancelled (results discarded)")
+            self._auto_open_distributions_on_finish = False
+            return
+
+        if self._auto_open_distributions_on_finish and self._last_outputs is not None:
+            self._auto_open_distributions_on_finish = False
+            self._show_distributions_dock()
 
     def _set_running(self, running: bool) -> None:
         self._busy_bar.setVisible(running)
@@ -241,6 +313,10 @@ class MainWindow(QMainWindow):
         self._cancel_btn.setEnabled(running)
         self._runs_spin.setEnabled(not running)
         self._seed_spin.setEnabled(not running)
+
+        # During a run we disable post-run inspection actions.
+        self._save_log_btn_refresh_enabled_state(running=running)
+        self._distributions_btn_refresh_enabled_state(running=running)
 
         if not running and self._restore_focus_to_run_btn:
             self._restore_focus_to_run_btn = False

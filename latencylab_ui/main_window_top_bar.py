@@ -16,7 +16,8 @@ def build_top_bar(
     *,
     focus_cycle: FocusCycleController,
     on_save_log_clicked: Callable[[], None],
-) -> tuple[QWidget, QPushButton, QLabel, ThemeToggle]:
+    on_show_distributions_clicked: Callable[[], None],
+) -> tuple[QWidget, QPushButton, QPushButton, QLabel, ThemeToggle]:
     top_bar = QWidget(parent)
     layout = QHBoxLayout(top_bar)
     layout.setContentsMargins(10, 0, 10, 0)
@@ -28,6 +29,12 @@ def build_top_bar(
     save_log_btn.setProperty("role", "icon-action")
     save_log_btn.clicked.connect(on_save_log_clicked)
     layout.addWidget(save_log_btn, 0, Qt.AlignmentFlag.AlignTop)
+
+    distributions_btn = QPushButton("📊")
+    distributions_btn.setToolTip("Show latency and critical-path distributions")
+    distributions_btn.setProperty("role", "icon-action")
+    distributions_btn.clicked.connect(on_show_distributions_clicked)
+    layout.addWidget(distributions_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     clock = QLabel("⏱️")
     clock.setObjectName("top_clock_emoji")
@@ -52,5 +59,5 @@ def build_top_bar(
     )
     layout.addWidget(theme_toggle, 0, Qt.AlignmentFlag.AlignTop)
 
-    return top_bar, save_log_btn, clock, theme_toggle
+    return top_bar, save_log_btn, distributions_btn, clock, theme_toggle
 

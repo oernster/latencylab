@@ -63,9 +63,42 @@ class OutputsView:
 
         r = self._runs[idx]
         if r.critical_path_tasks:
-            self._critical_path_text.setPlainText(r.critical_path_tasks)
+            self._critical_path_text.setPlainText(_format_critical_path_for_display(r.critical_path_tasks))
         else:
             self._critical_path_text.setPlainText("(no critical path)")
+
+
+def _format_critical_path_for_display(text: str) -> str:
+    """Format a critical-path string for readability in a narrow text box.
+
+    Deterministic, v1 UI-only behavior:
+    - Insert line breaks after: '>', ',', ')'
+    - Collapse accidental whitespace around inserted breaks
+
+    The underlying model/run output remains unchanged (tooltips/exports still use
+    the original strings).
+    """
+
+    # Insert breaks deterministically. We avoid splitting the common arrow token
+    # "->" because it reads better on a single line.
+    chars = list(text)
+    out_parts: list[str] = []
+    for i, ch in enumerate(chars):
+        out_parts.append(ch)
+        if ch == ">":
+            # Don't break inside "->".
+            if i > 0 and chars[i - 1] == "-":
+                continue
+            out_parts.append("\n")
+        elif ch in (",", ")"):
+            out_parts.append("\n")
+
+    out = "".join(out_parts)
+
+    # Normalize whitespace around newlines deterministically.
+    lines = [ln.strip() for ln in out.splitlines()]
+    # Preserve intentional blank lines (unlikely in critical paths, but safe).
+    return "\n".join(lines)
 
 
 def format_summary_text(outputs: RunOutputs) -> str:

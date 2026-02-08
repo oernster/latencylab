@@ -85,4 +85,5 @@ def walk_widget_for_interactive(
 
     if isinstance(w, QScrollArea):
         walk_widget_for_interactive(window, w.widget(), out, seen)
+        return
 

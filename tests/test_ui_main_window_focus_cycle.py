@@ -84,17 +84,14 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     # (not trap them inside menu navigation).
     _send(Qt.Key_Down)
     _send(Qt.Key_Tab)
-    _wait_for_focus_text("💾")
+    # Export is disabled until first successful run, so focus skips it.
+    _wait_for_focus_text("☀")
 
+    # Distributions button exists but is disabled until a successful run
+    # completes, so it is intentionally skipped by the focus-cycle.
+
+    # Theme toggle is a single focus stop; it is toggled with Space, not Tab.
     _send(Qt.Key_Tab)
-    assert _focused_widget_text() == "☀"
-
-    # Toggle Light -> focus moves to Dark.
-    _send(Qt.Key_Space)
-    assert _focused_widget_text() == "🌙"
-
-    # Toggle Dark -> focus advances out of the toggle group.
-    _send(Qt.Key_Space)
     assert _focused_widget_text() == "Open model…"
 
     _send(Qt.Key_Tab)
@@ -118,7 +115,7 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     assert w.menuBar().activeAction().text() == "Help"
 
     _send(Qt.Key_Tab)
-    assert _focused_widget_text() == "💾"
+    assert _focused_widget_text() == "☀"
 
     # Ensure a Help menu exists (covered earlier: File -> Help).
 
@@ -260,7 +257,7 @@ def test_tab_after_mouse_focus_does_not_restart_at_menu() -> None:
     # Run is the last enabled widget pre-run; pressing Tab should wrap.
     QTest.keyClick(w._run_btn, Qt.Key_Tab)
     app.processEvents()
-    assert QApplication.focusWidget() in (w, w._save_log_btn)
+    assert QApplication.focusWidget() is w
 
     w.close()
     app.processEvents()
