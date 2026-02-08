@@ -1,0 +1,80 @@
+{
+  "schema_version": 2,
+  "entry_event": "user.click_music_discovery",
+
+  "contexts": {
+    "ui": { "concurrency": 1 },
+    "workers": { "concurrency": 2 },
+    "net": { "concurrency": 2 }
+  },
+
+  "events": {
+    "user.click_music_discovery": { "tags": ["ui"] },
+    "bg.start": { "tags": [] },
+    "bg.progress": { "tags": [] },
+    "bg.done": { "tags": [] },
+    "ui.progress_updated": { "tags": ["ui"] },
+    "ui.playlist_rendered": { "tags": ["ui"] }
+  },
+
+  "tasks": {
+    "ui.handle_click": {
+      "context": "ui",
+      "duration_ms": { "dist": "fixed", "value": 5.0 },
+      "emit": ["bg.start"]
+    },
+
+    "bg.fetch_recommendations": {
+      "context": "net",
+      "duration_ms": { "dist": "lognormal", "mu": 5.523782474656201, "sigma": 0.6 },
+      "emit": ["bg.progress"]
+    },
+
+    "bg.fetch_more_recommendations": {
+      "context": "net",
+      "duration_ms": { "dist": "lognormal", "mu": 5.3, "sigma": 0.5 },
+      "emit": ["bg.progress"]
+    },
+
+    "bg.build_playlist": {
+      "context": "workers",
+      "duration_ms": { "dist": "normal", "mean": 150.0, "std": 30.0, "min": 0.0 },
+      "emit": ["bg.done", "bg.progress"]
+    },
+
+    "bg.precompute_similar_artists": {
+      "context": "workers",
+      "duration_ms": { "dist": "normal", "mean": 220.0, "std": 60.0, "min": 0.0 },
+      "emit": ["bg.progress"]
+    },
+
+    "ui.update_progress_feedback": {
+      "context": "ui",
+      "duration_ms": { "dist": "fixed", "value": 3.0 },
+      "emit": ["ui.progress_updated"]
+    },
+
+    "ui.render_final_playlist": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 25.0, "std": 5.0, "min": 0.0 },
+      "emit": ["ui.playlist_rendered"]
+    }
+  },
+
+  "wiring": {
+    "user.click_music_discovery": ["ui.handle_click"],
+    "bg.start": [
+      "bg.fetch_recommendations",
+      "bg.fetch_more_recommendations",
+      "bg.build_playlist",
+      "bg.precompute_similar_artists"
+    ],
+    "bg.progress": [
+      {
+        "task": "ui.update_progress_feedback",
+        "delay_ms": { "dist": "fixed", "value": 100.0 }
+      }
+    ],
+    "bg.done": ["ui.render_final_playlist"]
+  }
+}
