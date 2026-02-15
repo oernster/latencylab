@@ -25,14 +25,13 @@ def open_model_dialog(window) -> None:
     window._load_model(Path(path_str))  # noqa: SLF001
 
 
-def on_save_log_clicked(window) -> None:
-    # Disabled until first successful run; keep this handler safe for tests and
-    # potential programmatic triggers.
-    try:
-        if hasattr(window, "_save_log_btn") and not window._save_log_btn.isEnabled():  # noqa: SLF001
-            return
-    except Exception:  # noqa: BLE001  # pragma: no cover
-        return  # pragma: no cover
+def export_runs(window) -> bool:
+    """Export the last successful outputs as a .zip.
+
+    Returns:
+        True if an export was successfully written.
+        False if the user cancelled, there were no outputs, or an error occurred.
+    """
 
     # Export all runs as a zip of per-run text files.
     path_str, _ = QFileDialog.getSaveFileName(
@@ -42,7 +41,7 @@ def on_save_log_clicked(window) -> None:
         "Zip files (*.zip);;All files (*)",
     )
     if not path_str:
-        return
+        return False
 
     out_path = Path(path_str)
     if out_path.suffix.lower() != ".zip":
@@ -53,7 +52,7 @@ def on_save_log_clicked(window) -> None:
         # Cover the post-gate "no outputs" branch even though the button is
         # disabled in the real UI.
         QMessageBox.information(window, "Nothing to export", "Run a simulation first.")
-        return
+        return False
 
     runs = sorted(list(outputs.runs), key=lambda r: int(r.run_id))
     summary_txt = format_summary_text(outputs).strip()
@@ -80,6 +79,29 @@ def on_save_log_clicked(window) -> None:
                 zf.writestr(file_name, body.encode("utf-8"))
     except Exception as e:  # noqa: BLE001
         QMessageBox.critical(window, "Export failed", f"Could not export runs: {e}")
+        return False
+
+    return True
+
+
+def on_save_log_clicked(window) -> None:
+    # Disabled until first successful run; keep this handler safe for tests and
+    # potential programmatic triggers.
+    try:
+        if hasattr(window, "_save_log_btn") and not window._save_log_btn.isEnabled():  # noqa: SLF001
+            return
+    except Exception:  # noqa: BLE001  # pragma: no cover
+        return  # pragma: no cover
+
+    exported = export_runs(window)
+
+    # If this was triggered by the main window's export button, mark outputs as
+    # exported so Compose can decide whether to prompt.
+    if exported and hasattr(window, "_have_unexported_outputs"):
+        try:
+            window._have_unexported_outputs = False  # noqa: SLF001
+        except Exception:  # noqa: BLE001  # pragma: no cover
+            return  # pragma: no cover
 
 
 def load_model(window, path: Path) -> None:

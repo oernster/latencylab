@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import os
+import sys
 from enum import Enum
 
 from PySide6.QtGui import QColor, QPalette
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QStyleFactory
+
+from latencylab_ui.theme_stylesheet import _DARK_STYLESHEET, _LIGHT_STYLESHEET
+
+
+# Palette accents used by both themes.
+_ACCENT_TEAL = QColor(38, 166, 154)  # hover/focus accent
 
 
 class Theme(str, Enum):
@@ -11,225 +19,7 @@ class Theme(str, Enum):
     DARK = "dark"
 
 
-_PRIMARY_PURPLE = QColor(126, 87, 194)  # muted purple (Fusion-friendly)
-_ACCENT_TEAL = QColor(38, 166, 154)  # hover/focus accent
 
-
-_LIGHT_STYLESHEET = f"""
-/* Global, restrained rules only. Theme colors come from palette + a small set of controls. */
-
-QWidget {{
-  font-size: 13px;
-}}
-
-QStatusBar QLabel {{
-  padding-left: 6px;
-  padding-right: 6px;
-}}
-
-QGroupBox {{
-  font-weight: 600;
-  border: 1px solid palette(mid);
-  border-radius: 6px;
-  margin-top: 10px;
-  padding: 6px;
-}}
-
-QGroupBox::title {{
-  subcontrol-origin: margin;
-  left: 10px;
-  padding: 0 4px;
-}}
-
-QPushButton {{
-  background-color: {_PRIMARY_PURPLE.name()};
-  color: rgba(250, 250, 250, 0.98);
-  border: 2px solid rgba(0, 0, 0, 0.10);
-  border-radius: 10px;
-  padding: 6px 10px;
-}}
-
-QPushButton:focus {{
-  border: 2px solid white;
-}}
-
-QPushButton:hover {{
-  background-color: {_ACCENT_TEAL.name()};
-}}
-
-QPushButton:disabled {{
-  background-color: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.45);
-  border: 2px solid rgba(0, 0, 0, 0.06);
-}}
-
-QPushButton[role="theme-toggle"] {{
-  background-color: palette(button);
-  color: palette(buttonText);
-  border: 2px solid palette(mid);
-  font-size: 18px;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 2px 8px;
-}}
-
-QPushButton[role="theme-toggle"]:focus {{
-  border: 2px solid white;
-}}
-
-QPushButton[role="theme-toggle"]:checked {{
-  background-color: {_PRIMARY_PURPLE.name()};
-  color: rgba(250, 250, 250, 0.98);
-  border: 2px solid rgba(0, 0, 0, 0.10);
-}}
-
-QPushButton[role="theme-toggle"]:hover {{
-  background-color: {_ACCENT_TEAL.name()};
-  color: rgba(250, 250, 250, 0.98);
-}}
-
-QPushButton[role="icon-action"] {{
-  font-size: 18px;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 2px 8px;
-  border-radius: 10px;
-}}
-
-QSpinBox,
-QComboBox,
-QPlainTextEdit {{
-  border: 1px solid palette(mid);
-  border-radius: 6px;
-  min-height: 32px;
-  padding: 6px 8px;
-}}
-
-QSpinBox {{
-  /* Reserve space for the up/down buttons so they stay visible. */
-  padding-right: 26px;
-}}
-
-QSpinBox::up-button,
-QSpinBox::down-button {{
-  width: 22px;
-}}
-
-QSpinBox:focus,
-QComboBox:focus,
-QPlainTextEdit:focus {{
-  border: 1px solid {_ACCENT_TEAL.name()};
-}}
-""".strip()
-
-
-_DARK_STYLESHEET = f"""
-/* Keep it intentionally minimal: rely on a dark palette + restrained control rules only. */
-
-QWidget {{
-  font-size: 13px;
-}}
-
-QStatusBar QLabel {{
-  padding-left: 6px;
-  padding-right: 6px;
-}}
-
-QGroupBox {{
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  margin-top: 10px;
-  padding: 6px;
-}}
-
-QGroupBox::title {{
-  subcontrol-origin: margin;
-  left: 10px;
-  padding: 0 4px;
-}}
-
-QPushButton {{
-  background-color: {_PRIMARY_PURPLE.name()};
-  color: rgba(245, 245, 245, 0.98);
-  border: 2px solid rgba(0, 0, 0, 0.35);
-  border-radius: 10px;
-  padding: 6px 10px;
-}}
-
-QPushButton:focus {{
-  border: 2px solid white;
-}}
-
-QPushButton:hover {{
-  background-color: {_ACCENT_TEAL.name()};
-}}
-
-QPushButton:disabled {{
-  background-color: rgba(255, 255, 255, 0.06);
-  color: rgba(245, 245, 245, 0.45);
-  border: 2px solid rgba(255, 255, 255, 0.06);
-}}
-
-QPushButton[role="theme-toggle"] {{
-  background-color: rgba(255, 255, 255, 0.06);
-  color: rgba(245, 245, 245, 0.85);
-  border: 2px solid rgba(255, 255, 255, 0.10);
-  font-size: 18px;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 2px 8px;
-}}
-
-QPushButton[role="theme-toggle"]:focus {{
-  border: 2px solid white;
-}}
-
-QPushButton[role="theme-toggle"]:checked {{
-  background-color: {_PRIMARY_PURPLE.name()};
-  color: rgba(245, 245, 245, 0.98);
-  border: 2px solid rgba(0, 0, 0, 0.35);
-}}
-
-QPushButton[role="theme-toggle"]:hover {{
-  background-color: {_ACCENT_TEAL.name()};
-  color: rgba(245, 245, 245, 0.98);
-}}
-
-QPushButton[role="icon-action"] {{
-  font-size: 18px;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 2px 8px;
-  border-radius: 10px;
-}}
-
-QSpinBox,
-QComboBox,
-QPlainTextEdit {{
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 6px;
-  min-height: 32px;
-  padding: 6px 8px;
-  background: palette(base);
-}}
-
-QSpinBox {{
-  /* Reserve space for the up/down buttons so they stay visible. */
-  padding-right: 26px;
-}}
-
-QSpinBox::up-button,
-QSpinBox::down-button {{
-  width: 22px;
-}}
-
-QSpinBox:focus,
-QComboBox:focus,
-QPlainTextEdit:focus {{
-  border: 1px solid {_ACCENT_TEAL.name()};
-}}
-""".strip()
 
 
 def _dark_palette() -> QPalette:
@@ -315,11 +105,40 @@ def apply_theme(app: QApplication, theme: Theme) -> None:
     v1 intentionally uses an application stylesheet only, not per-widget overrides.
     """
 
-    app.setStyle("Fusion")
+    disable_fusion = os.environ.get("LATENCYLAB_UI_THEME_DISABLE_FUSION", "").strip() not in (
+        "",
+        "0",
+        "false",
+    )
+    disable_palette = os.environ.get("LATENCYLAB_UI_THEME_DISABLE_PALETTE", "").strip() not in (
+        "",
+        "0",
+        "false",
+    )
+    disable_stylesheet = os.environ.get(
+        "LATENCYLAB_UI_THEME_DISABLE_STYLESHEET", ""
+    ).strip() not in ("", "0", "false")
+
+    if not disable_fusion:
+        # Use QStyleFactory for determinism; string-based style selection can be
+        # platform-dependent if the style isn't available/registered.
+        fusion = QStyleFactory.create("Fusion")
+        if fusion is not None:
+            app.setStyle(fusion)
+        else:
+            app.setStyle("Fusion")
+
     if theme == Theme.DARK:
-        app.setPalette(_dark_palette())
-        app.setStyleSheet(_DARK_STYLESHEET)
+        palette = _dark_palette()
+        stylesheet = _DARK_STYLESHEET
     else:
-        app.setPalette(_light_palette(app))
-        app.setStyleSheet(_LIGHT_STYLESHEET)
+        palette = _light_palette(app)
+        stylesheet = _LIGHT_STYLESHEET
+
+    if not disable_palette:
+        app.setPalette(palette)
+    if not disable_stylesheet:
+        app.setStyleSheet(stylesheet)
+
+    # Debug logging removed.
 

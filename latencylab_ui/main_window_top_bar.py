@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget
 
 from latencylab_ui.focus_cycle import FocusCycleController
 from latencylab_ui.main_window_bindings import connect_theme_toggle
@@ -18,7 +18,10 @@ def build_top_bar(
     on_save_log_clicked: Callable[[], None],
     on_show_distributions_clicked: Callable[[], None],
     on_show_how_to_read_clicked: Callable[[], None],
+    on_toggle_model_composer_clicked: Callable[[], None],
 ) -> tuple[QWidget, QPushButton, QPushButton, QPushButton, QLabel, ThemeToggle]:
+    toolbar_btn_h = 34
+
     top_bar = QWidget(parent)
     layout = QHBoxLayout(top_bar)
     layout.setContentsMargins(10, 0, 10, 0)
@@ -28,12 +31,14 @@ def build_top_bar(
     save_log_btn = QPushButton("💾")
     save_log_btn.setToolTip("Export runs as zip…")
     save_log_btn.setProperty("role", "icon-action")
+    save_log_btn.setFixedHeight(toolbar_btn_h)
     save_log_btn.clicked.connect(on_save_log_clicked)
     layout.addWidget(save_log_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     distributions_btn = QPushButton("📊")
     distributions_btn.setToolTip("Show latency and critical-path distributions")
     distributions_btn.setProperty("role", "icon-action")
+    distributions_btn.setFixedHeight(toolbar_btn_h)
     distributions_btn.clicked.connect(on_show_distributions_clicked)
     layout.addWidget(distributions_btn, 0, Qt.AlignmentFlag.AlignTop)
 
@@ -41,8 +46,22 @@ def build_top_bar(
     how_to_read_btn.setObjectName("how_to_read_btn")
     how_to_read_btn.setToolTip("How to Read LatencyLab Output")
     how_to_read_btn.setProperty("role", "icon-action")
+    how_to_read_btn.setFixedHeight(toolbar_btn_h)
     how_to_read_btn.clicked.connect(on_show_how_to_read_clicked)
     layout.addWidget(how_to_read_btn, 0, Qt.AlignmentFlag.AlignTop)
+
+    compose_btn = QPushButton("Compose Model")
+    compose_btn.setObjectName("compose_model_btn")
+    compose_btn.setToolTip("Show/hide the Model Composer dock")
+    compose_btn.setCheckable(True)
+    # Deterministic toolbar sizing: match the icon-action buttons exactly.
+    compose_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+    compose_btn.setFixedHeight(toolbar_btn_h)
+    # Preserve existing focus-cycle semantics (Tab should continue to reach the
+    # theme toggle next, as tested).
+    compose_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    compose_btn.clicked.connect(on_toggle_model_composer_clicked)
+    layout.addWidget(compose_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     clock = QLabel("⏱️")
     clock.setObjectName("top_clock_emoji")
@@ -68,4 +87,5 @@ def build_top_bar(
     layout.addWidget(theme_toggle, 0, Qt.AlignmentFlag.AlignTop)
 
     return top_bar, save_log_btn, distributions_btn, how_to_read_btn, clock, theme_toggle
+
 

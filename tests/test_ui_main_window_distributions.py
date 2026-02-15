@@ -10,7 +10,9 @@ def _ensure_qapp():
     return app
 
 
-def test_distributions_button_disabled_until_success_then_finished_enables_and_auto_opens() -> None:
+def test_distributions_button_disabled_until_success_then_finished_enables_and_auto_opens(
+    monkeypatch,
+) -> None:
     app = _ensure_qapp()
 
     from PySide6.QtCore import QObject, Signal
@@ -90,6 +92,46 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
 
     assert w._distributions_btn.isEnabled() is True
     assert w._distributions_dock.isVisible() is True
+
+    # Compose should switch to the composer. Because the run has not been exported,
+    # it should prompt first.
+    from PySide6.QtWidgets import QMessageBox
+
+    called = {"question": 0}
+
+    def _question(*_a, **_k):
+        called["question"] += 1
+        return QMessageBox.StandardButton.Cancel
+
+    monkeypatch.setattr(QMessageBox, "question", _question)
+
+    # Cancel should keep the existing results layout.
+    w._on_toggle_model_composer_clicked()
+    app.processEvents()
+    assert called["question"] == 1
+    assert w._distributions_dock.isVisible() is True
+
+    # Now allow the switch (No = don't export, but proceed).
+    monkeypatch.setattr(QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No)
+    w._on_toggle_model_composer_clicked()
+    app.processEvents()
+    assert w._distributions_dock.isVisible() is False
+    assert w._model_composer_dock.isVisible() is True
+
+    # If distributions is shown while composer is already visible, clicking
+    # Compose should still switch to composer (hide distributions), not toggle off.
+    w._on_show_distributions_clicked()
+    app.processEvents()
+    assert w._distributions_dock.isVisible() is True
+    assert w._model_composer_dock.isVisible() is True
+
+    # No prompt now (we already chose No, leaving outputs as "unexported", but
+    # for test determinism we accept either path by forcing No again).
+    monkeypatch.setattr(QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No)
+    w._on_toggle_model_composer_clicked()
+    app.processEvents()
+    assert w._distributions_dock.isVisible() is False
+    assert w._model_composer_dock.isVisible() is True
 
     w.close()
     app.processEvents()

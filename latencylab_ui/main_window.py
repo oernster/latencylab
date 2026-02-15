@@ -41,6 +41,8 @@ from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.main_window_top_bar import build_top_bar
 from latencylab_ui.main_window_panels import build_left_panel
 from latencylab_ui.distributions_dock import DistributionsDock
+from latencylab_ui.model_composer_dock import ModelComposerDock
+from latencylab_ui.main_window_dock_switching import toggle_or_switch_to_model_composer
 
 
 @dataclass
@@ -60,6 +62,10 @@ class MainWindow(QMainWindow):
 
         # Last successful, non-cancelled outputs. Used by the top-bar export button.
         self._last_outputs: RunOutputs | None = None
+
+        # Tracks whether there are run outputs that have not been exported yet.
+        # Used to prompt before switching away from inspection UI (Compose).
+        self._have_unexported_outputs = False
 
         # If the user closes the Distributions dock while a run is active, do not
         # auto-reopen it when the run completes.
@@ -117,6 +123,7 @@ class MainWindow(QMainWindow):
             on_save_log_clicked=self._on_save_log_clicked,
             on_show_distributions_clicked=self._on_show_distributions_clicked,
             on_show_how_to_read_clicked=lambda: show_how_to_read_dialog(self),
+            on_toggle_model_composer_clicked=self._on_toggle_model_composer_clicked,
         )
 
         root_layout.addWidget(top_bar)
@@ -126,6 +133,12 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._distributions_dock)
         self._distributions_dock.setVisible(False)
         self._distributions_dock.visibilityChanged.connect(self._on_distributions_visibility_changed)
+
+        # Right-side model composer dock (authoring-only; default hidden).
+        self._model_composer_dock = ModelComposerDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._model_composer_dock)
+        self._model_composer_dock.setVisible(False)
+        self._model_composer_dock.visibilityChanged.connect(self._on_model_composer_visibility_changed)
 
         # Main content.
         #
@@ -180,6 +193,18 @@ class MainWindow(QMainWindow):
         if not self._distributions_btn_is_enabled():
             return
         self._show_distributions_dock()
+
+    def _on_toggle_model_composer_clicked(self) -> None:
+        try:
+            toggle_or_switch_to_model_composer(self)
+        except RuntimeError:  # pragma: no cover
+            return  # pragma: no cover
+
+    def _on_model_composer_visibility_changed(self, visible: bool) -> None:
+        try:
+            self.findChild(QPushButton, "compose_model_btn").setChecked(visible)
+        except Exception:  # noqa: BLE001  # pragma: no cover
+            return  # pragma: no cover
 
     def _show_distributions_dock(self) -> None:
         try:
@@ -271,6 +296,7 @@ class MainWindow(QMainWindow):
             return
         if isinstance(outputs_obj, RunOutputs):
             self._last_outputs = outputs_obj
+            self._have_unexported_outputs = True
             self._outputs_view.render(outputs_obj)
             self._run_select.setEnabled(True)
 

@@ -9,7 +9,7 @@ def test_export_runs_appends_zip_suffix_and_writes(monkeypatch, tmp_path: Path) 
 
     from latencylab.model import Model
     from latencylab.types import RunResult
-    from latencylab_ui.main_window_file_io import on_save_log_clicked
+    from latencylab_ui.main_window_file_io import export_runs, on_save_log_clicked
     from latencylab_ui.run_controller import RunOutputs
 
     _ = QApplication.instance() or QApplication([])
@@ -63,7 +63,8 @@ def test_export_runs_appends_zip_suffix_and_writes(monkeypatch, tmp_path: Path) 
     # UI export accesses the window's last outputs.
     w._last_outputs = RunOutputs(model=model, runs=runs, summary={})  # type: ignore[attr-defined]
 
-    on_save_log_clicked(w)
+    ok = export_runs(w)
+    assert ok is True
 
     # File should exist with .zip suffix.
     out_zip = tmp_path / "export.zip"
@@ -73,6 +74,9 @@ def test_export_runs_appends_zip_suffix_and_writes(monkeypatch, tmp_path: Path) 
 
     with zipfile.ZipFile(out_zip, "r") as zf:
         assert sorted(zf.namelist()) == ["Run0001.txt", "Summary.txt"]
+
+    # Legacy entrypoint stays callable.
+    on_save_log_clicked(w)
 
 
 def test_export_runs_gate_returns_if_button_disabled(monkeypatch, tmp_path: Path) -> None:
