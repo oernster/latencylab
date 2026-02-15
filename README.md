@@ -55,6 +55,22 @@ python -m pip install -e .[dev]
 python -m pip install -r requirements.txt
 ```
 
+## Tests
+
+Run the full test suite:
+
+```bash
+python -m pytest
+```
+
+Run the full test suite **with strict coverage enforcement**:
+
+```bash
+python -m pytest -q --cov=. --cov-report=term-missing --cov-fail-under=100
+```
+
+This repository currently maintains **100% unit test coverage** under that command.
+
 ## UI (GUI)
 
 The GUI lives in [`latencylab_ui/`](latencylab_ui/__init__.py:1).

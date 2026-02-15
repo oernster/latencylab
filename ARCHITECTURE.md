@@ -54,6 +54,35 @@ The intent is to keep the core deterministic, stdlib-only, and testable; and kee
   - Controller -> [`latencylab_ui.run_controller.RunController`](latencylab_ui/run_controller.py:72)
   - Worker object -> [`latencylab_ui.run_controller.RunWorker`](latencylab_ui/run_controller.py:35)
 
+#### GUI internal modules (maintainability)
+
+The GUI code is intentionally split into smaller modules to keep individual files small and readable.
+
+- Main window composition and behavior:
+  - Window class -> [`latencylab_ui.main_window.MainWindow`](latencylab_ui/main_window.py:54)
+  - Dock switching policy (Compose vs Distributions) ->
+    [`latencylab_ui.main_window_dock_switching.toggle_or_switch_to_model_composer()`](latencylab_ui/main_window_dock_switching.py:13)
+  - File IO (open model / export last outputs) ->
+    [`latencylab_ui.main_window_file_io.export_runs()`](latencylab_ui/main_window_file_io.py:28)
+  - Top bar construction / deterministic button sizing ->
+    [`latencylab_ui.main_window_top_bar.build_top_bar()`](latencylab_ui/main_window_top_bar.py:14)
+  - Menu wiring -> [`latencylab_ui.main_window_menus`](latencylab_ui/main_window_menus.py:1)
+
+- Theme + style hardening:
+  - Apply theme (palette + optional stylesheet) ->
+    [`latencylab_ui.theme.apply_theme()`](latencylab_ui/theme.py:102)
+  - Central stylesheet strings -> [`latencylab_ui.theme_stylesheet`](latencylab_ui/theme_stylesheet.py:1)
+  - QComboBox popup hardening (palette + per-item roles, reasserted on popup show) ->
+    [`latencylab_ui.qt_style_helpers.harden_combobox_popup()`](latencylab_ui/qt_style_helpers.py:124)
+
+- Model Composer (authoring-only UI):
+  - Dock container -> [`latencylab_ui.model_composer_dock.ModelComposerDock`](latencylab_ui/model_composer_dock.py:35)
+  - Editors:
+    - System -> [`latencylab_ui.model_composer_system_editor.SystemEditor`](latencylab_ui/model_composer_system_editor.py:9)
+    - Contexts -> [`latencylab_ui.model_composer_contexts_editor.ContextsEditor`](latencylab_ui/model_composer_contexts_editor.py:15)
+    - Tasks -> [`latencylab_ui.model_composer_tasks_editor.TasksEditor`](latencylab_ui/model_composer_tasks_editor.py:127)
+    - Wiring -> [`latencylab_ui.model_composer_wiring_editor.WiringEditor`](latencylab_ui/model_composer_wiring_editor.py:30)
+
 ## Overview diagrams
 
 ### CLI call flow and executor selection
@@ -290,6 +319,14 @@ On app shutdown, the controller waits for the worker thread to finish to avoid Q
 - The packaged distribution is configured in [`pyproject.toml`](pyproject.toml:5).
 - Only the `latencylab*` packages are included by setuptools find rules (see [`pyproject.toml`](pyproject.toml:40)); `latencylab_ui/` is not packaged.
 - A console script is exposed for the CLI only via [`pyproject.toml`](pyproject.toml:15).
+
+## Quality gates (enforced by tests)
+
+- Dependency boundaries: core must not import Qt (see [`tests/test_ui_dependency_boundaries.py`](tests/test_ui_dependency_boundaries.py:1)).
+- Determinism: simulation is stable under a seed (see [`tests/test_determinism.py`](tests/test_determinism.py:1)).
+- Source size guardrail: large GUI modules are refactored rather than allowed to grow without bound.
+  - Enforced by [`tests/test_codebase_size_limits.py`](tests/test_codebase_size_limits.py:1).
+- Unit test coverage is enforced at 100% when running with `pytest-cov` using `--cov-fail-under=100`.
 
 ## Future extension points
 
