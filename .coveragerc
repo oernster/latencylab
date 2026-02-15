@@ -1,0 +1,23 @@
+[run]
+# When coverage is invoked broadly (e.g. `pytest --cov=.`), omit non-product code
+# and third-party/virtualenv paths so the total reflects the application.
+omit =
+    tests/*
+    venv/*
+    .venv/*
+    */site-packages/*
+    */dist-packages/*
+
+    # Development-only helper scripts in the repo root.
+    generate_scripts.py
+
+    # Some PySide6/Shiboken environments can surface synthetic paths in reports
+    # when measuring the entire repo. These are not part of this codebase.
+    pyscript
+    shibokensupport/*
+    signature_bootstrap.py
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 0

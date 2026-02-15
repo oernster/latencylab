@@ -52,3 +52,27 @@ The primary interface is a CLI that reads a JSON execution model and produces:
 
 ```bash
 python -m pip install -e .[dev]
+python -m pip install -r requirements.txt
+```
+
+## UI (GUI)
+
+The GUI lives in [`latencylab_ui/`](latencylab_ui/__init__.py:1).
+
+Note: the UI is intentionally **not packaged** into the published distribution (see notes in
+[`ARCHITECTURE.md`](ARCHITECTURE.md:47)). Run it from a clone of this repository.
+
+Launch via the module entry point:
+
+```bash
+python -m latencylab_ui
+```
+
+There is also a small repo-root convenience shim:
+
+```bash
+python runner.py
+```
+
+If you see an error about `PySide6` missing, install the GUI dependency via
+[`requirements.txt`](requirements.txt:1) (or `pip install PySide6`).
