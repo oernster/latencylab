@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LatencyLab: Design-Time Latency Exploration for Event-Driven Systems</title>
+<meta name="description" content="LatencyLab is a local, design-time latency exploration tool for event-driven interactive systems. Simulate explicit models of tasks, events, queues and contention to find where perceived latency comes from before code is written.">
+<meta name="keywords" content="latency, simulation, design-time, event-driven systems, architecture, critical path, percentiles, queue wait, deterministic scheduling, software architecture, CTO, principal engineer, Python">
+<meta name="author" content="Oliver Ernster">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#181818">
+<link rel="canonical" href="https://oernster.github.io/latencylab/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LatencyLab">
+<meta property="og:title" content="LatencyLab: Design-Time Latency Exploration for Event-Driven Systems">
+<meta property="og:description" content="A local, design-time latency exploration tool. It is not a profiler, tracer or runtime observer. It exists to prevent confident people from shipping bad architecture.">
+<meta property="og:url" content="https://oernster.github.io/latencylab/">
+<meta property="og:image" content="https://oernster.github.io/latencylab/assets/latencylab-ui.png">
+<meta property="og:image:alt" content="The LatencyLab UI showing a makespan distribution, critical-path frequencies and percentiles">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LatencyLab: Design-Time Latency Exploration">
+<meta name="twitter:description" content="Find the latency problem before it is politically expensive. A design-time simulation engine for event-driven systems.">
+<meta name="twitter:image" content="https://oernster.github.io/latencylab/assets/latencylab-ui.png">
+<link rel="icon" type="image/svg+xml" href="assets/latencylab.svg">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "LatencyLab", "applicationCategory": "DeveloperApplication", "operatingSystem": "Windows, macOS, Linux", "description": "LatencyLab is a local, design-time latency exploration tool for event-driven interactive systems. It simulates explicit models of tasks, events, queues, delays and resource contention to make perceived latency visible before code is written.", "url": "https://oernster.github.io/latencylab/", "image": "https://oernster.github.io/latencylab/assets/latencylab-ui.png", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "GBP"}, "author": {"@type": "Person", "name": "Oliver Ernster", "url": "https://www.crankthecode.com/"}, "audience": {"@type": "Audience", "audienceType": "Senior engineers, software architects, CTOs and technical leaders"}, "keywords": "latency, simulation, design-time, event-driven systems, architecture, critical path, percentiles, deterministic scheduling", "license": "https://www.gnu.org/licenses/gpl-3.0.html"}</script>
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top">
+      <img src="assets/latencylab.svg" alt="LatencyLab icon">LatencyLab</a>
+    <nav class="nav-links">
+      <a href="#who">Who it's for</a>
+      <a href="#what">What it does</a>
+      <a href="#ui">The UI</a>
+      <a href="#start">Get started</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main id="top">
+  <section class="hero">
+    <div class="container">
+      <img class="logo" src="assets/latencylab.svg" alt="LatencyLab icon">
+      <h1>LatencyLab</h1>
+      <div class="tagline">Design-Time Latency Exploration</div>
+      <p class="lede">A local latency exploration tool for event-driven interactive
+        systems. It is not a profiler, tracer or runtime observer. It exists to
+        prevent confident people from shipping bad architecture.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="https://github.com/oernster/latencylab">View on GitHub</a>
+        <a class="btn btn-ghost" href="https://www.crankthecode.com/posts/latencylab">Read the guide</a>
+      </div>
+      <p class="release-note">If the output surprises you, that is the point.</p>
+      <div class="badges">
+        <span>Local-first</span>·<span>No cloud, no account</span>
+        ·<span>Deterministic, seeded runs</span>·<span>GPL-3.0 + LGPL-3.0</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="who" class="alt">
+    <div class="container">
+      <div class="eyebrow">Who it is for</div>
+      <h2 class="section-title">For the people who own structural decisions</h2>
+      <p class="section-sub">LatencyLab is aimed at the roles that make structural
+        decisions which are expensive to undo. If you have ever said "we will
+        profile it later", this is what later should have looked like.</p>
+      <div class="split">
+        <div class="panel is-for">
+          <h3>It is for you if</h3>
+          <ul>
+            <li>You are a <b>senior engineer, architect or CTO</b> validating an architecture before it hardens.</li>
+            <li>You want to see <b>where perceived latency actually comes from</b>, not where you assume it does.</li>
+            <li>You need to know <b>which causal paths dominate</b> latency most often, and how contention shapes responsiveness.</li>
+            <li>You want to test <b>which architectural changes help</b> before any code is written.</li>
+          </ul>
+        </div>
+        <div class="panel not-for">
+          <h3>It is not for you if</h3>
+          <ul>
+            <li>You want to <b>tune code that already exists</b>. Use a profiler.</li>
+            <li>You want a dashboard that <b>reassures you</b> everything is fine.</li>
+            <li>You want <b>generated recommendations</b>. It does not tell you how to make a function faster.</li>
+            <li>You want to reason about latency <b>without committing to explicit structure</b>. This will feel uncomfortable, and that is intentional.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="what">
+    <div class="container">
+      <div class="eyebrow">The idea</div>
+      <h2 class="section-title">Find the latency problem before it is politically expensive</h2>
+      <p class="section-sub">Profilers explain what happened in a running system.
+        They rarely explain why the user waited. LatencyLab executes explicit
+        models of tasks, events, queues, delays and resource contention using
+        deterministic scheduling and reproducible randomness, then runs them
+        many times to produce concrete metrics.</p>
+      <div class="features">
+        <div class="feature"><div class="fnum">01</div><h3>Explicit models</h3><p>Tasks, events, queues, delays and feedback paths must be named. Nothing is inferred and nothing is hidden. The model is what you reason about.</p></div>
+        <div class="feature"><div class="fnum">02</div><h3>Many seeded runs</h3><p>Every run is seeded, so behaviour stays reproducible across versions. At scale the dominant behaviours become clearer, not noisier.</p></div>
+        <div class="feature"><div class="fnum">03</div><h3>Critical paths and percentiles</h3><p>Concrete critical paths name the work; percentiles are split for UI events and overall makespan because they answer different questions.</p></div>
+        <div class="feature"><div class="fnum">04</div><h3>Yours, on your machine</h3><p>A local CLI plus an optional desktop UI. No account, no server, no instrumentation of production code. Nothing leaves your machine.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ui" class="alt">
+    <div class="container">
+      <div class="eyebrow">The UI is a client, not a comfort blanket</div>
+      <h2 class="section-title">It shows what the model produced, and nothing it did not</h2>
+      <p class="section-sub">The UI exists because text output alone was not enough
+        to reason about timing, ordering and consequence. It is intentionally
+        literal: it shows what ran, how often it ran and where time accumulated.
+        Full keyboard navigation is treated as a constraint, not polish.</p>
+      <div class="shots">
+        <figure class="shot">
+          <div class="frame">
+            <img loading="lazy" src="assets/latencylab-ui.png" alt="The LatencyLab UI showing a makespan distribution, critical-path frequencies, percentiles and the dominant critical path">
+          </div>
+          <figcaption><b>A real model, run 100,000 times.</b> This is the
+            music-discovery ingest flow from a shipped application: a user clicks,
+            background work starts, progress updates appear, the result renders.
+            Most people predict the background work dominates perceived latency.
+            They are usually wrong. Repeated progress updates, delayed slightly to
+            feel smooth, compete for a single UI thread; the critical-path
+            frequency on the right names the work and the percentiles show how
+            often the UI thread is busy doing the wrong thing.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="container">
+      <div class="eyebrow">Get started</div>
+      <h2 class="section-title">Run it from a clone</h2>
+      <p class="section-sub">LatencyLab is a Python tool. The primary interface is
+        a CLI that reads a JSON execution model; the desktop UI is a client of the
+        same headless core. Core outputs are written as plain files you can plot
+        or diff.</p>
+      <div class="outputs">
+        <div class="output"><code>summary.json</code><p>Aggregate latency and contention statistics for the whole run.</p></div>
+        <div class="output"><code>runs.csv</code><p>Per-run metrics, suitable for analysis or plotting.</p></div>
+        <div class="output"><code>trace.csv</code><p>Optional per-task-instance timing and causality data.</p></div>
+      </div>
+      <div class="codeblock">
+<pre><span class="c"># Clone and install (dev)</span>
+git clone https://github.com/oernster/latencylab.git
+cd latencylab
+python -m pip install -e <span class="p">.[dev]</span>
+python -m pip install -r requirements.txt
+
+<span class="c"># Run the desktop UI (client of the headless core)</span>
+python -m latencylab_ui
+
+<span class="c"># Run the test suite with strict 100% coverage</span>
+python -m pytest -q --cov=. --cov-report=term-missing --cov-fail-under=100</pre>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
+      (c) 2026 Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->2.0.1<!--/VERSION-->
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The guide</a>
+      <a href="https://oernster.github.io/">Project hub</a>
+      <a href="https://www.crankthecode.com/">crankthecode.com</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
