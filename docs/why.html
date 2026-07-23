@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why LatencyLab exists: latency answered before the code is written</title>
+<meta name="description" content="Why LatencyLab was built: latency arguments run on intuition and confidence until it is too late to change the architecture. LatencyLab makes delay and coordination visible at design time, deterministically.">
+<meta name="author" content="Oliver Ernster">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#181818">
+<link rel="canonical" href="https://ernster.dev/latencylab/why.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LatencyLab">
+<meta property="og:title" content="Why LatencyLab exists: latency answered before the code is written">
+<meta property="og:description" content="Latency arguments run on intuition and confidence until it is too late to change the architecture. LatencyLab makes delay and coordination visible at design time.">
+<meta property="og:url" content="https://ernster.dev/latencylab/why.html">
+<meta property="og:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<meta property="og:image:alt" content="The LatencyLab UI showing a makespan distribution, critical-path frequencies and percentiles">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why LatencyLab exists">
+<meta name="twitter:description" content="Latency arguments run on intuition and confidence until it is too late to change the architecture. LatencyLab makes delay and coordination visible at design time.">
+<meta name="twitter:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<link rel="icon" type="image/svg+xml" href="assets/latencylab.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <img src="assets/latencylab.svg" alt="LatencyLab icon">LatencyLab</a>
+    <nav class="nav-links">
+      <a href="index.html#who">Who it's for</a>
+      <a href="index.html#what">What it does</a>
+      <a href="why.html">Why</a>
+      <a href="index.html#start">Get started</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section id="exists">
+    <div class="container prose">
+      <div class="eyebrow">The reasoning</div>
+      <h2 class="section-title">Why this exists</h2>
+      <p>Latency discussions are dominated by intuition, confidence and post hoc profiling. By the
+        time a real system can be measured, the decisions about concurrency, feedback, sequencing
+        and delay have already hardened and are expensive to undo. Profilers explain where the time
+        went in a running system; they rarely explain why the user waited.</p>
+      <p>LatencyLab moves the question to design time. You write an explicit model (tasks, events,
+        queues, delays, resource contention: everything named, nothing inferred) and the engine
+        executes it with deterministic scheduling and seeded randomness, thousands of times. Out
+        come concrete critical paths that name the work, queue-wait figures and percentiles split
+        between UI events and overall makespan, because those answer different questions. When
+        numbers change it is because the model changed, never because the measurement drifted.</p>
+      <p>The results routinely betray intuition. In the shipped music-discovery ingest model most
+        people predict the background work dominates perceived latency; instead the smooth-feeling
+        progress updates competing for one UI thread quietly extend the critical path. The same
+        engine is one of the two instruments behind Relativistic Decision Architecture: it produced
+        the book's hierarchy-depth and authority-placement numbers from published models and seeds,
+        so every quantitative claim there can be rerun.</p>
+      <p>What works now is a local Python CLI reading a JSON execution model, with a desktop UI as
+        a client of the same headless core and plain-file outputs you can plot or diff. Fully
+        keyboard navigable, 100% coverage gated, no account, no server and nothing leaving your
+        machine. It does not tune code and it does not reassure; it exists so the latency problem
+        is found before it is politically expensive.</p>
+      <p>Full reasoning at <a href="https://www.crankthecode.com/posts/latencylab">crankthecode.com</a>.</p>
+      <div class="cta" style="justify-content:flex-start;margin-top:30px;">
+        <a class="btn btn-primary" href="https://github.com/oernster/latencylab">View on GitHub</a>
+        <a class="btn btn-ghost" href="index.html">Back to overview</a>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
+      (c) 2026 Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->2.0.1<!--/VERSION-->
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The guide</a>
+      <a href="https://ernster.dev/">Project hub</a>
+      <a href="https://www.crankthecode.com/">crankthecode.com</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

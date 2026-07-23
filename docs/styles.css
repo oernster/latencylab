@@ -279,3 +279,12 @@ footer {
   .nav-links a:nth-child(1),
   .nav-links a:nth-child(2) { display: none; }
 }
+
+/* Long-form prose (the Why this exists page). */
+.prose p {
+  color: var(--muted, #9aa3af);
+  font-size: 16.5px;
+  max-width: 820px;
+  margin: 0 0 18px;
+}
+.prose p:last-child { margin-bottom: 0; }
