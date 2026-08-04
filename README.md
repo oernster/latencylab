@@ -71,6 +71,12 @@ python -m pytest -q --cov=. --cov-report=term-missing --cov-fail-under=100
 
 This repository currently maintains **100% unit test coverage** under that command.
 
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md): the layers, the invariants and the tests that enforce them.
+- [TECH_DEBT.md](TECH_DEBT.md): the standing reference to what is still open, what is
+  deliberately left and what only looks like debt.
+
 ## UI (GUI)
 
 The GUI lives in [`latencylab_ui/`](latencylab_ui/__init__.py:1).
