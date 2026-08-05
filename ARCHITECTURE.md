@@ -334,6 +334,13 @@ On app shutdown, the controller waits for the worker thread to finish to avoid Q
 - The PySide6 front end in `latencylab_ui/` is LGPL-3.0. Its text is `latencylab_ui/LGPL3.txt`, which the app shows under Help > UI Licence.
 - `pyproject.toml` therefore declares `GPL-3.0-only` with the root `LICENSE` as its licence file, matching what the wheel actually contains.
 
+### Icon (single master, one-way from the site)
+
+- The mark is the purple stopwatch tile. Its origin is the SVG published on the profile site at `oernster.github.io/assets/latencylab.svg`; the repository-root `latencylab.png` is a 1024x1024 RGBA raster of that SVG rather than an independent drawing.
+- **The direction is one-way.** A change to the mark is made to the site SVG first, then `latencylab.png` is re-rendered from it with `QSvgRenderer` (no new dependency: PySide6 is already what the front end is built on). Editing the PNG directly leaves the two silently disagreeing, which is the failure this note exists to prevent.
+- `latencylab.png` is then the single master every platform asset derives from: the PNG size set, the multi-size Windows `.ico`, the macOS `.icns` and the Flatpak hicolor set. Nothing paints an icon at runtime. The master is in place; the deriving script arrives with the delivery path.
+- The glyph is balanced in its tile, 7 units clear at the top and at the base on the SVG's 64-unit grid. The case must not approach y=60 or lower, where the tile's own 14-unit corner radius is already curving inward and the circle reads as clipped.
+
 ## Quality gates (enforced by tests)
 
 - Dependency boundaries: core must not import Qt (see [`tests/test_ui_dependency_boundaries.py`](tests/test_ui_dependency_boundaries.py:1)).
