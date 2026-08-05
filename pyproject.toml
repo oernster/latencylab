@@ -32,6 +32,16 @@ legacy = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The gate lives here rather than in a command line people have to remember.
+# It was previously opt-in, so `python -m pytest` (the command the README gave
+# first) enforced nothing at all and the repository's 100% claim rested on
+# whoever ran it typing the longer form. The scoped source set is in
+# .coveragerc, so `--cov=.` resolves to the product code either way.
+addopts = """
+    --cov=.
+    --cov-report=term-missing
+    --cov-fail-under=100
+"""
 
 [tool.black]
 line-length = 88

@@ -63,13 +63,10 @@ Run the full test suite:
 python -m pytest
 ```
 
-Run the full test suite **with strict coverage enforcement**:
-
-```bash
-python -m pytest -q --cov=. --cov-report=term-missing --cov-fail-under=100
-```
-
-This repository currently maintains **100% unit test coverage** under that command.
+This repository maintains **100% unit test coverage**, and that is enforced by
+the command above: coverage reporting and the 100% threshold are configured in
+`pyproject.toml`, so there is no separate command to remember and no way to run
+the suite without the gate.
 
 ## Documentation
 
