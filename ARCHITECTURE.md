@@ -4,10 +4,10 @@ This document describes the *current* LatencyLab architecture as implemented in 
 
 Scope:
 
-1. **Core simulator** under [`latencylab/`](latencylab/__init__.py:1): model parsing/validation, executor dispatch, simulation engines, metrics, and file outputs.
+1. **Core simulator** under [`latencylab/`](latencylab/__init__.py:1): model parsing/validation, executor dispatch, simulation engines, metrics and file outputs.
 2. **Optional GUI** under [`latencylab_ui/`](latencylab_ui/__init__.py:1): Qt widgets + threaded run controller that consumes the core APIs.
 
-The intent is to keep the core deterministic, stdlib-only, and testable; and keep the GUI as a thin shell over the core.
+The intent is to keep the core deterministic, stdlib-only and testable, while keeping the GUI a thin shell over the core.
 
 ## Non-negotiable invariants (enforced by tests)
 
@@ -316,9 +316,23 @@ On app shutdown, the controller waits for the worker thread to finish to avoid Q
 
 ### Packaging notes (current repository state)
 
-- The packaged distribution is configured in [`pyproject.toml`](pyproject.toml:5).
-- Only the `latencylab*` packages are included by setuptools find rules (see [`pyproject.toml`](pyproject.toml:40)); `latencylab_ui/` is not packaged.
-- A console script is exposed for the CLI only via [`pyproject.toml`](pyproject.toml:15).
+- The packaged distribution is configured in [`pyproject.toml`](pyproject.toml).
+- The distributable is the headless CLI core. The setuptools find rules include `latencylab*`, which also globs `latencylab_ui`, so the GUI package is excluded by name; the built wheel contains `latencylab/` only.
+- A console script is exposed for the CLI only via [`pyproject.toml`](pyproject.toml).
+
+### Version (single source of truth)
+
+- The only real version string in the repository is the root `VERSION` file.
+- Runtime reads it through [`latencylab.version.read_version()`](latencylab/version.py:24), which falls back to `0.0.0-dev` when no source tree is present. `latencylab_ui` re-exports the same value and the About dialog renders it.
+- Packaging metadata declares the version dynamic and reads the same file.
+- The GitHub Pages site under `docs/` cannot read `VERSION` at render time, so it carries `<!--VERSION-->x.y.z<!--/VERSION-->` tokens rewritten by the repo-root `stamp_version.py`. That script targets `docs/` only and is idempotent.
+- Enforced by [`tests/test_version_single_source.py`](tests/test_version_single_source.py:1), which asserts the core version, the UI version and the `VERSION` file agree.
+
+### Licence split
+
+- The core in `latencylab/` (and therefore everything that is distributed) is GPL-3.0. The full text is the root `LICENSE`, which the app shows under Help > Main Licence.
+- The PySide6 front end in `latencylab_ui/` is LGPL-3.0. Its text is `latencylab_ui/LGPL3.txt`, which the app shows under Help > UI Licence.
+- `pyproject.toml` therefore declares `GPL-3.0-only` with the root `LICENSE` as its licence file, matching what the wheel actually contains.
 
 ## Quality gates (enforced by tests)
 
@@ -326,7 +340,8 @@ On app shutdown, the controller waits for the worker thread to finish to avoid Q
 - Determinism: simulation is stable under a seed (see [`tests/test_determinism.py`](tests/test_determinism.py:1)).
 - Source size guardrail: large GUI modules are refactored rather than allowed to grow without bound.
   - Enforced by [`tests/test_codebase_size_limits.py`](tests/test_codebase_size_limits.py:1).
-- Unit test coverage is enforced at 100% when running with `pytest-cov` using `--cov-fail-under=100`.
+- Unit test coverage is enforced at 100%. The `--cov` flags and `--cov-fail-under=100` live in the `addopts` of [`pyproject.toml`](pyproject.toml), so a bare `python -m pytest` enforces the gate and there is no way to run the suite without it. The measured source set is scoped by [`.coveragerc`](.coveragerc).
+- Version consistency: the core version, the UI version and the root `VERSION` file must agree (see [`tests/test_version_single_source.py`](tests/test_version_single_source.py:1)).
 
 ## Future extension points
 

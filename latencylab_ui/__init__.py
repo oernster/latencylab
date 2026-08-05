@@ -12,7 +12,8 @@ Run from source:
 
 from __future__ import annotations
 
+# The UI has no version of its own: it ships from the same tree as the core and
+# reports the core's number, which is read from the root VERSION file.
+from latencylab.version import __version__
+
 __all__ = ["__version__"]
-
-__version__ = "0.1.0"
-

@@ -1,16 +1,25 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+# >=77 for the PEP 639 `license` SPDX expression and `license-files` below.
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "latencylab"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Design-time latency exploration tool for event-driven interactive systems"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
+# The published distribution is the headless core only (see the packages.find
+# rules below) and that code is GPL-3.0. The PySide6 front end under
+# latencylab_ui/ is LGPL-3.0 and is not distributed here; its text lives in
+# latencylab_ui/LGPL3.txt.
+license = "GPL-3.0-only"
 license-files = ["LICENSE"]
 dependencies = []
+
+[tool.setuptools.dynamic]
+# The root VERSION file is the single source of truth for the version.
+version = {file = "VERSION"}
 
 [project.scripts]
 latencylab = "latencylab.__main__:main"
@@ -32,11 +41,10 @@ legacy = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# The gate lives here rather than in a command line people have to remember.
-# It was previously opt-in, so `python -m pytest` (the command the README gave
-# first) enforced nothing at all and the repository's 100% claim rested on
-# whoever ran it typing the longer form. The scoped source set is in
-# .coveragerc, so `--cov=.` resolves to the product code either way.
+# The coverage gate lives here rather than in a command line people have to
+# remember, so a bare `python -m pytest` enforces it and there is no way to run
+# the suite without it. The scoped source set is in .coveragerc, so `--cov=.`
+# resolves to the product code.
 addopts = """
     --cov=.
     --cov-report=term-missing
@@ -48,6 +56,9 @@ line-length = 88
 
 
 [tool.setuptools.packages.find]
+# The distributable is the CLI core. `latencylab*` also globs `latencylab_ui`,
+# so the GUI has to be excluded by name for the wheel to contain what every
+# other document says it contains.
 include = ["latencylab*"]
-exclude = ["plans*", "examples*", "tests*"]
+exclude = ["plans*", "examples*", "tests*", "latencylab_ui*"]
 

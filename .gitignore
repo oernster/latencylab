@@ -210,6 +210,9 @@ __marimo__/
 ALL_SOURCES.txt
 generate_scripts.py
 
+# Working release notes for the pending version
+NOTES.md
+
 # Output files
 out/*
 out/
