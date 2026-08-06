@@ -6,10 +6,8 @@ from enum import Enum
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication, QStyleFactory
 
-from latencylab_ui.theme_stylesheet import _DARK_STYLESHEET, _LIGHT_STYLESHEET
-
-# Palette accents used by both themes.
-_ACCENT_TEAL = QColor(38, 166, 154)  # hover/focus accent
+from latencylab_ui.theme_stylesheet import build_stylesheet
+from latencylab_ui.theme_tokens import DARK_TOKENS, LIGHT_TOKENS, ThemeTokens
 
 
 class Theme(str, Enum):
@@ -17,132 +15,79 @@ class Theme(str, Enum):
     DARK = "dark"
 
 
-def _dark_palette() -> QPalette:
-    """A conservative Fusion-friendly dark palette.
+def tokens_for(theme: Theme) -> ThemeTokens:
+    """The colour set behind a theme.
 
-    This avoids per-widget overrides while still producing a true dark theme.
+    Public because the ring and danger colours are not only a stylesheet
+    concern: anything that paints or asserts a focus state needs the same two
+    values the sheet was built from, and reading them from here is what stops a
+    second, drifting copy appearing.
     """
 
-    pal = QPalette()
+    return DARK_TOKENS if theme == Theme.DARK else LIGHT_TOKENS
 
-    # Backgrounds (avoid pure black).
-    window = QColor(30, 30, 30)
-    base = QColor(24, 24, 24)
-    alternate_base = QColor(36, 36, 36)
-    button = QColor(40, 40, 40)
 
-    # Text (avoid pure white).
-    text = QColor(228, 228, 228)
-    disabled_text = QColor(150, 150, 150)
+def _apply_common_palette(pal: QPalette, tokens: ThemeTokens) -> QPalette:
+    """Colour a palette from the same tokens the stylesheet was built from."""
 
-    # Accents.
-    highlight = _ACCENT_TEAL
-
-    pal.setColor(QPalette.ColorRole.Window, window)
-    pal.setColor(QPalette.ColorRole.WindowText, text)
-    pal.setColor(QPalette.ColorRole.Base, base)
-    pal.setColor(QPalette.ColorRole.AlternateBase, alternate_base)
-    pal.setColor(QPalette.ColorRole.ToolTipBase, window)
-    pal.setColor(QPalette.ColorRole.ToolTipText, text)
-    pal.setColor(QPalette.ColorRole.Text, text)
-    pal.setColor(QPalette.ColorRole.Button, button)
-    pal.setColor(QPalette.ColorRole.ButtonText, text)
-    pal.setColor(QPalette.ColorRole.BrightText, QColor(255, 0, 0))
-    pal.setColor(QPalette.ColorRole.Highlight, highlight)
+    pal.setColor(QPalette.ColorRole.Window, QColor(tokens.surface))
+    pal.setColor(QPalette.ColorRole.WindowText, QColor(tokens.text))
+    pal.setColor(QPalette.ColorRole.Base, QColor(tokens.base))
+    pal.setColor(QPalette.ColorRole.AlternateBase, QColor(tokens.alternate_base))
+    pal.setColor(QPalette.ColorRole.ToolTipBase, QColor(tokens.panel))
+    pal.setColor(QPalette.ColorRole.ToolTipText, QColor(tokens.text))
+    pal.setColor(QPalette.ColorRole.Text, QColor(tokens.text))
+    pal.setColor(QPalette.ColorRole.Button, QColor(tokens.panel))
+    pal.setColor(QPalette.ColorRole.ButtonText, QColor(tokens.text))
+    pal.setColor(QPalette.ColorRole.Highlight, QColor(tokens.accent))
     pal.setColor(QPalette.ColorRole.HighlightedText, QColor(15, 15, 15))
 
-    pal.setColor(
-        QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_text
-    )
-    pal.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, disabled_text)
-    pal.setColor(
-        QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, disabled_text
-    )
+    muted = QColor(tokens.muted_text)
+    for role in (
+        QPalette.ColorRole.WindowText,
+        QPalette.ColorRole.Text,
+        QPalette.ColorRole.ButtonText,
+    ):
+        pal.setColor(QPalette.ColorGroup.Disabled, role, muted)
+    return pal
+
+
+def _dark_palette() -> QPalette:
+    """A Fusion-friendly dark palette, avoiding pure black."""
+
+    pal = _apply_common_palette(QPalette(), DARK_TOKENS)
+    pal.setColor(QPalette.ColorRole.BrightText, QColor(DARK_TOKENS.danger))
     return pal
 
 
 def _light_palette(app: QApplication) -> QPalette:
-    """A bright, neutral light palette with minimal accent tweaks.
+    """A bright, neutral light palette.
 
-    We keep this explicitly light (white/near-white surfaces) to avoid the
-    "slightly-less-dark" look when switching from the dark palette.
+    Explicitly light surfaces, so switching away from dark does not land on a
+    slightly-less-dark grey.
     """
 
-    pal = app.style().standardPalette()
+    return _apply_common_palette(app.style().standardPalette(), LIGHT_TOKENS)
 
-    window = QColor(248, 248, 248)
-    base = QColor(255, 255, 255)
-    alternate_base = QColor(242, 242, 242)
-    button = QColor(245, 245, 245)
-    text = QColor(32, 32, 32)
-    disabled_text = QColor(130, 130, 130)
 
-    pal.setColor(QPalette.ColorRole.Window, window)
-    pal.setColor(QPalette.ColorRole.WindowText, text)
-    pal.setColor(QPalette.ColorRole.Base, base)
-    pal.setColor(QPalette.ColorRole.AlternateBase, alternate_base)
-    pal.setColor(QPalette.ColorRole.Button, button)
-    pal.setColor(QPalette.ColorRole.ButtonText, text)
-    pal.setColor(QPalette.ColorRole.Text, text)
-    pal.setColor(QPalette.ColorRole.ToolTipBase, base)
-    pal.setColor(QPalette.ColorRole.ToolTipText, text)
+def _disabled_by_env(name: str) -> bool:
+    """Whether an escape-hatch environment variable is switched on."""
 
-    pal.setColor(QPalette.ColorRole.Highlight, _ACCENT_TEAL)
-    pal.setColor(QPalette.ColorRole.HighlightedText, QColor(15, 15, 15))
-
-    pal.setColor(
-        QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_text
-    )
-    pal.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, disabled_text)
-    pal.setColor(
-        QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, disabled_text
-    )
-    return pal
+    return os.environ.get(name, "").strip() not in ("", "0", "false")
 
 
 def apply_theme(app: QApplication, theme: Theme) -> None:
-    """Apply an application-global theme.
+    """Apply an application-global theme: style, palette and stylesheet."""
 
-    v1 intentionally uses an application stylesheet only, not per-widget overrides.
-    """
-
-    disable_fusion = os.environ.get(
-        "LATENCYLAB_UI_THEME_DISABLE_FUSION", ""
-    ).strip() not in (
-        "",
-        "0",
-        "false",
-    )
-    disable_palette = os.environ.get(
-        "LATENCYLAB_UI_THEME_DISABLE_PALETTE", ""
-    ).strip() not in (
-        "",
-        "0",
-        "false",
-    )
-    disable_stylesheet = os.environ.get(
-        "LATENCYLAB_UI_THEME_DISABLE_STYLESHEET", ""
-    ).strip() not in ("", "0", "false")
-
-    if not disable_fusion:
-        # Use QStyleFactory for determinism; string-based style selection can be
-        # platform-dependent if the style isn't available/registered.
+    if not _disabled_by_env("LATENCYLAB_UI_THEME_DISABLE_FUSION"):
+        # Via QStyleFactory for determinism: string-based selection is
+        # platform-dependent when the style is not registered.
         fusion = QStyleFactory.create("Fusion")
-        if fusion is not None:
-            app.setStyle(fusion)
-        else:
-            app.setStyle("Fusion")
+        app.setStyle(fusion if fusion is not None else "Fusion")
 
-    if theme == Theme.DARK:
-        palette = _dark_palette()
-        stylesheet = _DARK_STYLESHEET
-    else:
-        palette = _light_palette(app)
-        stylesheet = _LIGHT_STYLESHEET
+    palette = _dark_palette() if theme == Theme.DARK else _light_palette(app)
 
-    if not disable_palette:
+    if not _disabled_by_env("LATENCYLAB_UI_THEME_DISABLE_PALETTE"):
         app.setPalette(palette)
-    if not disable_stylesheet:
-        app.setStyleSheet(stylesheet)
-
-    # Debug logging removed.
+    if not _disabled_by_env("LATENCYLAB_UI_THEME_DISABLE_STYLESHEET"):
+        app.setStyleSheet(build_stylesheet(tokens_for(theme)))

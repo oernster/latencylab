@@ -14,19 +14,24 @@ def test_theme_stylesheet_mentions_combobox_popup_view() -> None:
     - We harden each QComboBox programmatically to bind its popup view palette.
     """
 
-    from latencylab_ui import theme
+    from latencylab_ui import theme_stylesheet
 
-    # No popup view color rules via CSS.
-    assert "QComboBox QAbstractItemView{" not in theme._DARK_STYLESHEET.replace(" ", "")
-    assert "QComboBox QAbstractItemView{" not in theme._LIGHT_STYLESHEET.replace(
-        " ", ""
-    )
-    assert "QAbstractItemView{" not in theme._DARK_STYLESHEET.replace(" ", "")
-    assert "QAbstractItemView{" not in theme._LIGHT_STYLESHEET.replace(" ", "")
+    # Both themes render from ONE template, so asserting the template asserts
+    # every theme there will ever be. The rendered pair is checked too, cheaply,
+    # so a token that smuggled a rule in would still be caught.
+    sheets = [
+        theme_stylesheet._TEMPLATE,
+        theme_stylesheet._DARK_STYLESHEET,
+        theme_stylesheet._LIGHT_STYLESHEET,
+    ]
 
-    # Keep compact item height/padding rules.
-    assert "QComboBox QAbstractItemView::item" in theme._DARK_STYLESHEET
-    assert "QComboBox QAbstractItemView::item" in theme._LIGHT_STYLESHEET
+    for sheet in sheets:
+        # No popup view colour rules via CSS.
+        assert "QComboBoxQAbstractItemView{" not in sheet.replace(" ", "")
+        assert "QAbstractItemView{" not in sheet.replace(" ", "")
+
+        # Keep compact item height/padding rules.
+        assert "QComboBox QAbstractItemView::item" in sheet
 
 
 def test_model_composer_combobox_popup_view_uses_combo_palette() -> None:
