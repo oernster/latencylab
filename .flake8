@@ -1,6 +1,15 @@
 [flake8]
 max-line-length = 88
-extend-ignore = E203,W503
+# E203 and W503 conflict with black's own choices. E501 is here for the same
+# reason and no other: black owns line length in this repository and formats
+# every code line to 88, so `black --check` passing means the only lines left
+# over 88 are ones black declined to split, which are string literals and
+# comments (the dialog's HTML body, long assertion messages, URLs). Reporting
+# those teaches people to reformat prose to satisfy a code rule, or to sprinkle
+# noqa. Where black and flake8 disagree about formatting, black wins.
+#
+# This is not a licence to write long code lines: black will still split them.
+extend-ignore = E203,W503,E501
 exclude =
     .git,
     __pycache__,

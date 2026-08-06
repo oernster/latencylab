@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 from enum import Enum
 
 from PySide6.QtGui import QColor, QPalette

@@ -327,7 +327,7 @@ def test_run_button_focus_restored_after_run_finishes_when_requested() -> None:
 
     app = _ensure_qapp()
 
-    from PySide6.QtCore import QObject, Qt, Signal
+    from PySide6.QtCore import QObject, Signal
     from PySide6.QtWidgets import QApplication
 
     from latencylab_ui.main_window import MainWindow

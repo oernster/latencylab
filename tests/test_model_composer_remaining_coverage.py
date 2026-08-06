@@ -5,7 +5,7 @@ from PySide6.QtGui import QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QApplication, QMainWindow
 
 from latencylab_ui.model_composer_dock import ModelComposerDock
-from latencylab_ui.model_composer_tasks_editor import TasksEditor, _TaskCard
+from latencylab_ui.model_composer_tasks_editor import TasksEditor
 from latencylab_ui.model_composer_wiring_editor import WiringEditor
 
 

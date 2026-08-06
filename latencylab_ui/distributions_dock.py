@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
 )
 
 from latencylab_ui.distributions_agg import (
-    CriticalPathBar,
     HistogramBin,
     critical_path_frequency,
     freedman_diaconis_bins,
@@ -235,5 +234,6 @@ class _MakespanHistogramWidget(QWidget):
         p.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
 
 
-### NOTE: Critical path frequency rendering is implemented by
-### [`latencylab_ui.critical_path_frequency_widget.CriticalPathFrequencyWidget`](latencylab_ui/critical_path_frequency_widget.py:39)
+# Critical path frequency rendering lives in
+# latencylab_ui.critical_path_frequency_widget.CriticalPathFrequencyWidget,
+# not here.

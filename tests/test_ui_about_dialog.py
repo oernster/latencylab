@@ -27,7 +27,9 @@ def test_show_about_dialog_calls_message_box(monkeypatch) -> None:
     from latencylab.version import __version__
     import latencylab_ui.main_window_menus as menus
 
-    app = QApplication.instance() or QApplication([])
+    # A QApplication must exist before any widget is built; the instance itself
+    # is not needed here.
+    QApplication.instance() or QApplication([])
 
     # Avoid a modal event loop in tests.
 

@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QObject, QTimer, Qt
+from PySide6.QtCore import QObject, QTimer, Qt
 from PySide6.QtGui import QAction, QKeyEvent
-from PySide6.QtWidgets import (
-    QAbstractButton,
-    QAbstractSpinBox,
-    QApplication,
-    QComboBox,
-    QMainWindow,
-    QMenu,
-    QWidget,
-)
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
 
+from latencylab_ui.focus_cycle_keys import (
+    activate_focused_button,
+    dismiss_active_popup,
+    is_menu_hover,
+    suppress_menu_hover,
+)
 from latencylab_ui.focus_cycle_widgets import (
     collect_interactive_widgets_in_layout_order,
     maybe_add_interactive_widget,
@@ -118,17 +116,8 @@ class FocusCycleController(QObject):
 
         # Prevent hover-opening menus when a menu title is only active due to our
         # keyboard traversal.
-        if watched is window.menuBar() and event.type() in (
-            QEvent.Type.Enter,
-            QEvent.Type.HoverEnter,
-            QEvent.Type.HoverMove,
-            QEvent.Type.MouseMove,
-        ):
-            popup = QApplication.activePopupWidget()
-            if popup is None:
-                window.menuBar().setActiveAction(None)
-                # Swallow the event so the menubar can't immediately re-activate
-                # an action and open a dropdown on hover.
+        if is_menu_hover(window, watched, event):
+            if suppress_menu_hover(window):
                 return True
             return super().eventFilter(watched, event)
 
@@ -142,28 +131,17 @@ class FocusCycleController(QObject):
         key = key_event.key()
         mods = key_event.modifiers()
 
-        # Activation keys:
-        # - Space already triggers QPushButton click by default.
-        # - Enter/Return do *not* consistently trigger click for all buttons on all
-        #   platforms/styles, so we normalize it here.
-        #
-        # Important: never override input widgets like QComboBox / spin boxes.
+        # Enter activates a focused button, the way Space already does. See
+        # `activate_focused_button` for why the answer is three-valued.
         if event.type() == event.Type.KeyPress and key in (
             Qt.Key.Key_Return,
             Qt.Key.Key_Enter,
         ):
-            fw = QApplication.focusWidget()
-            if fw is not None and fw.window() is window:
-                if _focus_within_any(fw, (QComboBox, QAbstractSpinBox)):
-                    return super().eventFilter(watched, event)
-
-                btn = _nearest_ancestor(fw, QAbstractButton)
-                if btn is not None and btn.isEnabled() and btn.isVisibleTo(window):
-                    try:
-                        btn.click()
-                    except RuntimeError:  # pragma: no cover
-                        return True  # pragma: no cover
-                    return True
+            activated = activate_focused_button(window)
+            if activated is False:
+                return super().eventFilter(watched, event)
+            if activated:
+                return True
 
         is_tab = key == Qt.Key.Key_Tab
         is_backtab = key == Qt.Key.Key_Backtab or (
@@ -215,28 +193,7 @@ class FocusCycleController(QObject):
         # active popup and advance relative to the active menu title.
         # This ensures Tab can escape even after Up/Down moved inside the menu.
         if menu_active:
-            # If a dropdown menu is open, dismiss it. Calling close()/hide() can
-            # be unreliable on some platforms; sending Esc to the popup is more
-            # consistently respected.
-            popup = QApplication.activePopupWidget()
-            if popup is not None:
-                try:
-                    QApplication.sendEvent(
-                        popup,
-                        QKeyEvent(
-                            QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.NoModifier
-                        ),
-                    )
-                    QApplication.sendEvent(
-                        popup,
-                        QKeyEvent(
-                            QKeyEvent.Type.KeyRelease, Qt.Key.Key_Escape, Qt.NoModifier
-                        ),
-                    )
-                    popup.hide()
-                    popup.close()
-                except RuntimeError:  # pragma: no cover
-                    pass
+            dismiss_active_popup()
 
             chain = self._build_chain()
             if not chain:
@@ -378,21 +335,3 @@ class FocusCycleController(QObject):
                 return
 
         QTimer.singleShot(0, _settle_focus)
-
-
-def _nearest_ancestor(w: QWidget, cls: type[QWidget]) -> QWidget | None:
-    cur: QWidget | None = w
-    while cur is not None:
-        if isinstance(cur, cls):
-            return cur
-        cur = cur.parentWidget()
-    return None
-
-
-def _focus_within_any(w: QWidget, classes: tuple[type[QWidget], ...]) -> bool:
-    cur: QWidget | None = w
-    while cur is not None:
-        if isinstance(cur, classes):
-            return True
-        cur = cur.parentWidget()
-    return False

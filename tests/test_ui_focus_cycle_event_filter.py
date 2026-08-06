@@ -103,6 +103,50 @@ def test_focus_cycle_event_filter_menu_active_escape_path(monkeypatch) -> None:
     app.processEvents()
 
 
+def test_focus_cycle_ignores_keys_from_an_unrelated_window() -> None:
+    """A key pressed in another window is not ours to traverse with.
+
+    The filter is installed on the QApplication, so it sees every key press in
+    the process, including ones belonging to a dialog or another top-level
+    window. Without this guard, Tab in an unrelated window would move focus in
+    this one.
+    """
+
+    app = _ensure_qapp()
+
+    from PySide6.QtCore import QEvent, Qt
+    from PySide6.QtGui import QKeyEvent
+    from PySide6.QtWidgets import QLineEdit, QMainWindow
+
+    from latencylab_ui.focus_cycle import FocusCycleController
+
+    w = QMainWindow()
+    w.menuBar().addMenu("File")
+    w.show()
+    app.processEvents()
+
+    other = QLineEdit()
+    other.show()
+    other.activateWindow()
+    other.setFocus()
+    app.processEvents()
+
+    c = FocusCycleController(w)
+    c.install()
+    try:
+        # No menu title is active, so there is nothing tying this key to us.
+        assert w.menuBar().activeAction() is None
+        assert app.focusWidget() is other
+
+        press = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Tab, Qt.NoModifier)
+        assert c.eventFilter(other, press) is False
+    finally:
+        c.uninstall()
+        other.close()
+        w.close()
+        app.processEvents()
+
+
 def test_menu_hover_does_not_open_without_click(monkeypatch) -> None:
     """Regression: top-level menus should not open on hover unless clicked.
 

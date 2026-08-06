@@ -10,9 +10,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPlainTextEdit,
     QPushButton,
-    QScrollArea,
     QSpinBox,
-    QSplitter,
     QVBoxLayout,
     QWidget,
 )

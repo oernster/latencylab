@@ -7,19 +7,11 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
-    QFormLayout,
-    QGroupBox,
-    QHBoxLayout,
     QLabel,
     QMainWindow,
     QMessageBox,
-    QPlainTextEdit,
     QPushButton,
     QProgressBar,
-    QScrollArea,
-    QSpinBox,
-    QSplitter,
     QStatusBar,
     QVBoxLayout,
     QWidget,
@@ -34,7 +26,6 @@ from latencylab_ui.main_window_file_io import (
 )
 
 from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
-from latencylab_ui.outputs_view import OutputsView
 from latencylab_ui.focus_cycle import FocusCycleController
 from latencylab_ui.main_window_menus import build_menus, show_how_to_read_dialog
 from latencylab_ui.theme import Theme, apply_theme
