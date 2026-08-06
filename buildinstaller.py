@@ -26,6 +26,7 @@ from build_utils import (
     PROJECT_ROOT,
     VERSION_FILE,
     pe_version,
+    publish,
     read_version,
     remove_file,
     remove_tree,
@@ -141,10 +142,7 @@ def main() -> int:
     if not built.is_file():
         raise SystemExit(f"Nuitka produced no installer at {built}")
 
-    DIST_DIR.mkdir(parents=True, exist_ok=True)
-    published = DIST_DIR / f"{INSTALLER_NAME}.exe"
-    remove_file(published)
-    shutil.move(str(built), str(published))
+    published = publish(built, DIST_DIR / f"{INSTALLER_NAME}.exe")
     remove_tree(TEMP_DIST_DIR)
 
     print(f"\nBuilt {published}")
