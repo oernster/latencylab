@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 # The size a file may reach and no further. Test files count exactly as source
-# files do: a 400-line test is as hard to navigate as a 400-line module, and
-# harder to be sure is complete.
+# files do: a 400-line test is as hard to navigate as a 400-line module, then
+# harder still to be sure is complete.
 LINE_CAP = 400
 
 # How far below the cap a file is already too close to it.
@@ -14,6 +14,25 @@ DANGER_BAND_PERCENT = 5
 # second literal, so changing the cap moves the band with it and the two can
 # never drift apart.
 DANGER_BAND_FLOOR = LINE_CAP - (LINE_CAP * DANGER_BAND_PERCENT // 100)
+
+# Delivery scripts are exempt: these alone. Each is a linear recipe read top
+# to bottom: a sequence of toolchain flags and staged files where splitting the
+# sequence across modules costs more than it buys. Nothing else is exempt. The
+# installer's own user interface is application code and stays in scope, which
+# is the distinction that matters: the recipe that invokes Nuitka is a script,
+# the window it produces is a program.
+BUILD_SCRIPTS = frozenset(
+    {
+        "generate_icons.py",
+        "generate_scripts.py",
+        "stamp_version.py",
+        "buildexe.py",
+        "buildinstaller.py",
+        "builddmg.py",
+        "build_utils.py",
+        "dmg_icon.py",
+    }
+)
 
 
 def _iter_repo_py_files(root: Path) -> list[Path]:
@@ -29,6 +48,10 @@ def _iter_repo_py_files(root: Path) -> list[Path]:
             ".mypy_cache",
             ".pytest_cache",
         } & parts:
+            continue
+        # Exempt only at the repository root: a module that happens to share a
+        # name with a build script deeper in the tree is still application code.
+        if p.parent == root and p.name in BUILD_SCRIPTS:
             continue
         files.append(p)
 
@@ -61,8 +84,26 @@ def test_all_python_files_are_at_most_400_lines() -> None:
     )
 
 
+def test_the_build_script_exemption_has_no_stale_entries() -> None:
+    """An exemption for a file that no longer exists is a hole, not a rule.
+
+    A deleted or renamed build script would otherwise leave a name behind that
+    silently exempts whatever takes it next.
+    """
+
+    root = Path(__file__).resolve().parents[1]
+
+    missing = sorted(name for name in BUILD_SCRIPTS if not (root / name).is_file())
+
+    assert not missing, (
+        "These names are exempt from the size cap but no longer exist at the "
+        "repository root. Remove them from BUILD_SCRIPTS:\n"
+        + "\n".join(f"- {name}" for name in missing)
+    )
+
+
 def test_no_python_file_sits_just_below_the_cap() -> None:
-    """The half of the rule that is easy to argue away, and worth keeping.
+    """The half of the rule that is easy to argue away, yet worth keeping.
 
     Shaving a file to 399 buys nothing. The next edit breaks it, the same file
     is decomposed again, the work is paid for twice and in between a reader

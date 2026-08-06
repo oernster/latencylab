@@ -50,7 +50,7 @@ def show_about_dialog(parent: QWidget) -> None:
     # under some test / CI environments and is unnecessary for an About dialog.
     dlg = AboutDialog(
         parent,
-        content=AboutDialogContent(title="LatencyLab", emoji="⏱️", body=_about_text()),
+        content=AboutDialogContent(title="LatencyLab", body=_about_text()),
     )
 
     # Keep a reference on the parent so the dialog isn't garbage-collected

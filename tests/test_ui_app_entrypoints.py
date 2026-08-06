@@ -4,7 +4,12 @@ from __future__ import annotations
 def test_ui_app_run_app_no_event_loop(monkeypatch) -> None:
     import latencylab_ui.app as ui_app
 
-    calls = {"apply_theme": 0, "show": 0, "shutdown_connected": 0}
+    calls = {
+        "apply_theme": 0,
+        "show": 0,
+        "shutdown_connected": 0,
+        "window_icon": 0,
+    }
 
     class _Sig:
         def connect(self, _fn):
@@ -19,6 +24,9 @@ def test_ui_app_run_app_no_event_loop(monkeypatch) -> None:
 
         def setOrganizationName(self, _s):
             return None
+
+        def setWindowIcon(self, _icon):
+            calls["window_icon"] += 1
 
         def exec(self) -> int:
             return 0
@@ -66,6 +74,64 @@ def test_ui_app_run_app_no_event_loop(monkeypatch) -> None:
     assert calls["apply_theme"] == 1
     assert calls["show"] == 1
     assert calls["shutdown_connected"] == 1
+    # The generated icon is applied application-wide, before any window exists,
+    # so every window and dialog inherits it.
+    assert calls["window_icon"] == 1
+
+
+def test_ui_app_starts_without_a_generated_icon(monkeypatch, tmp_path) -> None:
+    """A checkout that has never run generate_icons.py still starts.
+
+    The icons are generated rather than committed, so a missing set has to mean
+    a default window icon, not a failure to launch.
+    """
+
+    import latencylab_ui.app as ui_app
+
+    shown = {"count": 0}
+
+    class _Sig:
+        def connect(self, _fn):
+            return None
+
+    class _FakeApp:
+        def __init__(self, _argv):
+            self.aboutToQuit = _Sig()
+
+        def setApplicationName(self, _s):
+            return None
+
+        def setOrganizationName(self, _s):
+            return None
+
+        def setWindowIcon(self, _icon):  # pragma: no cover - must not be called
+            raise AssertionError("no icon exists, so none should be set")
+
+        def exec(self) -> int:
+            return 0
+
+    class _FakeController:
+        def shutdown(self):
+            return None
+
+    class _FakeWindow:
+        def __init__(self, *, run_controller):
+            self._c = run_controller
+
+        def resize(self, *_a):
+            return None
+
+        def show(self):
+            shown["count"] += 1
+
+    monkeypatch.setattr(ui_app, "QApplication", _FakeApp)
+    monkeypatch.setattr(ui_app, "RunController", _FakeController)
+    monkeypatch.setattr(ui_app, "MainWindow", _FakeWindow)
+    monkeypatch.setattr(ui_app, "apply_theme", lambda *_a: None)
+    monkeypatch.setattr(ui_app, "get_app_icon_path", lambda: None)
+
+    assert ui_app.run_app(argv=["x"]) == 0
+    assert shown["count"] == 1
 
 
 def test_ui_main_delegates(monkeypatch) -> None:

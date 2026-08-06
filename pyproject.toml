@@ -34,6 +34,17 @@ dev = [
   "numpy>=1.26",
 ]
 
+# Everything the delivery scripts need and the application does not. Kept
+# separate so a contributor running the suite does not install a compiler.
+build = [
+  # generate_icons.py derives every platform icon from the master PNG.
+  "pillow>=10",
+  # buildexe.py and buildinstaller.py (Windows).
+  "nuitka>=2",
+  # builddmg.py (macOS).
+  "pyinstaller>=6",
+]
+
 # Legacy (NumPy-backed) simulator execution path.
 legacy = [
   "numpy>=1.26",

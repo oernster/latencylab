@@ -1,0 +1,31 @@
+LatencyLab Setup: terms for the setup program itself
+
+This notice covers the setup program (LatencyLabSetup.exe) only. It does not
+change the licences of the software it installs.
+
+LatencyLab is distributed under two licences. The headless model, the
+simulator core and the command line interface are licensed under the GNU
+General Public License version 3. The PySide6 user interface is licensed under
+the GNU Lesser General Public License version 3. Both texts are available from
+this setup program and are installed alongside the application.
+
+The setup program is provided as is, without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and non-infringement. In no event shall the
+author be liable for any claim, damages or other liability arising from, out
+of or in connection with the setup program or its use.
+
+What it does, in full:
+
+- Installs into your own user profile, under
+  %LOCALAPPDATA%\Programs\LatencyLab. It requires no administrator rights and
+  writes nothing outside your profile.
+- Creates the Desktop and Start Menu shortcuts you tick. No others.
+- Registers an entry under HKEY_CURRENT_USER so the application appears in
+  Apps and Features and can be removed from there.
+- Keeps a copy of itself in the installation folder, which is what the
+  Uninstall button runs.
+
+It contacts no network, collects no data and sends nothing anywhere.
+
+Copyright Oliver Ernster

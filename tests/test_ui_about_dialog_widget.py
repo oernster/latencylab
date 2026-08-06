@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 
 def _ensure_qapp():
     from PySide6.QtWidgets import QApplication
@@ -10,19 +14,22 @@ def _ensure_qapp():
     return app
 
 
-def test_about_dialog_header_layout_and_font_sizes() -> None:
+def test_about_dialog_shows_the_generated_icon_beside_the_title() -> None:
     app = _ensure_qapp()
 
     from PySide6.QtWidgets import QLabel, QWidget
 
-    from latencylab_ui.about_dialog import AboutDialog, AboutDialogContent
+    from latencylab_ui.about_dialog import _BADGE_PX, AboutDialog, AboutDialogContent
+    from latencylab_ui.icon_resolver import get_app_icon_png_path
+
+    if get_app_icon_png_path(_BADGE_PX) is None:
+        pytest.skip("generate_icons.py has not been run in this checkout")
 
     parent = QWidget()
     dlg = AboutDialog(
         parent,
         content=AboutDialogContent(
             title="LatencyLab",
-            emoji="⏱️",
             body="Version: 0.0.0\nAuthor: Oliver Ernster",
         ),
     )
@@ -30,23 +37,52 @@ def test_about_dialog_header_layout_and_font_sizes() -> None:
     app.processEvents()
 
     title = dlg.findChild(QLabel, "about_title")
-    emoji = dlg.findChild(QLabel, "about_emoji")
+    badge = dlg.findChild(QLabel, "about_icon")
     assert title is not None
-    assert emoji is not None
+    assert badge is not None
 
-    # Emoji should be to the right of the title.
+    # The badge is a real image, not a glyph painted from a font.
+    pixmap = badge.pixmap()
+    assert not pixmap.isNull()
+    assert max(pixmap.width(), pixmap.height()) == _BADGE_PX
+
+    # The badge sits to the right of the title.
     assert (
-        emoji.mapToGlobal(emoji.rect().center()).x()
+        badge.mapToGlobal(badge.rect().center()).x()
         > title.mapToGlobal(title.rect().center()).x()
     )
 
-    # Emoji should be visually ~4x the title height (allowing some tolerance).
-    # Do NOT assert point sizes: the app theme uses a global stylesheet with
-    # QWidget { font-size: ...px; }, and emoji sizing is applied using pixel
-    # sizes via a per-widget stylesheet.
-    emoji_h = emoji.fontMetrics().height()
-    title_h = title.fontMetrics().height()
-    assert emoji_h >= title_h * 3.5
+    dlg.close()
+    app.processEvents()
+
+
+def test_about_dialog_opens_without_a_badge_when_the_assets_are_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A checkout that has never run generate_icons.py still gets an About box.
+
+    The icon is generated rather than committed, so its absence has to degrade
+    to a dialog with no badge instead of to a traceback.
+    """
+
+    app = _ensure_qapp()
+
+    from PySide6.QtWidgets import QLabel, QWidget
+
+    from latencylab_ui import icon_resolver
+    from latencylab_ui.about_dialog import AboutDialog, AboutDialogContent
+
+    empty = tmp_path / "assets"
+    empty.mkdir()
+    monkeypatch.setenv(icon_resolver.ASSETS_DIR_ENV_VAR, str(empty))
+
+    parent = QWidget()
+    dlg = AboutDialog(parent, content=AboutDialogContent(title="X", body="Y"))
+    dlg.show()
+    app.processEvents()
+
+    assert dlg.findChild(QLabel, "about_title") is not None
+    assert dlg.findChild(QLabel, "about_icon") is None
 
     dlg.close()
     app.processEvents()

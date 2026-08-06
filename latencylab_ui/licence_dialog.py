@@ -12,6 +12,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+# Shown when a packaged build did not stage the licence text beside the module
+# that reads it. Also imported by main_licence_dialog, so both dialogs degrade
+# the same way and there is one sentence to keep accurate.
+LICENCE_UNAVAILABLE = (
+    "The licence text was not bundled with this build.\n\n"
+    "LatencyLab is distributed under the GNU General Public License version 3 "
+    "(the model and the command line interface) and the GNU Lesser General "
+    "Public License version 3 (the PySide6 user interface). Both texts are "
+    "published with the source at https://github.com/oernster/latencylab"
+)
+
 
 class LicenceDialog(QDialog):
     def __init__(self, parent: QWidget) -> None:
@@ -53,6 +64,14 @@ class LicenceDialog(QDialog):
 
 def _read_lgpl3_text() -> str:
     # The UI is LGPLv3; the text lives in latencylab_ui/LGPL3.txt.
+    #
+    # A packaged build has to stage that file. A build that forgets to must
+    # produce a dialog saying so rather than a traceback on the Help menu. This
+    # is not hypothetical: a macOS build elsewhere in this portfolio shipped
+    # without its licence texts for exactly this reason.
     root = Path(__file__).resolve().parent
     licence_path = root / "LGPL3.txt"
-    return licence_path.read_text(encoding="utf-8")
+    try:
+        return licence_path.read_text(encoding="utf-8")
+    except OSError:
+        return LICENCE_UNAVAILABLE

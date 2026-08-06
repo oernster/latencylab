@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui.licence_dialog import LICENCE_UNAVAILABLE
+
 
 class MainLicenceDialog(QDialog):
     def __init__(self, parent: QWidget) -> None:
@@ -47,5 +49,10 @@ class MainLicenceDialog(QDialog):
 
 
 def _read_main_license_text() -> str:
+    # See licence_dialog._read_lgpl3_text: a build that fails to stage the text
+    # must say so, not raise on the Help menu.
     repo_root = Path(__file__).resolve().parents[1]
-    return (repo_root / "LICENSE").read_text(encoding="utf-8")
+    try:
+        return (repo_root / "LICENSE").read_text(encoding="utf-8")
+    except OSError:
+        return LICENCE_UNAVAILABLE

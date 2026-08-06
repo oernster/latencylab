@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -14,11 +14,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui.icon_resolver import get_app_icon_path, get_app_icon_png_path
+
+# The badge beside the title. Square, large enough to read as the product's
+# mark rather than as decoration.
+_BADGE_PX = 96
+
 
 @dataclass(frozen=True)
 class AboutDialogContent:
     title: str
-    emoji: str
     body: str
 
 
@@ -58,34 +63,30 @@ class AboutDialog(QDialog):
         title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         header.addWidget(title)
 
-        # IMPORTANT: our app theme sets a global stylesheet font-size in px
-        # (see QWidget { font-size: ...px; } in latencylab_ui/theme.py).
-        # Stylesheets can override fonts set via QFont point sizes, which makes
-        # emoji scaling via pointSizeF unreliable. For a reliably huge emoji,
-        # compute a pixel target from the *rendered* title metrics and apply a
-        # per-widget stylesheet (font-size: Npx) to the emoji label.
-        title.ensurePolished()
-        title_px_height = max(1, title.fontMetrics().height())
-        emoji_px = max(64, int(round(title_px_height * 4.0)))
+        # The real generated icon, never a glyph painted from a font: the badge
+        # here, the taskbar and the installer all have to be the same mark, which
+        # only a file can guarantee.
+        badge_path = get_app_icon_png_path(_BADGE_PX)
+        if badge_path is not None:
+            badge = QLabel()
+            badge.setObjectName("about_icon")
+            badge.setAlignment(
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight
+            )
+            badge.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            badge.setPixmap(
+                QPixmap(str(badge_path)).scaled(
+                    _BADGE_PX,
+                    _BADGE_PX,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+            header.addWidget(badge)
 
-        emoji = QLabel(content.emoji)
-        emoji.setObjectName("about_emoji")
-        emoji.setTextFormat(Qt.TextFormat.PlainText)
-        emoji.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
-        emoji.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-
-        emoji_font = QFont(emoji.font())
-        # Prefer an emoji-capable font on Windows; other platforms will ignore
-        # unknown families and fall back.
-        emoji_font.setFamily("Segoe UI Emoji")
-        emoji.setFont(emoji_font)
-
-        # Force pixel sizing on this widget so it can't be clamped by the
-        # global QWidget font-size rule.
-        emoji.setStyleSheet(f"font-size: {emoji_px}px;")
-        emoji.setMinimumWidth(int(emoji_px * 1.10))
-        emoji.setMinimumHeight(int(emoji_px * 1.05))
-        header.addWidget(emoji)
+        icon_path = get_app_icon_path()
+        if icon_path is not None:
+            self.setWindowIcon(QIcon(str(icon_path)))
 
         root.addLayout(header)
 

@@ -11,6 +11,19 @@ omit =
     # Development-only helper scripts in the repo root.
     generate_scripts.py
 
+    # Delivery scripts and the bespoke installer. These are linear recipes that
+    # only mean anything against a real toolchain, a real filesystem and a real
+    # registry, so a build proves them and the suite cannot. Keeping them out of
+    # the gate is what stops the 100% figure being padded with fake coverage of
+    # code that has never actually run.
+    generate_icons.py
+    buildexe.py
+    buildinstaller.py
+    builddmg.py
+    build_utils.py
+    dmg_icon.py
+    installer/*
+
     # Some PySide6/Shiboken environments can surface synthetic paths in reports
     # when measuring the entire repo. These are not part of this codebase.
     pyscript

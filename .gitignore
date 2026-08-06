@@ -219,5 +219,18 @@ out/
 runs.csv
 summary.json
 
+# Delivery outputs. The scripts that produce these are committed; the artefacts
+# they produce are not. `assets/` is deliberately NOT here: those icons are read
+# by the running application, so a clone has to have them.
+dist-installer/
+dist-installer.build/
+installer/payload/
+*.flatpak
+.flatpak-build/
+.flatpak-repo/
+.flatpak-builder/
+.flatpak-wheels/
+packaging/
+
 # shit
 1

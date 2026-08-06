@@ -36,7 +36,6 @@ def test_show_about_dialog_calls_message_box(monkeypatch) -> None:
     class _FakeDialog:
         def __init__(self, parent, *, content):
             assert isinstance(parent, QWidget)
-            assert content.emoji == "⏱️"
             assert content.title == "LatencyLab"
             assert __version__ in content.body
             self.open_called = False
