@@ -236,3 +236,5 @@ packaging/
 
 # shit
 1
+# The macOS disk image builddmg.py writes to the repository root.
+/latencylab.dmg

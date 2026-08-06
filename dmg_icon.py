@@ -1,8 +1,13 @@
 """Icon helpers for the macOS DMG build.
 
-Two jobs: turn the generated master PNG into an `.icns`, then give the mounted
-disk image a custom volume icon. Both are macOS-only and both are optional in
-the sense that the DMG is still valid without the volume icon.
+Two jobs: turn the generated master PNG into an `.icns`, then give the disk
+image file its own Finder icon. Both are macOS-only and both are optional in
+the sense that the DMG is still valid without them.
+
+The volume icon (what you see once the image is mounted) is not handled here:
+create-dmg's own `--volicon` does that correctly, and the hand-rolled
+read-write round trip this module used to do set the icon file but never got
+the custom-icon bit to survive the conversion back to a compressed image.
 
 This is a build script. It is exempt from the size cap and from the coverage
 gate.
@@ -10,6 +15,7 @@ gate.
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -17,10 +23,11 @@ from pathlib import Path
 ICONSET_SIZES = (16, 32, 128, 256, 512)
 RETINA_SCALE = 2
 
-VOLUME_ICON_NAME = ".VolumeIcon.icns"
+# The Finder attribute letter for "this file has a custom icon".
+CUSTOM_ICON_FLAG = "C"
 
-# The Finder flag that says "this volume has a custom icon".
-HAS_CUSTOM_ICON_ATTRIBUTE = "com.apple.FinderInfo"
+# The resource type an .icns occupies in a resource fork.
+ICON_RESOURCE_TYPE = "icns"
 
 
 def png_to_icns(png: Path, icns: Path, work_dir: Path) -> Path:
@@ -65,53 +72,38 @@ def _sips(source: Path, destination: Path, size: int) -> None:
     )
 
 
-def set_volume_icon(dmg: Path, icns: Path, work_dir: Path) -> None:
-    """Attach the image read-write, drop the icon in, then detach.
+def set_file_icon(target: Path, icns: Path, work_dir: Path) -> None:
+    """Give a file its own Finder icon, the way Finder actually reads one.
 
-    A failure here costs the DMG its custom Finder icon and nothing else, so
-    the caller is expected to treat it as non-fatal.
+    A volume icon only appears once the image is mounted. The icon someone
+    sees on the DMG sitting in their Downloads folder belongs to the file, and
+    that means an icon resource in the file's resource fork plus the
+    custom-icon bit in its Finder info.
+
+    A failure here costs the DMG its Finder icon and nothing else, so the
+    caller is expected to treat it as non-fatal.
     """
 
-    rw_dmg = work_dir / f"{dmg.stem}-rw.dmg"
+    # sips -i writes the icon into the .icns file's own resource fork, which is
+    # then the thing DeRez can read back out as a resource description. Work on
+    # a copy so the source icon in assets/ is left alone.
+    staged_icns = work_dir / f"{target.stem}-icon.icns"
+    shutil.copyfile(icns, staged_icns)
     subprocess.run(
-        ["hdiutil", "convert", str(dmg), "-format", "UDRW", "-o", str(rw_dmg)],
-        check=True,
-        stdout=subprocess.DEVNULL,
+        ["sips", "-i", str(staged_icns)], check=True, stdout=subprocess.DEVNULL
     )
 
-    mount_point = work_dir / "mount"
-    mount_point.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [
-            "hdiutil",
-            "attach",
-            str(rw_dmg),
-            "-mountpoint",
-            str(mount_point),
-            "-nobrowse",
-        ],
+    # Kept as bytes: a resource description carries raw high bytes in its
+    # $"..." literals and is not UTF-8, so decoding it fails outright.
+    description = subprocess.run(
+        ["DeRez", "-only", ICON_RESOURCE_TYPE, str(staged_icns)],
         check=True,
-        stdout=subprocess.DEVNULL,
-    )
+        capture_output=True,
+    ).stdout
+    resource_file = work_dir / f"{target.stem}-icon.rsrc"
+    resource_file.write_bytes(description)
 
-    try:
-        subprocess.run(
-            ["cp", str(icns), str(mount_point / VOLUME_ICON_NAME)], check=True
-        )
-        # Set the custom-icon bit. SetFile ships with Xcode; when it is absent
-        # the icon simply does not appear, which is why this is tolerated.
-        subprocess.run(["SetFile", "-a", "C", str(mount_point)], check=False)
-    finally:
-        subprocess.run(
-            ["hdiutil", "detach", str(mount_point)],
-            check=False,
-            stdout=subprocess.DEVNULL,
-        )
-
-    dmg.unlink()
     subprocess.run(
-        ["hdiutil", "convert", str(rw_dmg), "-format", "UDZO", "-o", str(dmg)],
-        check=True,
-        stdout=subprocess.DEVNULL,
+        ["Rez", "-append", str(resource_file), "-o", str(target)], check=True
     )
-    rw_dmg.unlink()
+    subprocess.run(["SetFile", "-a", CUSTOM_ICON_FLAG, str(target)], check=True)
