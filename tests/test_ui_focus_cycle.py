@@ -80,7 +80,9 @@ def test_focus_cycle_collects_only_interactive_widgets_in_layout_order() -> None
     w.show()
 
     c = FocusCycleController(w)
-    from latencylab_ui.focus_cycle_widgets import collect_interactive_widgets_in_layout_order
+    from latencylab_ui.focus_cycle_widgets import (
+        collect_interactive_widgets_in_layout_order,
+    )
 
     got = collect_interactive_widgets_in_layout_order(w)
     assert got == [b1, s1, b2, s2, combo]
@@ -131,7 +133,9 @@ def test_focus_cycle_current_index_when_no_focused_widget(monkeypatch) -> None:
     assert c._current_index(chain) is None  # noqa: SLF001
 
 
-def test_focus_cycle_event_filter_runtimeerror_on_window_is_visible(monkeypatch) -> None:
+def test_focus_cycle_event_filter_runtimeerror_on_window_is_visible(
+    monkeypatch,
+) -> None:
     _ensure_qapp()
 
     from latencylab_ui.focus_cycle import FocusCycleController
@@ -174,7 +178,9 @@ def test_focus_cycle_event_filter_runtimeerror_uninstall_raises_is_swallowed(
     assert c.eventFilter(None, object()) is False
 
 
-def test_focus_cycle_advance_when_started_but_current_index_is_none(monkeypatch) -> None:
+def test_focus_cycle_advance_when_started_but_current_index_is_none(
+    monkeypatch,
+) -> None:
     app = _ensure_qapp()
 
     from PySide6.QtWidgets import QApplication, QMainWindow
@@ -252,7 +258,9 @@ def test_focus_cycle_event_filter_irrelevant_key_returns_false() -> None:
     c = FocusCycleController(w)
     c.install()
     try:
-        ev = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_A, Qt.KeyboardModifier.NoModifier)
+        ev = QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_A, Qt.KeyboardModifier.NoModifier
+        )
         assert c.eventFilter(w, ev) is False
     finally:
         c.uninstall()
@@ -360,4 +368,3 @@ def test_focus_cycle_focus_within_any_helper() -> None:
     combo = QComboBox(w)
 
     assert _focus_within_any(combo, (QComboBox,)) is True
-

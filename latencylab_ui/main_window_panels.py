@@ -105,8 +105,12 @@ def build_left_panel(window) -> QWidget:
     window._critical_path_text.setPlaceholderText("No critical path yet.")
     # Wrap long lines so critical-path text is not horizontally truncated.
     window._critical_path_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-    window._critical_path_text.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
-    window._critical_path_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    window._critical_path_text.setWordWrapMode(
+        QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere
+    )
+    window._critical_path_text.setHorizontalScrollBarPolicy(
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
     crit_layout.addWidget(window._critical_path_text)
 
     window._outputs_view = OutputsView(
@@ -133,4 +137,3 @@ def build_right_panel(window) -> QWidget:
     # Kept for backward compatibility with older tests/imports.
     # The main window no longer adds this panel.
     return QWidget()  # pragma: no cover
-

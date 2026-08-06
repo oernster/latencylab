@@ -83,4 +83,3 @@ def test_legacy_v1_is_frozen_oracle_and_v2_matches_for_simple_model() -> None:
     assert all(
         not inst.task_name.startswith("delay(") for inst in v1_trace
     ), "Unexpected synthetic delay instances in v1 trace"
-

@@ -86,6 +86,11 @@ def build_top_bar(
     )
     layout.addWidget(theme_toggle, 0, Qt.AlignmentFlag.AlignTop)
 
-    return top_bar, save_log_btn, distributions_btn, how_to_read_btn, clock, theme_toggle
-
-
+    return (
+        top_bar,
+        save_log_btn,
+        distributions_btn,
+        how_to_read_btn,
+        clock,
+        theme_toggle,
+    )

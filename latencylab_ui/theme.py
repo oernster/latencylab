@@ -9,7 +9,6 @@ from PySide6.QtWidgets import QApplication, QStyleFactory
 
 from latencylab_ui.theme_stylesheet import _DARK_STYLESHEET, _LIGHT_STYLESHEET
 
-
 # Palette accents used by both themes.
 _ACCENT_TEAL = QColor(38, 166, 154)  # hover/focus accent
 
@@ -17,9 +16,6 @@ _ACCENT_TEAL = QColor(38, 166, 154)  # hover/focus accent
 class Theme(str, Enum):
     LIGHT = "light"
     DARK = "dark"
-
-
-
 
 
 def _dark_palette() -> QPalette:
@@ -56,7 +52,9 @@ def _dark_palette() -> QPalette:
     pal.setColor(QPalette.ColorRole.Highlight, highlight)
     pal.setColor(QPalette.ColorRole.HighlightedText, QColor(15, 15, 15))
 
-    pal.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_text)
+    pal.setColor(
+        QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_text
+    )
     pal.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, disabled_text)
     pal.setColor(
         QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, disabled_text
@@ -93,9 +91,13 @@ def _light_palette(app: QApplication) -> QPalette:
     pal.setColor(QPalette.ColorRole.Highlight, _ACCENT_TEAL)
     pal.setColor(QPalette.ColorRole.HighlightedText, QColor(15, 15, 15))
 
-    pal.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_text)
+    pal.setColor(
+        QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_text
+    )
     pal.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, disabled_text)
-    pal.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, disabled_text)
+    pal.setColor(
+        QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, disabled_text
+    )
     return pal
 
 
@@ -105,12 +107,16 @@ def apply_theme(app: QApplication, theme: Theme) -> None:
     v1 intentionally uses an application stylesheet only, not per-widget overrides.
     """
 
-    disable_fusion = os.environ.get("LATENCYLAB_UI_THEME_DISABLE_FUSION", "").strip() not in (
+    disable_fusion = os.environ.get(
+        "LATENCYLAB_UI_THEME_DISABLE_FUSION", ""
+    ).strip() not in (
         "",
         "0",
         "false",
     )
-    disable_palette = os.environ.get("LATENCYLAB_UI_THEME_DISABLE_PALETTE", "").strip() not in (
+    disable_palette = os.environ.get(
+        "LATENCYLAB_UI_THEME_DISABLE_PALETTE", ""
+    ).strip() not in (
         "",
         "0",
         "false",
@@ -141,4 +147,3 @@ def apply_theme(app: QApplication, theme: Theme) -> None:
         app.setStyleSheet(stylesheet)
 
     # Debug logging removed.
-

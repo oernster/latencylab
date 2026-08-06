@@ -8,4 +8,3 @@ def test_main_licence_dialog_reads_root_license() -> None:
     # The repo root LICENSE is GPLv3.
     assert "GNU GENERAL PUBLIC LICENSE" in txt
     assert "Version 3, 29 June 2007" in txt
-

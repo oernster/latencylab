@@ -21,4 +21,3 @@ def connect_theme_toggle(
     theme_toggle.focus_advance_requested.connect(
         lambda _btn: focus_cycle._advance(forward=True)  # noqa: SLF001
     )
-

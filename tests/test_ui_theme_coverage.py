@@ -52,4 +52,3 @@ def test_apply_theme_fusion_none_fallback(monkeypatch) -> None:
 
     apply_theme(app, Theme.DARK)
     assert app.style() is not None
-

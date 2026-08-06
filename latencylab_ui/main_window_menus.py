@@ -100,4 +100,3 @@ def _about_text() -> str:
             "- PySide6 (Qt for Python)",
         ]
     )
-

@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-
 HOW_TO_READ_TEXT = """How to Read LatencyLab Output
 
 LatencyLab does not tell you what is slow.
@@ -64,4 +63,3 @@ class HowToReadDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         buttons.accepted.connect(self.accept)
         root.addWidget(buttons)
-

@@ -182,7 +182,9 @@ def build_raw_model_dict(state: ComposerState) -> dict[str, Any]:
     return raw
 
 
-def build_stress_variant_state(state: ComposerState, *, multiplier: float) -> ComposerState:
+def build_stress_variant_state(
+    state: ComposerState, *, multiplier: float
+) -> ComposerState:
     """Return a deep-copied stress variant per decision lock."""
 
     m = float(multiplier)
@@ -224,4 +226,3 @@ def build_stress_variant_state(state: ComposerState, *, multiplier: float) -> Co
 
     s2.model_name = f"{state.model_name}_STRESS"
     return s2
-

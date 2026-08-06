@@ -58,7 +58,9 @@ def export_runs(window) -> bool:
     summary_txt = format_summary_text(outputs).strip()
 
     try:
-        with zipfile.ZipFile(out_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(
+            out_path, mode="w", compression=zipfile.ZIP_DEFLATED
+        ) as zf:
             zf.writestr("Summary.txt", f"{summary_txt}\n".encode("utf-8"))
             for r in runs:
                 # User-facing filenames are 1-based, zero-padded.
@@ -88,7 +90,9 @@ def on_save_log_clicked(window) -> None:
     # Disabled until first successful run; keep this handler safe for tests and
     # potential programmatic triggers.
     try:
-        if hasattr(window, "_save_log_btn") and not window._save_log_btn.isEnabled():  # noqa: SLF001
+        if (
+            hasattr(window, "_save_log_btn") and not window._save_log_btn.isEnabled()
+        ):  # noqa: SLF001
             return
     except Exception:  # noqa: BLE001  # pragma: no cover
         return  # pragma: no cover
@@ -110,11 +114,14 @@ def load_model(window, path: Path) -> None:
         model = Model.from_json(raw)
         validate_model(model)
     except ModelValidationError as e:
-        window._set_model_load_failed(path, version_text="-", validation_text=f"Invalid: {e}")  # noqa: SLF001
+        window._set_model_load_failed(
+            path, version_text="-", validation_text=f"Invalid: {e}"
+        )  # noqa: SLF001
         return
     except Exception as e:  # noqa: BLE001
-        window._set_model_load_failed(path, version_text="-", validation_text=f"Error: {e}")  # noqa: SLF001
+        window._set_model_load_failed(
+            path, version_text="-", validation_text=f"Error: {e}"
+        )  # noqa: SLF001
         return
 
     window._set_model_load_ok(path, model)  # noqa: SLF001
-

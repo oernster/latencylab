@@ -177,4 +177,3 @@ class _BarWidget(QWidget):
         bar_color = QColor(self.palette().text().color())
         bar_color.setAlpha(80)
         p.fillRect(rect.adjusted(0, 6, -(rect.width() - fill_w), -6), bar_color)
-

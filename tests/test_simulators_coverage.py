@@ -12,13 +12,20 @@ def test_v2_delay_parse_errors_and_sampler_unhandled_dist() -> None:
     import random
 
     with pytest.raises(AssertionError, match="unhandled dist"):
-        _sample_ms(__import__("random").Random(1), DurationDist(dist="weird", params={}))
+        _sample_ms(
+            __import__("random").Random(1), DurationDist(dist="weird", params={})
+        )
 
     # Cover all supported distributions in sampler.
     rng = random.Random(0)
     assert _sample_ms(rng, DurationDist(dist="fixed", params={"value": 1.0})) == 1.0
-    assert _sample_ms(rng, DurationDist(dist="normal", params={"mean": 0.0, "std": 0.0})) == 0.0
-    v = _sample_ms(rng, DurationDist(dist="lognormal", params={"mu": 0.0, "sigma": 0.0}))
+    assert (
+        _sample_ms(rng, DurationDist(dist="normal", params={"mean": 0.0, "std": 0.0}))
+        == 0.0
+    )
+    v = _sample_ms(
+        rng, DurationDist(dist="lognormal", params={"mu": 0.0, "sigma": 0.0})
+    )
     assert v == 1.0
 
 
@@ -107,7 +114,9 @@ def test_v1_legacy_sampler_unhandled_dist_and_failure_when_max_tasks_exceeded() 
     # Cover supported distributions.
     rng = __import__("numpy").random.default_rng(0)
     assert _sample_duration_ms(rng, "fixed", {"value": 1.0}) == 1.0
-    assert _sample_duration_ms(rng, "normal", {"mean": 0.0, "std": 0.0, "min": 0.0}) == 0.0
+    assert (
+        _sample_duration_ms(rng, "normal", {"mean": 0.0, "std": 0.0, "min": 0.0}) == 0.0
+    )
     assert _sample_duration_ms(rng, "lognormal", {"mu": 0.0, "sigma": 0.0}) == 1.0
 
     model = Model.from_json(
@@ -187,4 +196,3 @@ def test_legacy_seed_helpers_cover_splitmix_and_seed_for_run() -> None:
 
     assert isinstance(_splitmix64(0), int)
     assert _seed_for_run(123, 0) != _seed_for_run(123, 1)
-

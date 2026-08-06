@@ -98,4 +98,3 @@ class ContextsEditor(QWidget):
             conc = int(sp.value()) if isinstance(sp, QSpinBox) else 1
             out[name] = {"concurrency": max(1, conc), "policy": "fifo"}
         return out
-

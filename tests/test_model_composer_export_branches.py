@@ -12,7 +12,9 @@ def _ensure_qapp():
     return app
 
 
-def test_model_composer_dock_export_and_stress_branches(tmp_path: Path, monkeypatch) -> None:
+def test_model_composer_dock_export_and_stress_branches(
+    tmp_path: Path, monkeypatch
+) -> None:
     _ensure_qapp()
 
     from PySide6.QtWidgets import QMessageBox, QWidget
@@ -58,7 +60,11 @@ def test_model_composer_dock_export_and_stress_branches(tmp_path: Path, monkeypa
 
     # Stress variant: full success path (covers dock.py:271 and 276-287).
     # Restore write_text.
-    monkeypatch.setattr(Path, "write_text", lambda self, txt, **_k: Path(self).write_bytes(txt.encode("utf-8")))
+    monkeypatch.setattr(
+        Path,
+        "write_text",
+        lambda self, txt, **_k: Path(self).write_bytes(txt.encode("utf-8")),
+    )
 
     stress_out = tmp_path / "m_STRESS.json"
     monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: stress_out)
@@ -76,4 +82,3 @@ def test_model_composer_dock_export_and_stress_branches(tmp_path: Path, monkeypa
     dock._on_export_stress_clicked()  # noqa: SLF001
 
     dock.close()
-

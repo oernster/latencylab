@@ -125,4 +125,3 @@ def test_critical_path_frequency_top10_and_other_sorted_and_full_display() -> No
 
     # Strict sort: highest count first.
     assert bars[0].count > bars[1].count
-

@@ -24,4 +24,3 @@ def test_tasks_editor_row_height_is_fixed_and_consistent() -> None:
     h0 = cards[0].sizeHint().height()
     h1 = cards[1].sizeHint().height()
     assert h0 == h1
-

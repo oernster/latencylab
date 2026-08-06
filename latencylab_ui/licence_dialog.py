@@ -56,4 +56,3 @@ def _read_lgpl3_text() -> str:
     root = Path(__file__).resolve().parent
     licence_path = root / "LGPL3.txt"
     return licence_path.read_text(encoding="utf-8")
-

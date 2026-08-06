@@ -38,8 +38,6 @@ def test_all_python_files_are_at_most_400_lines() -> None:
         if line_count > max_lines:
             offenders.append((str(p.relative_to(root)).replace("\\", "/"), line_count))
 
-    assert not offenders, (
-        "Python files must be <= 400 lines. Offenders:\n"
-        + "\n".join(f"- {path}: {n}" for path, n in offenders)
+    assert not offenders, "Python files must be <= 400 lines. Offenders:\n" + "\n".join(
+        f"- {path}: {n}" for path, n in offenders
     )
-

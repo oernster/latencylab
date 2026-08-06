@@ -32,7 +32,13 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
 
     # Ensure wiring editor has a derived event list (otherwise combo stays empty).
     dock._state.entry_event = "e0"  # noqa: SLF001
-    dock._state.tasks = {"t": {"context": "ui", "duration_ms": {"dist": "fixed", "value": 1.0}, "emit": []}}  # noqa: SLF001
+    dock._state.tasks = {
+        "t": {
+            "context": "ui",
+            "duration_ms": {"dist": "fixed", "value": 1.0},
+            "emit": [],
+        }
+    }  # noqa: SLF001
     dock._state.wiring = {"e0": []}  # noqa: SLF001
     monkeypatch.setattr(dock, "_sync_from_ui", lambda: dock._refresh_wiring_events())
 
@@ -80,7 +86,9 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
     dock._on_export_stress_clicked()  # noqa: SLF001
 
     # Stress cancel branch.
-    monkeypatch.setattr(_dock_mod, "build_stress_variant_state", _dock_mod.build_stress_variant_state)
+    monkeypatch.setattr(
+        _dock_mod, "build_stress_variant_state", _dock_mod.build_stress_variant_state
+    )
     monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: None)
     dock._on_export_stress_clicked()  # noqa: SLF001
 
@@ -127,4 +135,3 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
     dock.close()
     dock2.close()
     app.processEvents()
-

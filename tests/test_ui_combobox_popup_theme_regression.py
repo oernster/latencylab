@@ -18,7 +18,9 @@ def test_theme_stylesheet_mentions_combobox_popup_view() -> None:
 
     # No popup view color rules via CSS.
     assert "QComboBox QAbstractItemView{" not in theme._DARK_STYLESHEET.replace(" ", "")
-    assert "QComboBox QAbstractItemView{" not in theme._LIGHT_STYLESHEET.replace(" ", "")
+    assert "QComboBox QAbstractItemView{" not in theme._LIGHT_STYLESHEET.replace(
+        " ", ""
+    )
     assert "QAbstractItemView{" not in theme._DARK_STYLESHEET.replace(" ", "")
     assert "QAbstractItemView{" not in theme._LIGHT_STYLESHEET.replace(" ", "")
 
@@ -49,12 +51,20 @@ def test_model_composer_combobox_popup_view_uses_combo_palette() -> None:
 
     view_pal = view.palette()
     combo_pal = combo.palette()
-    assert view_pal.color(view_pal.ColorRole.Text) == combo_pal.color(combo_pal.ColorRole.Text)
-    assert view_pal.color(view_pal.ColorRole.Base) == combo_pal.color(combo_pal.ColorRole.Base)
+    assert view_pal.color(view_pal.ColorRole.Text) == combo_pal.color(
+        combo_pal.ColorRole.Text
+    )
+    assert view_pal.color(view_pal.ColorRole.Base) == combo_pal.color(
+        combo_pal.ColorRole.Base
+    )
 
     vp_pal = vp.palette()
-    assert vp_pal.color(vp_pal.ColorRole.Text) == combo_pal.color(combo_pal.ColorRole.Text)
-    assert vp_pal.color(vp_pal.ColorRole.Base) == combo_pal.color(combo_pal.ColorRole.Base)
+    assert vp_pal.color(vp_pal.ColorRole.Text) == combo_pal.color(
+        combo_pal.ColorRole.Text
+    )
+    assert vp_pal.color(vp_pal.ColorRole.Base) == combo_pal.color(
+        combo_pal.ColorRole.Base
+    )
 
 
 def test_combobox_popup_hardener_filter_installed_without_debug_env() -> None:
@@ -72,4 +82,3 @@ def test_combobox_popup_hardener_filter_installed_without_debug_env() -> None:
 
     # The always-on hardener must be installed on the popup view.
     assert hasattr(view, "_ll_combo_popup_hardener_filter")
-

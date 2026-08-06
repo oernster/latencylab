@@ -174,7 +174,9 @@ def test_menu_hover_does_not_clear_when_popup_is_open(monkeypatch) -> None:
         from PySide6 import QtWidgets
 
         fake_popup = QWidget()
-        monkeypatch.setattr(QtWidgets.QApplication, "activePopupWidget", lambda: fake_popup)
+        monkeypatch.setattr(
+            QtWidgets.QApplication, "activePopupWidget", lambda: fake_popup
+        )
 
         evt = QEvent(QEvent.Type.MouseMove)
         assert c.eventFilter(w.menuBar(), evt) is False
@@ -212,4 +214,3 @@ def test_focus_cycle_uninstall_ignores_menubar_remove_event_filter_errors() -> N
     c.uninstall()
     w.close()
     app.processEvents()
-

@@ -35,9 +35,10 @@ def test_about_dialog_header_layout_and_font_sizes() -> None:
     assert emoji is not None
 
     # Emoji should be to the right of the title.
-    assert emoji.mapToGlobal(emoji.rect().center()).x() > title.mapToGlobal(
-        title.rect().center()
-    ).x()
+    assert (
+        emoji.mapToGlobal(emoji.rect().center()).x()
+        > title.mapToGlobal(title.rect().center()).x()
+    )
 
     # Emoji should be visually ~4x the title height (allowing some tolerance).
     # Do NOT assert point sizes: the app theme uses a global stylesheet with
@@ -49,4 +50,3 @@ def test_about_dialog_header_layout_and_font_sizes() -> None:
 
     dlg.close()
     app.processEvents()
-

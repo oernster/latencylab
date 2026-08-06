@@ -115,4 +115,3 @@ class DurationDistEditor(QWidget):
         elif dist == "lognormal":
             self._log_mu.setValue(float((obj or {}).get("mu", 0.0)))
             self._log_sigma.setValue(float((obj or {}).get("sigma", 1.0)))
-

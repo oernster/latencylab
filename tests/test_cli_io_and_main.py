@@ -64,7 +64,9 @@ def test_cli_simulate_writes_summary_runs_and_trace(tmp_path: Path) -> None:
     assert out_trace.exists()
 
 
-def test_cli_unhandled_command_raises_assertion(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cli_unhandled_command_raises_assertion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     import latencylab.cli
 
     class _DummyParser:
@@ -189,4 +191,3 @@ def test_io_writers_roundtrip(tmp_path: Path) -> None:
     write_trace_csv(out_trace, trace)
     txt = out_trace.read_text(encoding="utf-8")
     assert "e1;e2" in txt
-

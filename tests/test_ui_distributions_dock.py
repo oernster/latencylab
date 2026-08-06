@@ -149,4 +149,3 @@ def test_distributions_dock_renders_and_paints_empty() -> None:
 
     host.close()
     _spin(app)
-

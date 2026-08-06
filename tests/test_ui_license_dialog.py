@@ -7,4 +7,3 @@ def test_license_dialog_reads_repo_license() -> None:
     txt = _read_lgpl3_text()
     assert "GNU LESSER GENERAL PUBLIC LICENSE" in txt
     assert "Version 3, 29 June 2007" in txt
-

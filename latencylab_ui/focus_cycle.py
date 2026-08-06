@@ -148,7 +148,10 @@ class FocusCycleController(QObject):
         #   platforms/styles, so we normalize it here.
         #
         # Important: never override input widgets like QComboBox / spin boxes.
-        if event.type() == event.Type.KeyPress and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+        if event.type() == event.Type.KeyPress and key in (
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ):
             fw = QApplication.focusWidget()
             if fw is not None and fw.window() is window:
                 if _focus_within_any(fw, (QComboBox, QAbstractSpinBox)):
@@ -182,9 +185,7 @@ class FocusCycleController(QObject):
         # when there is an active menu title AND focus is not currently on a
         # child widget of the main window.
         active_action = window.menuBar().activeAction()
-        focus_on_window_child = (
-            src is not window and src.window() is window
-        )
+        focus_on_window_child = src is not window and src.window() is window
         menu_active = (active_action is not None) and (not focus_on_window_child)
 
         if src is not window and src.window() is not window and not menu_active:
@@ -222,7 +223,9 @@ class FocusCycleController(QObject):
                 try:
                     QApplication.sendEvent(
                         popup,
-                        QKeyEvent(QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.NoModifier),
+                        QKeyEvent(
+                            QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.NoModifier
+                        ),
                     )
                     QApplication.sendEvent(
                         popup,
@@ -393,4 +396,3 @@ def _focus_within_any(w: QWidget, classes: tuple[type[QWidget], ...]) -> bool:
             return True
         cur = cur.parentWidget()
     return False
-

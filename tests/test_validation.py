@@ -71,5 +71,7 @@ def test_stellody_model_is_valid() -> None:
     import json
     from pathlib import Path
 
-    model = Model.from_json(json.loads(Path("stellody_music_discovery.json").read_text()))
+    model = Model.from_json(
+        json.loads(Path("stellody_music_discovery.json").read_text())
+    )
     validate_model(model)

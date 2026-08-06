@@ -16,7 +16,9 @@ def test_export_runs_appends_zip_suffix_and_writes(monkeypatch, tmp_path: Path) 
 
     # Choose a non-.zip extension; exporter should append .zip.
     chosen = tmp_path / "export.txt"
-    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *_a, **_k: (str(chosen), "txt"))
+    monkeypatch.setattr(
+        QFileDialog, "getSaveFileName", lambda *_a, **_k: (str(chosen), "txt")
+    )
 
     # Ensure no modal dialogs appear.
     called = {"info": False, "critical": False}
@@ -79,7 +81,9 @@ def test_export_runs_appends_zip_suffix_and_writes(monkeypatch, tmp_path: Path) 
     on_save_log_clicked(w)
 
 
-def test_export_runs_gate_returns_if_button_disabled(monkeypatch, tmp_path: Path) -> None:
+def test_export_runs_gate_returns_if_button_disabled(
+    monkeypatch, tmp_path: Path
+) -> None:
     from PySide6.QtWidgets import QApplication, QFileDialog, QWidget
 
     from latencylab_ui.main_window_file_io import on_save_log_clicked
@@ -99,7 +103,9 @@ def test_export_runs_gate_returns_if_button_disabled(monkeypatch, tmp_path: Path
     assert not out_path.exists()
 
 
-def test_export_runs_cancel_dialog_returns_without_writing(monkeypatch, tmp_path: Path) -> None:
+def test_export_runs_cancel_dialog_returns_without_writing(
+    monkeypatch, tmp_path: Path
+) -> None:
     from PySide6.QtWidgets import QApplication, QFileDialog, QWidget
 
     from latencylab_ui.main_window_file_io import on_save_log_clicked
@@ -217,4 +223,3 @@ def test_top_bar_how_to_read_button_opens_same_dialog_via_main_window() -> None:
 
     w.close()
     app.processEvents()
-

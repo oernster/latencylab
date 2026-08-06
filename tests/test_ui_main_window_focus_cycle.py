@@ -364,4 +364,3 @@ def test_run_button_focus_restored_after_run_finishes_when_requested() -> None:
 
     w.close()
     app.processEvents()
-

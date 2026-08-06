@@ -23,7 +23,11 @@ def test_model_composer_types_build_raw_and_events_and_labels() -> None:
     )
 
     # Labels: ignore invalid segments.
-    assert parse_labels("a=1, b = two, nope, =bad, ok=") == {"a": "1", "b": "two", "ok": ""}
+    assert parse_labels("a=1, b = two, nope, =bad, ok=") == {
+        "a": "1",
+        "b": "two",
+        "ok": "",
+    }
 
     s = ComposerState(model_name="x", version=2, entry_event="e0")
     s.contexts = {"ui": {"concurrency": 2, "policy": "fifo"}}
@@ -58,7 +62,10 @@ def test_model_composer_types_build_raw_and_events_and_labels() -> None:
     assert dumps_deterministic(raw) == json.dumps(raw, indent=2, sort_keys=True)
 
     # v2 keeps delay objects when present.
-    assert raw["wiring"]["e0"][0] == {"delay_ms": {"dist": "fixed", "value": 5.0}, "task": "t1"}
+    assert raw["wiring"]["e0"][0] == {
+        "delay_ms": {"dist": "fixed", "value": 5.0},
+        "task": "t1",
+    }
     # delay=None exports as a plain listener string.
     assert raw["wiring"]["e0"][1] == "t2"
 
@@ -84,12 +91,23 @@ def test_model_composer_types_build_raw_and_events_and_labels() -> None:
 
 
 def test_model_composer_types_stress_variant() -> None:
-    from latencylab_ui.model_composer_types import ComposerState, build_stress_variant_state
+    from latencylab_ui.model_composer_types import (
+        ComposerState,
+        build_stress_variant_state,
+    )
 
     s = ComposerState(model_name="m", version=2, entry_event="e0")
     s.tasks = {
-        "a": {"context": "ui", "duration_ms": {"dist": "fixed", "value": 10}, "emit": []},
-        "b": {"context": "ui", "duration_ms": {"dist": "normal", "mean": 3, "std": 2}, "emit": []},
+        "a": {
+            "context": "ui",
+            "duration_ms": {"dist": "fixed", "value": 10},
+            "emit": [],
+        },
+        "b": {
+            "context": "ui",
+            "duration_ms": {"dist": "normal", "mean": 3, "std": 2},
+            "emit": [],
+        },
         "c": {
             "context": "ui",
             "duration_ms": {"dist": "lognormal", "mu": 1, "sigma": 1},
@@ -295,7 +313,11 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
             "tasks": {},
         },
     )
-    monkeypatch.setattr(Model, "from_json", lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(
+        Model,
+        "from_json",
+        lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
     assert dock._validate_now(show_dialog=False) is False  # noqa: SLF001
 
     # Cancel save dialog => no write.
@@ -303,7 +325,9 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
     dock._on_export_clicked(load_after=False)  # noqa: SLF001
 
     # Prompt path without .json gets normalized.
-    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a, **k: (str(tmp_path / "noext"), ""))
+    monkeypatch.setattr(
+        QFileDialog, "getSaveFileName", lambda *a, **k: (str(tmp_path / "noext"), "")
+    )
     p = dock._prompt_save_path(default_filename="x.json")  # noqa: SLF001
     assert p is not None
     assert p.suffix == ".json"
@@ -311,7 +335,9 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
     # Write failure path.
     out = tmp_path / "x.json"
     monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a, **k: (str(out), ""))
-    monkeypatch.setattr(Path, "write_text", lambda *_a, **_k: (_ for _ in ()).throw(OSError("nope")))
+    monkeypatch.setattr(
+        Path, "write_text", lambda *_a, **_k: (_ for _ in ()).throw(OSError("nope"))
+    )
     seen_crit = {"called": False}
     monkeypatch.setattr(
         QMessageBox,
@@ -341,7 +367,9 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
     dock._on_export_stress_clicked()  # noqa: SLF001
 
     # Stress: cancel path.
-    monkeypatch.setattr(_dock_mod, "build_stress_variant_state", _dock_mod.build_stress_variant_state)
+    monkeypatch.setattr(
+        _dock_mod, "build_stress_variant_state", _dock_mod.build_stress_variant_state
+    )
     monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a, **k: ("", ""))
     dock._on_export_stress_clicked()  # noqa: SLF001
 

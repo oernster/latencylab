@@ -280,7 +280,9 @@ class ModelComposerDock(QDockWidget):
         export_load_btn = QPushButton("Export + Load Into Main UI…", btn_row)
         stress_btn = QPushButton("Generate Stress Variant…", btn_row)
         export_btn.clicked.connect(lambda: self._on_export_clicked(load_after=False))
-        export_load_btn.clicked.connect(lambda: self._on_export_clicked(load_after=True))
+        export_load_btn.clicked.connect(
+            lambda: self._on_export_clicked(load_after=True)
+        )
         stress_btn.clicked.connect(self._on_export_stress_clicked)
         btns.addWidget(export_btn)
         btns.addWidget(export_load_btn)
@@ -364,4 +366,3 @@ class ModelComposerDock(QDockWidget):
                 mw._load_model(path)  # noqa: SLF001
         except Exception as e:  # noqa: BLE001
             QMessageBox.critical(self, "Load failed", str(e))
-

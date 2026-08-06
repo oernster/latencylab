@@ -254,4 +254,3 @@ QPlainTextEdit:focus {{
   border: 1px solid {_ACCENT_TEAL.name()};
 }}
 """.strip()
-

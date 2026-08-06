@@ -105,4 +105,3 @@ def test_model_parses_numeric_delay_dist_and_rejects_bad_types() -> None:
                 "wiring": {"e0": [123]},
             }
         )
-

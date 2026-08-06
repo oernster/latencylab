@@ -86,9 +86,13 @@ def test_dock_autowire_entry_event_early_return_guards() -> None:
     # Can't use `entry_event_edit.setText("")` because SystemEditor.get_entry_event()
     # normalizes empty -> "start". Patch the getter instead.
     dock._system.get_entry_event = lambda: ""  # type: ignore[method-assign]  # noqa: SLF001
-    dock._wiring.set_wiring({"start": [{"task": "t", "delay_ms": None}]})  # noqa: SLF001
+    dock._wiring.set_wiring(
+        {"start": [{"task": "t", "delay_ms": None}]}
+    )  # noqa: SLF001
     dock._maybe_autowire_entry_event(task_names=["t"])  # noqa: SLF001
-    assert dock._wiring.get_wiring() == {"start": [{"task": "t", "delay_ms": None}]}  # noqa: SLF001
+    assert dock._wiring.get_wiring() == {
+        "start": [{"task": "t", "delay_ms": None}]
+    }  # noqa: SLF001
 
     # Guard 2: not exactly one task.
     dock._system.get_entry_event = lambda: "start"  # type: ignore[method-assign]  # noqa: SLF001
@@ -113,7 +117,9 @@ def test_dock_autowire_single_edge_task_sync_preserves_delay_ms() -> None:
     dock._wiring.set_wiring({"start": [{"task": "old", "delay_ms": 5}]})  # noqa: SLF001
 
     dock._maybe_autowire_entry_event(task_names=["new"])  # noqa: SLF001
-    assert dock._wiring.get_wiring()["start"] == [{"task": "new", "delay_ms": 5}]  # noqa: SLF001
+    assert dock._wiring.get_wiring()["start"] == [
+        {"task": "new", "delay_ms": 5}
+    ]  # noqa: SLF001
 
 
 def test_tasks_editor_context_preserve_skip_and_remove_paths() -> None:
@@ -350,6 +356,7 @@ def test_wiring_editor_event_filter_swallows_mouse_and_key_when_single_event() -
     )
     assert w.eventFilter(w.event_combo, mouse_evt) is True
 
-    key_evt = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier)
+    key_evt = QKeyEvent(
+        QEvent.Type.KeyPress, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier
+    )
     assert w.eventFilter(w.event_combo, key_evt) is True
-

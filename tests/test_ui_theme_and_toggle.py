@@ -97,4 +97,3 @@ def test_theme_toggle_space_switch_updates_enabled_state() -> None:
 
     assert not light.isEnabled()
     assert dark.isEnabled()
-

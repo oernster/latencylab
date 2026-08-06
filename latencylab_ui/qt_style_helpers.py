@@ -78,16 +78,40 @@ def _bind_combo_popup_palette(combo: QComboBox) -> None:
         QPalette.ColorGroup.Inactive,
         QPalette.ColorGroup.Disabled,
     ):
-        pal.setColor(group, QPalette.ColorRole.Text, src.color(group, QPalette.ColorRole.Text))
-        pal.setColor(group, QPalette.ColorRole.WindowText, src.color(group, QPalette.ColorRole.WindowText))
-        pal.setColor(group, QPalette.ColorRole.ButtonText, src.color(group, QPalette.ColorRole.ButtonText))
-        pal.setColor(group, QPalette.ColorRole.Base, src.color(group, QPalette.ColorRole.Base))
-        pal.setColor(group, QPalette.ColorRole.Window, src.color(group, QPalette.ColorRole.Window))
-        pal.setColor(group, QPalette.ColorRole.Highlight, src.color(group, QPalette.ColorRole.Highlight))
+        pal.setColor(
+            group, QPalette.ColorRole.Text, src.color(group, QPalette.ColorRole.Text)
+        )
+        pal.setColor(
+            group,
+            QPalette.ColorRole.WindowText,
+            src.color(group, QPalette.ColorRole.WindowText),
+        )
+        pal.setColor(
+            group,
+            QPalette.ColorRole.ButtonText,
+            src.color(group, QPalette.ColorRole.ButtonText),
+        )
+        pal.setColor(
+            group, QPalette.ColorRole.Base, src.color(group, QPalette.ColorRole.Base)
+        )
+        pal.setColor(
+            group,
+            QPalette.ColorRole.Window,
+            src.color(group, QPalette.ColorRole.Window),
+        )
+        pal.setColor(
+            group,
+            QPalette.ColorRole.Highlight,
+            src.color(group, QPalette.ColorRole.Highlight),
+        )
 
         # Use normal Text color for HighlightedText (see harden_combobox_popup
         # rationale below).
-        pal.setColor(group, QPalette.ColorRole.HighlightedText, src.color(group, QPalette.ColorRole.Text))
+        pal.setColor(
+            group,
+            QPalette.ColorRole.HighlightedText,
+            src.color(group, QPalette.ColorRole.Text),
+        )
 
     view.setPalette(pal)
     if vp is not None:
@@ -164,6 +188,7 @@ def harden_combobox_popup(combo: QComboBox) -> None:
 
     model = combo.model()
     if model is not None and not getattr(model, "_ll_combo_role_hooked", False):
+
         def _refresh_roles(*_args) -> None:
             _apply_combo_model_roles(combo)
 

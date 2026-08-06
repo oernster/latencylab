@@ -33,4 +33,3 @@ def test_core_does_not_reference_latencylab_ui_package() -> None:
             offenders.append(str(p))
 
     assert not offenders, f"core references latencylab_ui: {offenders}"
-

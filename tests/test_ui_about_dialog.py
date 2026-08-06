@@ -53,4 +53,3 @@ def test_show_about_dialog_calls_message_box(monkeypatch) -> None:
     dlg = getattr(parent, "_about_dialog")
     assert isinstance(dlg, _FakeDialog)
     assert dlg.open_called is True
-

@@ -56,4 +56,3 @@ class SystemEditor(QWidget):
 
     def get_entry_event(self) -> str:
         return self.entry_event_edit.text().strip() or "start"
-

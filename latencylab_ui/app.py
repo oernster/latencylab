@@ -25,4 +25,3 @@ def run_app(argv: list[str] | None = None) -> int:
     window.show()
 
     return app.exec()
-

@@ -130,15 +130,23 @@ class MainWindow(QMainWindow):
 
         # Right-side distributions panel (dockable, non-modal).
         self._distributions_dock = DistributionsDock(self)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._distributions_dock)
+        self.addDockWidget(
+            Qt.DockWidgetArea.RightDockWidgetArea, self._distributions_dock
+        )
         self._distributions_dock.setVisible(False)
-        self._distributions_dock.visibilityChanged.connect(self._on_distributions_visibility_changed)
+        self._distributions_dock.visibilityChanged.connect(
+            self._on_distributions_visibility_changed
+        )
 
         # Right-side model composer dock (authoring-only; default hidden).
         self._model_composer_dock = ModelComposerDock(self)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._model_composer_dock)
+        self.addDockWidget(
+            Qt.DockWidgetArea.RightDockWidgetArea, self._model_composer_dock
+        )
         self._model_composer_dock.setVisible(False)
-        self._model_composer_dock.visibilityChanged.connect(self._on_model_composer_visibility_changed)
+        self._model_composer_dock.visibilityChanged.connect(
+            self._on_model_composer_visibility_changed
+        )
 
         # Main content.
         #
@@ -355,4 +363,3 @@ class MainWindow(QMainWindow):
             return
         elapsed = max(0.0, time.monotonic() - self._elapsed_started_at)
         self._elapsed_label.setText(f"{elapsed:0.1f}s")
-

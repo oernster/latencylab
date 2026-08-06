@@ -12,7 +12,9 @@ class ThemeToggle(QWidget):
     theme_changed = Signal(Theme)
     focus_advance_requested = Signal(object)
 
-    def __init__(self, *, default: Theme = Theme.DARK, parent: QWidget | None = None) -> None:
+    def __init__(
+        self, *, default: Theme = Theme.DARK, parent: QWidget | None = None
+    ) -> None:
         super().__init__(parent)
 
         layout = QHBoxLayout(self)
@@ -94,5 +96,3 @@ class ThemeToggle(QWidget):
                 self._btn_dark.setFocus()
 
             self.theme_changed.emit(theme)
-
-

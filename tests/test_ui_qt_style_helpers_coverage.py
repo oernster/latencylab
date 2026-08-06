@@ -171,4 +171,3 @@ def test_harden_combobox_popup_model_signal_hook_try_except_branch(monkeypatch) 
     monkeypatch.setattr(model, "dataChanged", _Sig())
 
     qsh.harden_combobox_popup(combo)
-

@@ -221,7 +221,9 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
 
     # Close event calls shutdown.
     called = {"shutdown": False}
-    monkeypatch.setattr(controller, "shutdown", lambda: called.__setitem__("shutdown", True))
+    monkeypatch.setattr(
+        controller, "shutdown", lambda: called.__setitem__("shutdown", True)
+    )
     w.close()
     app.processEvents()
     assert called["shutdown"]
@@ -385,5 +387,3 @@ def test_ui_focus_cycle_covered_elsewhere() -> None:
     # [`tests/test_ui_main_window_focus_cycle.py`](tests/test_ui_main_window_focus_cycle.py:1)
     # to keep each file <= 400 lines.
     assert True
-
-

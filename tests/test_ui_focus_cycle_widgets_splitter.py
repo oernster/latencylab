@@ -20,9 +20,17 @@ def test_focus_cycle_collects_interactive_inside_qsplitter() -> None:
     _ = _ensure_qapp()
 
     from PySide6.QtCore import Qt
-    from PySide6.QtWidgets import QMainWindow, QPushButton, QSplitter, QWidget, QVBoxLayout
+    from PySide6.QtWidgets import (
+        QMainWindow,
+        QPushButton,
+        QSplitter,
+        QWidget,
+        QVBoxLayout,
+    )
 
-    from latencylab_ui.focus_cycle_widgets import collect_interactive_widgets_in_layout_order
+    from latencylab_ui.focus_cycle_widgets import (
+        collect_interactive_widgets_in_layout_order,
+    )
 
     w = QMainWindow()
     root = QWidget()
@@ -41,4 +49,3 @@ def test_focus_cycle_collects_interactive_inside_qsplitter() -> None:
     chain = collect_interactive_widgets_in_layout_order(w)
     assert btn_a in chain
     assert btn_b in chain
-

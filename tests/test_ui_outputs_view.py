@@ -178,4 +178,3 @@ def test_outputs_view_formats_critical_path_for_display() -> None:
     view.render(outputs2)
     view.on_run_selected(0)
     assert crit.toPlainText() == "t0 -> t1"
-

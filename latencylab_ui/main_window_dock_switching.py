@@ -87,4 +87,3 @@ def _ensure_composer_sane_size(window) -> None:
 
 class _UserCancelledCompose(Exception):
     """Internal control-flow signal used to abort compose switching."""
-

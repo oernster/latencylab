@@ -207,9 +207,7 @@ def test_validation_error_branches() -> None:
 
     # wiring delay dist invalid
     bad = _base_model()
-    bad["wiring"] = {
-        "e0": [{"task": "t", "delay_ms": {"dist": "fixed", "value": -1}}]
-    }
+    bad["wiring"] = {"e0": [{"task": "t", "delay_ms": {"dist": "fixed", "value": -1}}]}
     m = Model.from_json(bad)
     with pytest.raises(ModelValidationError, match="fixed value must be >= 0"):
         validate_model(m)
@@ -223,9 +221,7 @@ def test_validation_error_branches() -> None:
 
     # wiring delay normal missing std
     bad = _base_model()
-    bad["wiring"] = {
-        "e0": [{"task": "t", "delay_ms": {"dist": "normal", "mean": 1.0}}]
-    }
+    bad["wiring"] = {"e0": [{"task": "t", "delay_ms": {"dist": "normal", "mean": 1.0}}]}
     m = Model.from_json(bad)
     with pytest.raises(ModelValidationError, match="normal dist requires 'std'"):
         validate_model(m)
@@ -265,7 +261,9 @@ def test_validation_error_branches() -> None:
     # wiring delay lognormal negative sigma
     bad = _base_model()
     bad["wiring"] = {
-        "e0": [{"task": "t", "delay_ms": {"dist": "lognormal", "mu": 1.0, "sigma": -1.0}}]
+        "e0": [
+            {"task": "t", "delay_ms": {"dist": "lognormal", "mu": 1.0, "sigma": -1.0}}
+        ]
     }
     m = Model.from_json(bad)
     with pytest.raises(ModelValidationError, match="lognormal sigma must be >= 0"):
@@ -282,7 +280,9 @@ def test_validation_error_branches() -> None:
     # wiring delay lognormal ok -> hits _validate_dist lognormal success return
     ok = _base_model()
     ok["wiring"] = {
-        "e0": [{"task": "t", "delay_ms": {"dist": "lognormal", "mu": 0.0, "sigma": 0.0}}]
+        "e0": [
+            {"task": "t", "delay_ms": {"dist": "lognormal", "mu": 0.0, "sigma": 0.0}}
+        ]
     }
     m = Model.from_json(ok)
     validate_model(m)
@@ -293,4 +293,3 @@ def test_validation_error_branches() -> None:
     m = Model.from_json(bad)
     with pytest.raises(ModelValidationError, match="unsupported dist"):
         validate_model(m)
-

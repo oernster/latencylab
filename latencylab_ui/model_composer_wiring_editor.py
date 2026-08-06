@@ -275,7 +275,10 @@ class WiringEditor(QWidget):
         if not ev or not task:
             return
         # Prevent duplicates (should be impossible via UI, but keep it safe).
-        if any(str((e or {}).get("task", "")).strip() == task for e in (self._wiring.get(ev) or [])):
+        if any(
+            str((e or {}).get("task", "")).strip() == task
+            for e in (self._wiring.get(ev) or [])
+        ):
             return
         self._wiring.setdefault(ev, []).append({"task": task, "delay_ms": None})
         self._render_listeners(ev)
@@ -311,4 +314,3 @@ class WiringEditor(QWidget):
         self.event_combo.blockSignals(False)
         self._update_event_combo_interactive_state()
         self._render_listeners(self.event_combo.currentText())
-

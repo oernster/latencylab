@@ -60,7 +60,9 @@ class RunWorker(QObject):
             summary = aggregate_runs(model=model, runs=runs)
             summary = add_task_metadata(summary, model=model)
 
-            self.succeeded.emit(self._run_token, RunOutputs(model=model, runs=runs, summary=summary))
+            self.succeeded.emit(
+                self._run_token, RunOutputs(model=model, runs=runs, summary=summary)
+            )
         except ModelValidationError as e:
             self.failed.emit(self._run_token, str(e))
         except Exception:  # noqa: BLE001 - show traceback for unexpected failures
@@ -180,4 +182,3 @@ class RunController(QObject):
         self._worker = None
         self._active_token = None
         self._started_at = None
-

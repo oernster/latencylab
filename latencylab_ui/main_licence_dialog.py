@@ -49,4 +49,3 @@ class MainLicenceDialog(QDialog):
 def _read_main_license_text() -> str:
     repo_root = Path(__file__).resolve().parents[1]
     return (repo_root / "LICENSE").read_text(encoding="utf-8")
-

@@ -43,7 +43,9 @@ def test_run_worker_success_and_error_paths(monkeypatch, tmp_path: Path) -> None
 
     w = rc.RunWorker(run_token=7, request=req)
     seen = {"succeeded": False, "failed": False, "finished": False}
-    w.succeeded.connect(lambda tok, obj: seen.__setitem__("succeeded", tok == 7 and obj is not None))
+    w.succeeded.connect(
+        lambda tok, obj: seen.__setitem__("succeeded", tok == 7 and obj is not None)
+    )
     w.failed.connect(lambda *_a: seen.__setitem__("failed", True))
     w.finished.connect(lambda tok: seen.__setitem__("finished", tok == 7))
     w.run()
@@ -57,7 +59,9 @@ def test_run_worker_success_and_error_paths(monkeypatch, tmp_path: Path) -> None
     )
     w2 = rc.RunWorker(run_token=8, request=req)
     out2 = {"failed": False, "finished": False}
-    w2.failed.connect(lambda tok, txt: out2.__setitem__("failed", tok == 8 and "bad" in txt))
+    w2.failed.connect(
+        lambda tok, txt: out2.__setitem__("failed", tok == 8 and "bad" in txt)
+    )
     w2.finished.connect(lambda tok: out2.__setitem__("finished", tok == 8))
     w2.run()
     assert out2 == {"failed": True, "finished": True}
@@ -186,4 +190,3 @@ def test_run_controller_lifecycle_paths(monkeypatch, tmp_path: Path) -> None:
     # _on_thread_finished clears internal refs.
     c._on_thread_finished()
     assert c.active_token() is None
-

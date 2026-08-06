@@ -120,4 +120,3 @@ def test_critical_path_frequency_widget_zero_count_bar_paints_safely() -> None:
 
     host.close()
     _spin(app)
-

@@ -74,9 +74,7 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
             )
         ],
         summary={
-            "latency_ms": {
-                "makespan": {"p50": 1.0, "p90": 1.0, "p95": 1.0, "p99": 1.0}
-            }
+            "latency_ms": {"makespan": {"p50": 1.0, "p90": 1.0, "p95": 1.0, "p99": 1.0}}
         },
     )
 
@@ -112,7 +110,9 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
     assert w._distributions_dock.isVisible() is True
 
     # Now allow the switch (No = don't export, but proceed).
-    monkeypatch.setattr(QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No)
+    monkeypatch.setattr(
+        QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No
+    )
     w._on_toggle_model_composer_clicked()
     app.processEvents()
     assert w._distributions_dock.isVisible() is False
@@ -127,7 +127,9 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
 
     # No prompt now (we already chose No, leaving outputs as "unexported", but
     # for test determinism we accept either path by forcing No again).
-    monkeypatch.setattr(QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No)
+    monkeypatch.setattr(
+        QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No
+    )
     w._on_toggle_model_composer_clicked()
     app.processEvents()
     assert w._distributions_dock.isVisible() is False
@@ -228,4 +230,3 @@ def test_distributions_visibility_change_sets_closed_during_run_flag() -> None:
 
     w.close()
     app.processEvents()
-

@@ -26,4 +26,3 @@ def _add_repo_root_to_syspath() -> None:
     root_str = str(root)
     if root_str not in sys.path:
         sys.path.insert(0, root_str)
-

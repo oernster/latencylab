@@ -202,4 +202,3 @@ class TasksEditor(QWidget):
         card.setParent(None)
         card.deleteLater()
         self.changed.emit()
-

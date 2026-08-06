@@ -85,7 +85,9 @@ class DistributionsDock(QDockWidget):
         hint_row = QWidget(cp_box)
         hint_layout = QHBoxLayout(hint_row)
         hint_layout.setContentsMargins(0, 0, 0, 0)
-        hint_layout.addWidget(QLabel("Top 10 paths shown; remaining paths are aggregated as long tail."))
+        hint_layout.addWidget(
+            QLabel("Top 10 paths shown; remaining paths are aggregated as long tail.")
+        )
         hint_layout.addStretch(1)
         cp_layout.addWidget(hint_row)
 
@@ -99,10 +101,7 @@ class DistributionsDock(QDockWidget):
         makespans = [r.makespan_ms for r in ok]
         bins = freedman_diaconis_bins(makespans)
 
-        p = (
-            outputs.summary.get("latency_ms", {})
-            .get("makespan", {})
-        )
+        p = outputs.summary.get("latency_ms", {}).get("makespan", {})
 
         markers: list[_Marker] = []
         for k in ("p50", "p90", "p95", "p99"):
@@ -188,7 +187,9 @@ class _MakespanHistogramWidget(QWidget):
             rect.width() - 16,
             label_band_h,
         )
-        num_row = QRect(label_area.left(), label_area.top(), label_area.width(), num_row_h)
+        num_row = QRect(
+            label_area.left(), label_area.top(), label_area.width(), num_row_h
+        )
         legend_area = QRect(
             label_area.left(),
             num_row.bottom() + 1,
@@ -212,7 +213,9 @@ class _MakespanHistogramWidget(QWidget):
         for idx, (_m, x_center) in enumerate(marker_xs, start=1):
             txt = str(idx)
             w = fm.horizontalAdvance(txt)
-            x_left = max(num_row.left(), min(num_row.right() - w, x_center - int(w / 2)))
+            x_left = max(
+                num_row.left(), min(num_row.right() - w, x_center - int(w / 2))
+            )
             y = num_row.top() + 2 + fm.ascent()
             p.drawText(QPoint(x_left, y), txt)
 
@@ -234,4 +237,3 @@ class _MakespanHistogramWidget(QWidget):
 
 ### NOTE: Critical path frequency rendering is implemented by
 ### [`latencylab_ui.critical_path_frequency_widget.CriticalPathFrequencyWidget`](latencylab_ui/critical_path_frequency_widget.py:39)
-

@@ -145,9 +145,7 @@ def critical_path_frequency(
     """
 
     ok_paths = [
-        r.critical_path_tasks
-        for r in runs
-        if (not r.failed) and r.critical_path_tasks
+        r.critical_path_tasks for r in runs if (not r.failed) and r.critical_path_tasks
     ]
     counts = Counter(ok_paths)
     if not counts:
@@ -180,4 +178,3 @@ def critical_path_frequency(
         )
 
     return out
-

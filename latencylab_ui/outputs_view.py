@@ -63,7 +63,9 @@ class OutputsView:
 
         r = self._runs[idx]
         if r.critical_path_tasks:
-            self._critical_path_text.setPlainText(_format_critical_path_for_display(r.critical_path_tasks))
+            self._critical_path_text.setPlainText(
+                _format_critical_path_for_display(r.critical_path_tasks)
+            )
         else:
             self._critical_path_text.setPlainText("(no critical path)")
 
@@ -131,4 +133,3 @@ def format_summary_text(outputs: RunOutputs) -> str:
         lines.append(f"- ({count}) {tasks}")
 
     return "\n".join(lines)
-

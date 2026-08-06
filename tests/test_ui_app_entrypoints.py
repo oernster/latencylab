@@ -99,4 +99,3 @@ def test_ui_package_version() -> None:
     import latencylab_ui
 
     assert isinstance(latencylab_ui.__version__, str)
-

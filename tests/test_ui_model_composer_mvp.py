@@ -57,14 +57,19 @@ def test_compose_button_exists_and_toggles_dock_visibility() -> None:
     app.processEvents()
 
 
-def test_export_and_export_load_use_deterministic_json(tmp_path: Path, monkeypatch) -> None:
+def test_export_and_export_load_use_deterministic_json(
+    tmp_path: Path, monkeypatch
+) -> None:
     app = _ensure_qapp()
 
     from PySide6.QtCore import QObject, Signal
     from PySide6.QtWidgets import QFileDialog
 
     from latencylab_ui.main_window import MainWindow
-    from latencylab_ui.model_composer_types import build_raw_model_dict, dumps_deterministic
+    from latencylab_ui.model_composer_types import (
+        build_raw_model_dict,
+        dumps_deterministic,
+    )
 
     class _Controller(QObject):
         started = Signal(int)
@@ -114,4 +119,3 @@ def test_export_and_export_load_use_deterministic_json(tmp_path: Path, monkeypat
 
     w.close()
     app.processEvents()
-

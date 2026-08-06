@@ -11,4 +11,3 @@ def elapsed_seconds(*, started_at: float | None, now: float) -> float:
     if started_at is None:
         return 0.0
     return max(0.0, now - started_at)
-

@@ -19,9 +19,17 @@ def test_focus_cycle_collects_interactive_inside_qscrollarea() -> None:
 
     _ = _ensure_qapp()
 
-    from PySide6.QtWidgets import QMainWindow, QPushButton, QScrollArea, QWidget, QVBoxLayout
+    from PySide6.QtWidgets import (
+        QMainWindow,
+        QPushButton,
+        QScrollArea,
+        QWidget,
+        QVBoxLayout,
+    )
 
-    from latencylab_ui.focus_cycle_widgets import collect_interactive_widgets_in_layout_order
+    from latencylab_ui.focus_cycle_widgets import (
+        collect_interactive_widgets_in_layout_order,
+    )
 
     w = QMainWindow()
     root = QWidget()
@@ -42,4 +50,3 @@ def test_focus_cycle_collects_interactive_inside_qscrollarea() -> None:
 
     chain = collect_interactive_widgets_in_layout_order(w)
     assert btn in chain
-
