@@ -67,11 +67,19 @@ def test_schema_version_aliases_are_accepted(key: str) -> None:
     assert model.version == 2
 
 
-def test_stellody_model_is_valid() -> None:
+def test_shipped_example_models_are_valid() -> None:
+    """Every example in `examples/` must load and validate.
+
+    These are the files a new user opens first, so one that no longer parses is
+    worse than no example at all. Reading the directory rather than naming the
+    files means a new example is covered the moment it is added.
+    """
     import json
     from pathlib import Path
 
-    model = Model.from_json(
-        json.loads(Path("stellody_music_discovery.json").read_text())
-    )
-    validate_model(model)
+    examples = sorted((Path(__file__).resolve().parents[1] / "examples").glob("*.json"))
+    assert examples, "examples/ is empty, so this test is checking nothing"
+
+    for path in examples:
+        model = Model.from_json(json.loads(path.read_text(encoding="utf-8")))
+        validate_model(model)
