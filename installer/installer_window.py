@@ -178,7 +178,9 @@ class InstallerWindow(QWidget):
         if version:
             version_label = QLabel(f"v{version}")
             version_label.setObjectName("HeaderVersion")
-            name_row.addWidget(version_label, 0, Qt.AlignmentFlag.AlignBottom)
+            # Centred on the title's line, not bottom-aligned: bottom alignment
+            # hangs it below the words like a subscript.
+            name_row.addWidget(version_label, 0, Qt.AlignmentFlag.AlignVCenter)
 
         # Constrain BOTH axes. A vertical alignment alone leaves the container
         # free to stretch across the row, and the title label then absorbs the
