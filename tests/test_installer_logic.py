@@ -157,9 +157,11 @@ def test_deploy_names_the_archive_it_could_not_find(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("version", "expected"),
     [
-        ("2.2.0", (2, 2, 0)),
+        ("9.4.0", (9, 4, 0)),
         ("1.0", (1, 0)),
-        ("2.2.0-rc1", (2, 2, 1)),
+        # A pre-release suffix keeps its digits: the segment "0-rc1" reduces to
+        # 01, so the tuple stays comparable rather than raising.
+        ("9.4.0-rc1", (9, 4, 1)),
         ("", (0,)),
         ("nonsense", (0,)),
     ],
@@ -201,11 +203,11 @@ def test_detect_state_with_nothing_installed(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("state", "version", "expected"),
     [
-        (logic.AppState.NOT_INSTALLED, "2.2.0", "Install"),
-        (logic.AppState.UPGRADE, "2.2.0", "Upgrade to 2.2.0"),
+        (logic.AppState.NOT_INSTALLED, "9.4.0", "Install"),
+        (logic.AppState.UPGRADE, "9.4.0", "Upgrade to 9.4.0"),
         (logic.AppState.UPGRADE, "", "Upgrade"),
-        (logic.AppState.DOWNGRADE, "2.2.0", "Reinstall (older)"),
-        (logic.AppState.REINSTALL, "2.2.0", "Reinstall"),
+        (logic.AppState.DOWNGRADE, "9.4.0", "Reinstall (older)"),
+        (logic.AppState.REINSTALL, "9.4.0", "Reinstall"),
     ],
 )
 def test_primary_label(state: str, version: str, expected: str) -> None:
@@ -257,18 +259,18 @@ def test_the_uninstall_registration_carries_everything_the_apps_list_needs(
     tmp_path: Path,
 ) -> None:
     uninstaller = logic.uninstaller_path(tmp_path)
-    values = logic.uninstall_entry_values(tmp_path, uninstaller, "2.2.0", 1234)
+    values = logic.uninstall_entry_values(tmp_path, uninstaller, "9.4.0", 1234)
     by_name = {value.name: value.value for value in values}
 
     assert by_name["DisplayName"] == logic.APP_DISPLAY_NAME
-    assert by_name["DisplayVersion"] == "2.2.0"
+    assert by_name["DisplayVersion"] == "9.4.0"
     assert by_name["EstimatedSize"] == 1234
     assert logic.UNINSTALL_FLAG in str(by_name["UninstallString"])
     assert str(uninstaller) in str(by_name["UninstallString"])
 
 
 def test_the_registration_omits_a_size_it_could_not_measure(tmp_path: Path) -> None:
-    values = logic.uninstall_entry_values(tmp_path, tmp_path / "u.exe", "2.2.0", None)
+    values = logic.uninstall_entry_values(tmp_path, tmp_path / "u.exe", "9.4.0", None)
     assert "EstimatedSize" not in {value.name for value in values}
 
 

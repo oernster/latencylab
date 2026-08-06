@@ -50,8 +50,8 @@ def pe_version(version: str) -> str:
     """A four-part numeric PE version derived from the release version.
 
     Non-numeric characters are dropped per segment and the result is padded or
-    truncated to exactly four parts, so `2.2.0` becomes `2.2.0.0` and
-    `2.2.0-rc1` becomes `2.2.0.1` rather than failing the resource compiler.
+    truncated to exactly four parts, so `1.4.0` becomes `1.4.0.0` and
+    `1.4.0-rc1` becomes `1.4.0.1` rather than failing the resource compiler.
     """
 
     parts: list[str] = []
