@@ -34,6 +34,8 @@ DIALOG_MARGIN = 20
 SECTION_SPACING = 14
 HEADER_SPACING = 14
 BUTTON_GAP = 10
+# The gap between the product name and the version that trails it.
+HEADER_VERSION_GAP = 8
 
 # --- LatencyLab teal palette -------------------------------------------------
 # Every QPushButton carries a transparent 2px border by default, so the green

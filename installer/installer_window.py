@@ -160,18 +160,32 @@ class InstallerWindow(QWidget):
             badge.setPixmap(icon.pixmap(QSize(theme.ICON_PX, theme.ICON_PX)))
             header.addWidget(badge)
 
+        # The name and the version share a container of their own. Aligned
+        # directly against the header row, the version bottom-aligns to a row
+        # whose height is set by the much taller icon, and so lands well below
+        # the words it belongs to. Inside a container sized to the title, its
+        # bottom is the title's bottom, which is where it reads as a version.
+        name_block = QWidget()
+        name_row = QHBoxLayout(name_block)
+        name_row.setContentsMargins(0, 0, 0, 0)
+        name_row.setSpacing(theme.HEADER_VERSION_GAP)
+
         title = QLabel(f"{APP_DISPLAY_NAME} Setup")
         title.setObjectName("HeaderTitle")
-        header.addWidget(title)
+        name_row.addWidget(title)
 
         version = bundle.app_version()
         if version:
             version_label = QLabel(f"v{version}")
             version_label.setObjectName("HeaderVersion")
-            version_label.setAlignment(
-                Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft
-            )
-            header.addWidget(version_label)
+            name_row.addWidget(version_label, 0, Qt.AlignmentFlag.AlignBottom)
+
+        # Constrain BOTH axes. A vertical alignment alone leaves the container
+        # free to stretch across the row, and the title label then absorbs the
+        # slack and carries the version off to the right with it.
+        header.addWidget(
+            name_block, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
 
         header.addStretch()
 
