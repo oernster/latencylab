@@ -18,7 +18,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractButton,
     QApplication,
@@ -33,16 +33,12 @@ from PySide6.QtWidgets import (
 )
 
 import installer_bundle as bundle
+import installer_header as header
 import installer_lifecycle as lifecycle
 import installer_logic as logic
 import installer_ops as ops
 import installer_theme as theme
-from installer_widgets import (
-    AppRunningDialog,
-    LicenceDialog,
-    NeutralStart,
-    UninstallDialog,
-)
+from installer_widgets import AppRunningDialog, NeutralStart, UninstallDialog
 
 APP_DISPLAY_NAME = logic.APP_DISPLAY_NAME
 AppState = logic.AppState
@@ -106,7 +102,7 @@ class InstallerWindow(QWidget):
         )
         layout.setSpacing(theme.SECTION_SPACING)
 
-        layout.addLayout(self._build_header())
+        layout.addLayout(header.build_header(self))
 
         subtitle = QLabel(logic.subtitle_text(self._state))
         subtitle.setObjectName("SubTitle")
@@ -148,60 +144,6 @@ class InstallerWindow(QWidget):
         layout.addStretch()
         layout.addLayout(self._build_buttons())
 
-    def _build_header(self) -> QHBoxLayout:
-        """Build the header row: icon, title and version, plus licence buttons."""
-
-        header = QHBoxLayout()
-        header.setSpacing(theme.HEADER_SPACING)
-
-        icon = bundle.app_icon()
-        if not icon.isNull():
-            badge = QLabel()
-            badge.setPixmap(icon.pixmap(QSize(theme.ICON_PX, theme.ICON_PX)))
-            header.addWidget(badge)
-
-        # The name and the version share a container of their own. Aligned
-        # directly against the header row, the version bottom-aligns to a row
-        # whose height is set by the much taller icon, and so lands well below
-        # the words it belongs to. Inside a container sized to the title, its
-        # bottom is the title's bottom, which is where it reads as a version.
-        name_block = QWidget()
-        name_row = QHBoxLayout(name_block)
-        name_row.setContentsMargins(0, 0, 0, 0)
-        name_row.setSpacing(theme.HEADER_VERSION_GAP)
-
-        title = QLabel(f"{APP_DISPLAY_NAME} Setup")
-        title.setObjectName("HeaderTitle")
-        name_row.addWidget(title)
-
-        version = bundle.app_version()
-        if version:
-            version_label = QLabel(f"v{version}")
-            version_label.setObjectName("HeaderVersion")
-            # Centred on the title's line, not bottom-aligned: bottom alignment
-            # hangs it below the words like a subscript.
-            name_row.addWidget(version_label, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        # Constrain BOTH axes. A vertical alignment alone leaves the container
-        # free to stretch across the row, and the title label then absorbs the
-        # slack and carries the version off to the right with it.
-        header.addWidget(
-            name_block, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
-
-        header.addStretch()
-
-        for caption, handler in (
-            ("Installer notice", self._on_show_installer_licence),
-            ("Model licence (GPL-3.0)", self._on_show_model_licence),
-            ("UI licence (LGPL-3.0)", self._on_show_ui_licence),
-        ):
-            button = QPushButton(caption)
-            button.setObjectName("LicenceButton")
-            button.clicked.connect(handler)
-            header.addWidget(button)
-        return header
-
     def _build_buttons(self) -> QHBoxLayout:
         """Build the action row: Uninstall, Repair, the primary action, Close."""
 
@@ -226,27 +168,6 @@ class InstallerWindow(QWidget):
         return buttons
 
     # ---------------------------------------------------------------- actions
-
-    def _show_licence(self, text: str, title: str) -> None:
-        LicenceDialog(text, title, self).exec()
-
-    def _on_show_model_licence(self) -> None:
-        self._show_licence(
-            bundle.licence_text(logic.MODEL_LICENSE_FILE_NAME),
-            f"{APP_DISPLAY_NAME} Model Licence (GPL-3.0)",
-        )
-
-    def _on_show_ui_licence(self) -> None:
-        self._show_licence(
-            bundle.licence_text(logic.UI_LICENSE_FILE_NAME),
-            f"{APP_DISPLAY_NAME} UI Licence (LGPL-3.0)",
-        )
-
-    def _on_show_installer_licence(self) -> None:
-        self._show_licence(
-            bundle.installer_licence_text(),
-            f"{APP_DISPLAY_NAME} Installer Notice",
-        )
 
     def _guard_not_running(self, action: str) -> bool:
         """True when the app is not running; otherwise ask the user to close it."""
@@ -275,11 +196,14 @@ class InstallerWindow(QWidget):
         except Exception as error:  # noqa: BLE001 - surfaced as a status message
             self._finish_error(f"Installation failed: {error}")
             return
+        # Refresh BEFORE launching. The window must read as an installed machine
+        # whatever the launch then does, because the launch is the step most
+        # likely to go wrong and a window frozen mid-install is the worst thing
+        # to leave behind when it does.
+        self._refresh_after_change()
         self._status.setText(f"Installed to {exe_path.parent}.")
         if self._launch_on_finish.isChecked():
             self._launch_and_front(exe_path)
-            return
-        self._refresh_after_change()
 
     def _launch_and_front(self, exe_path: Path) -> None:
         """Launch the app, wait for its window, front it, then close.
@@ -287,13 +211,21 @@ class InstallerWindow(QWidget):
         A window that arrives after the installer has gone is denied focus by
         Windows and only flashes on the taskbar, so the fronting happens while
         the installer still owns the foreground.
+
+        Nothing here closes the installer except a window that actually
+        appeared. A launch that fails, or one whose window never arrives, leaves
+        the installer open and says so: closing on failure is indistinguishable
+        from success and hides the only evidence the user has.
         """
 
         process = ops.launch(exe_path)
         if process is None:
-            self.close()
+            self._status.setText(
+                f"Installed, but {APP_DISPLAY_NAME} could not be started from "
+                f"{exe_path}."
+            )
             return
-        self._set_busy(f"Launching {APP_DISPLAY_NAME}...")
+        self._status.setText(f"Launching {APP_DISPLAY_NAME}...")
         self._front_pid = process.pid
         self._front_deadline = time.monotonic() + ops.FOREGROUND_WAIT_S
         self._front_timer = QTimer(self)
@@ -301,10 +233,16 @@ class InstallerWindow(QWidget):
         self._front_timer.start(ops.FOREGROUND_POLL_MS)
 
     def _front_launched_app(self) -> None:
-        fronted = ops.bring_process_window_to_front(self._front_pid)
-        if fronted or time.monotonic() > self._front_deadline:
+        if ops.bring_process_window_to_front(self._front_pid):
             self._front_timer.stop()
             self.close()
+            return
+        if time.monotonic() > self._front_deadline:
+            self._front_timer.stop()
+            self._status.setText(
+                f"Installed. {APP_DISPLAY_NAME} was started but showed no window "
+                f"within {int(ops.FOREGROUND_WAIT_S)} seconds."
+            )
 
     def _on_repair(self) -> None:
         """Re-deploy the application files over the existing install."""

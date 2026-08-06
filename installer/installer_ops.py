@@ -16,14 +16,25 @@ from pathlib import Path
 import installer_logic as logic
 
 # Hide the console window a shell-out would otherwise flash up mid-install.
+#
+# These two are mutually exclusive: Windows documents CREATE_NO_WINDOW as
+# ignored when it is combined with DETACHED_PROCESS. Combining them therefore
+# does not hide anything, it hands the child no console at all, and a console
+# program given no console allocates a fresh visible one. Never pass both.
 _CREATE_NO_WINDOW = 0x08000000
 _DETACHED_PROCESS = 0x00000008
 
 # Long enough for this process to exit before the leftover directory goes.
 _SELF_DELETE_DELAY_SECONDS = 3
 
+# `ping` sends one packet immediately and then waits a second before each of
+# the rest, so N packets is N-1 seconds of delay. It is used in preference to
+# `timeout`, which reads the console directly and aborts with an error when it
+# has no interactive input to read.
+_SELF_DELETE_PING_COUNT = _SELF_DELETE_DELAY_SECONDS + 1
+
 # How long the installer waits for the launched application's window before it
-# gives up and closes anyway.
+# stops watching and reports that no window arrived.
 FOREGROUND_WAIT_S = 15.0
 FOREGROUND_POLL_MS = 200
 
@@ -292,13 +303,12 @@ def schedule_self_delete(target: Path) -> None:
     """
 
     command = (
-        f"timeout /t {_SELF_DELETE_DELAY_SECONDS} /nobreak >nul & "
-        f'rmdir /s /q "{target}"'
+        f"ping 127.0.0.1 -n {_SELF_DELETE_PING_COUNT} >nul & " f'rmdir /s /q "{target}"'
     )
     try:
         subprocess.Popen(
             ["cmd", "/c", command],
-            creationflags=_CREATE_NO_WINDOW | _DETACHED_PROCESS,
+            creationflags=_CREATE_NO_WINDOW,
             close_fds=True,
         )
     except OSError:  # pragma: no cover - defensive
