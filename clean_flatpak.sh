@@ -16,10 +16,16 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${PROJECT_ROOT}"
 
 echo "Uninstalling ${APP_ID} if it is installed"
+# build_flatpak.sh can install into either scope, so both are checked here.
 if flatpak list --user 2>/dev/null | grep -q "${APP_ID}"; then
     flatpak uninstall --user -y "${APP_ID}"
 else
-    echo "  Not installed, skipping."
+    echo "  Not installed for this user, skipping."
+fi
+if flatpak list --system 2>/dev/null | grep -q "${APP_ID}"; then
+    sudo flatpak uninstall --system -y "${APP_ID}"
+else
+    echo "  Not installed system-wide, skipping."
 fi
 
 echo "Removing build artefacts"

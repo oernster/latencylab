@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
-# Build a LatencyLab Flatpak bundle.
+# Build a LatencyLab Flatpak bundle, then install it.
 #
-# The manifest, launcher, desktop entry and metainfo are generated here rather
-# than committed, so there is one place where the app's identity is written and
-# no second copy to fall out of step with it.
+# The manifest, launcher, desktop entry, metainfo and prune script are generated
+# here rather than committed, so there is one place where the app's identity is
+# written and no second copy to fall out of step with it.
 #
 # Dependencies are installed offline from wheels downloaded on the host first,
 # which is why the sandbox never needs network access at build time and the
 # finished application never asks for it at all.
+#
+# Usage: ./build_flatpak.sh [--user | --system] [--no-install]
+#
+#   --user        install the finished bundle for this user only (the default)
+#   --system      install it for every user on the machine (needs root)
+#   --no-install  build and bundle only, install nothing
 #
 # This is a build script. It is exempt from the size cap and the coverage gate.
 
@@ -32,8 +38,44 @@ WHEELS_DIR="${PROJECT_ROOT}/.flatpak-wheels"
 PACKAGING_DIR="${PROJECT_ROOT}/packaging"
 MANIFEST="${PROJECT_ROOT}/${APP_ID}.yml"
 BUNDLE="${PROJECT_ROOT}/latencylab.flatpak"
+PRUNE_SCRIPT="prune_flatpak_tree.py"
 
 ICON_SIZES=(16 24 32 48 64 96 128 256 512)
+
+# Where the finished bundle is installed, and whether it is installed at all.
+INSTALL_SCOPE="user"
+INSTALL_BUNDLE=1
+
+usage() {
+    cat <<USAGE
+Usage: $(basename "${BASH_SOURCE[0]}") [--user | --system] [--no-install]
+
+  --user        install the finished bundle for this user only (the default)
+  --system      install it for every user on the machine (needs root)
+  --no-install  build and bundle only, install nothing
+USAGE
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --user) INSTALL_SCOPE="user" ;;
+        --system) INSTALL_SCOPE="system" ;;
+        --no-install) INSTALL_BUNDLE=0 ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+    esac
+    shift
+done
+
+# A system installation writes outside the user's home, so it needs root; a user
+# one never does. Everything downstream goes through this one decision.
+as_scope_root() {
+    if [ "${INSTALL_SCOPE}" = "system" ]; then
+        sudo "$@"
+    else
+        "$@"
+    fi
+}
 
 section() {
     printf '\n%s\n' "$(tput bold 2>/dev/null || true)=== $1 ===$(tput sgr0 2>/dev/null || true)"
@@ -59,10 +101,20 @@ section "Checking the toolchain"
 install_if_missing flatpak flatpak
 install_if_missing flatpak-builder flatpak-builder
 
+# The build always reads the SDK from the user installation, which needs no root.
 flatpak remote-add --if-not-exists --user flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --user --noninteractive flathub \
     "${RUNTIME}//${RUNTIME_VERSION}" "${SDK}//${RUNTIME_VERSION}"
+
+# A system-wide app has to find its runtime system-wide too, or it only runs for
+# whoever built it.
+if [ "${INSTALL_SCOPE}" = "system" ] && [ "${INSTALL_BUNDLE}" -eq 1 ]; then
+    as_scope_root flatpak remote-add --if-not-exists --system flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo
+    as_scope_root flatpak install --system --noninteractive flathub \
+        "${RUNTIME}//${RUNTIME_VERSION}"
+fi
 
 section "Checking the icons"
 if [ ! -f "${PROJECT_ROOT}/assets/latencylab_icon_256.png" ]; then
@@ -140,6 +192,214 @@ cat > "${PACKAGING_DIR}/${APP_ID}.metainfo.xml" <<METAINFO
 </component>
 METAINFO
 
+cat > "${PACKAGING_DIR}/${PRUNE_SCRIPT}" <<'PRUNE'
+#!/usr/bin/env python3
+"""Delete what /app carries but never runs.
+
+The Qt wheels are built for every Qt user at once, so most of what they install
+is dead weight here: LatencyLab imports QtCore, QtGui and QtWidgets and nothing
+else. What each part of PySide6 belongs to is read from the wheels' own install
+records rather than named here, so a Qt upgrade cannot leave this list stale.
+
+Run last, once the application itself is staged, so it sweeps that tree too.
+
+This is a build script. It is exempt from the size cap and the coverage gate.
+"""
+
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+# pip names an installed wheel's metadata directory after the distribution, so
+# these are prefixes to glob for, not paths.
+ADDONS_DIST_PREFIX = "pyside6_addons-"
+ESSENTIALS_DIST_PREFIX = "pyside6_essentials-"
+
+# Tooling that builds Qt applications rather than running them. `metatypes` and
+# `libexec` feed the QML and resource compilers; `include`, `glue`, `doc` and
+# `typesystems` exist for people binding their own C++ to Python.
+BUILD_ONLY_PYSIDE_DIRS = ("Qt/metatypes", "Qt/libexec", "include", "glue", "doc", "typesystems")
+
+BYTECODE_DIR = "__pycache__"
+BYTECODE_SUFFIX = ".pyc"
+STUB_SUFFIX = ".pyi"
+
+QT_LIBRARY_PREFIX = "libQt6"
+MISSING_LIBRARY_MARKER = "not found"
+
+
+def _record_paths(dist_info: Path) -> set[str]:
+    """Every path a wheel installed, as written in its own RECORD."""
+
+    record = dist_info / "RECORD"
+    if not record.is_file():
+        return set()
+    paths = set()
+    for line in record.read_text(encoding="utf-8").splitlines():
+        path = line.split(",", 1)[0].strip()
+        if path:
+            paths.add(path)
+    return paths
+
+
+def _remove(path: Path) -> int:
+    """Delete a file or tree, reporting the bytes it occupied."""
+
+    if path.is_symlink() or path.is_file():
+        size = path.lstat().st_size
+        path.unlink()
+        return size
+    if path.is_dir():
+        size = sum(item.lstat().st_size for item in path.rglob("*") if not item.is_dir())
+        shutil.rmtree(path)
+        return size
+    return 0
+
+
+def _drop_empty_dirs(root: Path) -> None:
+    """Remove directories left behind with nothing in them."""
+
+    if not root.is_dir():
+        return
+    for directory in sorted(root.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+        if directory.is_dir() and not any(directory.iterdir()):
+            directory.rmdir()
+
+
+def prune_addons(site_packages: Path) -> int:
+    """Drop PySide6-Addons: WebEngine, Multimedia, Charts, Quick3D and the rest.
+
+    Both Qt wheels ship a few of the same files, so only what Addons alone
+    installed may go; deleting the shared ones would break the package that
+    stays.
+    """
+
+    addons = next(site_packages.glob(f"{ADDONS_DIST_PREFIX}*.dist-info"), None)
+    if addons is None:
+        return 0
+    essentials = next(site_packages.glob(f"{ESSENTIALS_DIST_PREFIX}*.dist-info"), None)
+    shared = _record_paths(essentials) if essentials is not None else set()
+
+    freed = 0
+    for relative in sorted(_record_paths(addons) - shared):
+        target = site_packages / relative
+        if addons == target or addons in target.parents:
+            continue
+        freed += _remove(target)
+    freed += _remove(addons)
+    _drop_empty_dirs(site_packages / "PySide6")
+    return freed
+
+
+def prune_build_only(site_packages: Path) -> int:
+    """Drop the Qt developer tooling that came along with the runtime."""
+
+    pyside = site_packages / "PySide6"
+    if not pyside.is_dir():
+        return 0
+
+    freed = 0
+    for relative in BUILD_ONLY_PYSIDE_DIRS:
+        freed += _remove(pyside / relative)
+
+    # designer, linguist, lupdate, qmlls and friends: extensionless executables
+    # sitting beside the modules, none of which the running app ever invokes.
+    for entry in pyside.iterdir():
+        if entry.is_file() and not entry.suffix:
+            freed += _remove(entry)
+    return freed
+
+
+def prune_orphaned_plugins(site_packages: Path) -> int:
+    """Drop the Qt plugins whose libraries went with the Addons wheel.
+
+    The PDF image reader and the WebEngine designer widget, among others, are
+    left dangling once their Qt libraries go. Qt would quietly skip them, but a
+    plugin that cannot load is exactly the dead weight this script exists to
+    remove. Plugins missing a non-Qt system library (a database client, say) are
+    left alone: they arrived that way and nothing here made them so.
+    """
+
+    plugins = site_packages / "PySide6" / "Qt" / "plugins"
+    if not plugins.is_dir():
+        return 0
+    environment = dict(os.environ, LD_LIBRARY_PATH=str(site_packages / "PySide6" / "Qt" / "lib"))
+
+    freed = 0
+    for plugin in sorted(plugins.rglob("*.so")):
+        result = subprocess.run(
+            ["ldd", str(plugin)], capture_output=True, text=True, env=environment
+        )
+        missing = [line for line in result.stdout.splitlines() if MISSING_LIBRARY_MARKER in line]
+        if any(QT_LIBRARY_PREFIX in line for line in missing):
+            freed += _remove(plugin)
+    _drop_empty_dirs(plugins)
+    return freed
+
+
+def prune_type_stubs(site_packages: Path) -> int:
+    """Drop the .pyi stubs, which serve type checkers, not the interpreter."""
+
+    return sum(_remove(stub) for stub in sorted(site_packages.rglob(f"*{STUB_SUFFIX}")))
+
+
+def prune_bytecode(*roots: Path) -> int:
+    """Drop compiled bytecode, which the first run regenerates as it needs."""
+
+    freed = 0
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for cache in sorted(root.rglob(BYTECODE_DIR), reverse=True):
+            freed += _remove(cache)
+        for compiled in sorted(root.rglob(f"*{BYTECODE_SUFFIX}")):
+            freed += _remove(compiled)
+    return freed
+
+
+def prune_foreign_entry_points(bin_dir: Path, app_command: str) -> int:
+    """Drop every console script but the app's own launcher.
+
+    Installing PySide6 puts pyside6-designer, pyside6-rcc and a dozen more into
+    /app/bin, where they would be exported as if they were part of this app.
+    """
+
+    if not bin_dir.is_dir():
+        return 0
+    return sum(
+        _remove(entry) for entry in sorted(bin_dir.iterdir()) if entry.name != app_command
+    )
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) != 4:
+        print(f"usage: {Path(argv[0]).name} <app-prefix> <python-dir> <app-command>", file=sys.stderr)
+        return 2
+
+    prefix, python_dir, app_command = Path(argv[1]), argv[2], argv[3]
+    site_packages = prefix / "lib" / python_dir / "site-packages"
+    app_tree = prefix / "share" / "latencylab"
+
+    freed = prune_addons(site_packages)
+    freed += prune_build_only(site_packages)
+    freed += prune_orphaned_plugins(site_packages)
+    freed += prune_type_stubs(site_packages)
+    freed += prune_foreign_entry_points(prefix / "bin", app_command)
+    freed += prune_bytecode(site_packages, app_tree)
+
+    print(f"Pruned {freed / (1 << 20):.1f} MiB of unused build output from {prefix}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))
+PRUNE
+chmod 755 "${PACKAGING_DIR}/${PRUNE_SCRIPT}"
+
 section "Writing the manifest"
 {
 cat <<MANIFEST_HEAD
@@ -152,6 +412,17 @@ command: ${APP_COMMAND}
 build-options:
   strip: true
   no-debuginfo: true
+
+# Nothing here is read at runtime: pip's caches and the .la/.a files a build
+# leaves behind would otherwise be exported into the finished application.
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /man
+  - /share/man
+  - /share/doc
+  - "*.la"
+  - "*.a"
 
 finish-args:
   - --share=ipc
@@ -180,8 +451,8 @@ modules:
     build-commands:
       - install -d /app/share/latencylab
       - cp -r latencylab latencylab_ui runner.py VERSION LICENSE /app/share/latencylab/
-      - install -d /app/assets
-      - cp -r assets/. /app/assets/
+      # Only the PNGs: the .ico and .icns are for the Windows and macOS builds.
+      - install -Dm644 -t /app/assets assets/*.png
       - install -Dm755 packaging/${APP_COMMAND} /app/bin/${APP_COMMAND}
       - install -Dm644 packaging/${APP_ID}.desktop /app/share/applications/${APP_ID}.desktop
       - install -Dm644 packaging/${APP_ID}.metainfo.xml /app/share/metainfo/${APP_ID}.metainfo.xml
@@ -192,10 +463,33 @@ for size in "${ICON_SIZES[@]}"; do
         "${size}" "${size}" "${size}" "${APP_ID}"
 done
 
+# Last, so it sweeps the staged application as well as the installed wheels.
+printf '      - python3 packaging/%s /app %s %s\n' \
+    "${PRUNE_SCRIPT}" "${PYTHON_DIR}" "${APP_COMMAND}"
+
+# Only what the build commands above actually read. Naming the sources rather
+# than the whole directory keeps venv/, .git/, tests/ and the other delivery
+# paths' output out of the sandbox entirely.
 cat <<'MANIFEST_TAIL'
     sources:
       - type: dir
-        path: .
+        path: latencylab
+        dest: latencylab
+      - type: dir
+        path: latencylab_ui
+        dest: latencylab_ui
+      - type: dir
+        path: assets
+        dest: assets
+      - type: dir
+        path: packaging
+        dest: packaging
+      - type: file
+        path: runner.py
+      - type: file
+        path: VERSION
+      - type: file
+        path: LICENSE
 MANIFEST_TAIL
 } > "${MANIFEST}"
 
@@ -210,7 +504,16 @@ flatpak build-bundle \
     --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
     "${REPO_DIR}" "${BUNDLE}" "${APP_ID}"
 
+if [ "${INSTALL_BUNDLE}" -eq 1 ]; then
+    section "Installing (${INSTALL_SCOPE})"
+    as_scope_root flatpak install "--${INSTALL_SCOPE}" -y --reinstall "${BUNDLE}"
+fi
+
 section "Done"
-echo "Built ${BUNDLE}"
-echo "Install it with: flatpak install --user ${BUNDLE}"
+echo "Built ${BUNDLE} ($(du -h "${BUNDLE}" | cut -f1))"
+if [ "${INSTALL_BUNDLE}" -eq 1 ]; then
+    echo "Installed for: ${INSTALL_SCOPE}"
+else
+    echo "Install it with: flatpak install --${INSTALL_SCOPE} ${BUNDLE}"
+fi
 echo "Run it with:     flatpak run ${APP_ID}"
