@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
+import time
 from pathlib import Path
 
 import stamp_version
@@ -78,6 +80,20 @@ DEBUG_ENV_VAR = "LATENCYLAB_BUILD_DEBUG"
 CONSOLE_MODE_RELEASE = "disable"
 CONSOLE_MODE_DEBUG = "attach"
 
+# The release build has no console, so a bundle that dies during startup does so
+# in complete silence: it looks identical to one that was never double-clicked,
+# and the first person to find out is whoever installed it. This is the last
+# place that silence can still be caught, so the bundle is started here before
+# it is staged. Piping its streams is what makes the failure legible: the child
+# writes a normal traceback to stderr even when it has no console to show it on.
+SMOKE_TEST_SECONDS = 6
+SMOKE_TEST_POLL_SECONDS = 0.25
+SMOKE_TEST_DRAIN_SECONDS = 10
+
+# Run it headless so a build never puts a window on the builder's desktop.
+QT_PLATFORM_ENV_VAR = "QT_QPA_PLATFORM"
+QT_PLATFORM_HEADLESS = "offscreen"
+
 
 def _debug_requested() -> bool:
     return os.environ.get(DEBUG_ENV_VAR, "").strip() not in ("", "0", "false")
@@ -121,6 +137,44 @@ def _nuitka_command(version: str) -> list[str]:
     return command
 
 
+def smoke_test(executable: Path) -> None:
+    """Start the built bundle headless and refuse to ship one that dies.
+
+    Survival is the whole assertion. A bundle that is still running after a few
+    seconds has imported everything, constructed its QApplication and built its
+    main window, which is precisely the stretch where a packaging fault shows
+    up. Nothing here inspects what it drew: this is a build script, and the
+    behaviour of the application is the test suite's business.
+    """
+
+    environment = dict(os.environ)
+    environment[QT_PLATFORM_ENV_VAR] = QT_PLATFORM_HEADLESS
+
+    process = subprocess.Popen(
+        [str(executable)],
+        cwd=str(executable.parent),
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    deadline = time.monotonic() + SMOKE_TEST_SECONDS
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            _, errors = process.communicate(timeout=SMOKE_TEST_DRAIN_SECONDS)
+            raise SystemExit(
+                f"The bundle at {executable} exited with code "
+                f"{process.returncode} instead of starting.\n\n"
+                f"{errors.strip() or 'It produced no output.'}"
+            )
+        time.sleep(SMOKE_TEST_POLL_SECONDS)
+
+    process.terminate()
+    process.communicate(timeout=SMOKE_TEST_DRAIN_SECONDS)
+    print(f"Still running after {SMOKE_TEST_SECONDS} seconds.")
+
+
 def main() -> int:
     require_windows()
 
@@ -148,6 +202,9 @@ def main() -> int:
     executable = BUNDLE_DIR / f"{EXE_NAME}.exe"
     if not executable.is_file():
         raise SystemExit(f"Expected an executable at {executable}")
+
+    section("Smoke testing the bundle")
+    smoke_test(executable)
 
     print(f"\nBuilt {executable}")
     print("Next: python buildinstaller.py")

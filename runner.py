@@ -11,22 +11,25 @@ It delegates to the canonical UI entry point:
     python -m latencylab_ui
 """
 
-import sys
-
 
 def main() -> int:
     """Launch the LatencyLab UI.
 
     Arguments are forwarded exactly as in `python -m latencylab_ui`.
+
+    `sys.argv` is left exactly as the operating system supplied it. It used to
+    be rewritten here so `argv[0]` read as the module name, which was cosmetic
+    even from source (`python -m` puts the path of `__main__.py` there, not the
+    module name) and fatal once frozen: Nuitka's PySide6 plugin reads `argv[0]`
+    when a Windows icon is compiled in, pulls the icons out of that file and
+    asserts it found at least one. Pointed at a bare module name it finds no
+    file, and the frozen application dies before its first window, silently,
+    because the release build has no console to print the traceback to.
     """
 
     # `latencylab_ui.__main__.main()` is responsible for printing the friendly
     # PySide6-missing message if the GUI dependency is not installed.
     from latencylab_ui.__main__ import main as ui_main
-
-    # Make argv look like the canonical entry point (`python -m latencylab_ui`),
-    # while preserving any user-provided arguments.
-    sys.argv = ["latencylab_ui", *sys.argv[1:]]
 
     return ui_main()
 
