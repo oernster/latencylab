@@ -5,7 +5,7 @@ max-line-length = 88
 # every code line to 88, so `black --check` passing means the only lines left
 # over 88 are ones black declined to split, which are string literals and
 # comments (the dialog's HTML body, long assertion messages, URLs). Reporting
-# those teaches people to reformat prose to satisfy a code rule, or to sprinkle
+# those teaches people to reformat prose to satisfy a code rule or to sprinkle
 # noqa. Where black and flake8 disagree about formatting, black wins.
 #
 # This is not a licence to write long code lines: black will still split them.
@@ -16,5 +16,13 @@ exclude =
     build,
     dist,
     .venv,
-    venv
+    venv,
+    # Build output, not source. Nuitka leaves its own scaffolding scripts in
+    # the staged payload; linting a toolchain's scratch files reports on
+    # code nobody here wrote or can fix.
+    installer/payload,
+    dist-installer,
+    dist-installer.build,
+    .flatpak-build,
+    .flatpak-builder
 

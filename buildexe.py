@@ -68,8 +68,11 @@ DATA_DIRS: tuple[tuple[Path, str], ...] = (
 PAYLOAD_DIR = PROJECT_ROOT / "installer" / "payload"
 BUNDLE_DIR = PAYLOAD_DIR / APP_DISPLAY_NAME
 
-# Nuitka names its standalone output after the entry script.
+# Nuitka names its standalone output after the entry script, then leaves its
+# scratch directory beside it. Both are cleared each run: the scratch one holds
+# a scons script that would otherwise be staged into the installer payload.
 NUITKA_OUTPUT_DIR = PAYLOAD_DIR / f"{ENTRY_SCRIPT.stem}.dist"
+NUITKA_SCRATCH_DIR = PAYLOAD_DIR / f"{ENTRY_SCRIPT.stem}.build"
 
 DEBUG_ENV_VAR = "LATENCYLAB_BUILD_DEBUG"
 CONSOLE_MODE_RELEASE = "disable"
@@ -129,6 +132,7 @@ def main() -> int:
 
     section("Clearing the previous bundle")
     remove_tree(NUITKA_OUTPUT_DIR)
+    remove_tree(NUITKA_SCRATCH_DIR)
     remove_tree(BUNDLE_DIR)
     PAYLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -139,6 +143,7 @@ def main() -> int:
     if not NUITKA_OUTPUT_DIR.is_dir():
         raise SystemExit(f"Nuitka produced no bundle at {NUITKA_OUTPUT_DIR}")
     shutil.move(str(NUITKA_OUTPUT_DIR), str(BUNDLE_DIR))
+    remove_tree(NUITKA_SCRATCH_DIR)
 
     executable = BUNDLE_DIR / f"{EXE_NAME}.exe"
     if not executable.is_file():

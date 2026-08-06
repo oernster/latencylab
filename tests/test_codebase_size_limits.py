@@ -35,19 +35,36 @@ BUILD_SCRIPTS = frozenset(
 )
 
 
+# Directories that hold no source. The build outputs matter as much as the
+# caches here: a staged payload contains a copy of the whole application plus
+# whatever scaffolding the toolchain left behind; measuring build output
+# against a maintainability rule says nothing about maintainability.
+EXCLUDED_DIRS = frozenset(
+    {
+        ".git",
+        "__pycache__",
+        ".venv",
+        "venv",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        "payload",
+        "dist",
+        "dist-installer",
+        "dist-installer.build",
+        "build",
+        ".flatpak-build",
+        ".flatpak-builder",
+    }
+)
+
+
 def _iter_repo_py_files(root: Path) -> list[Path]:
     files: list[Path] = []
 
     for p in root.rglob("*.py"):
         parts = set(p.parts)
-        if {
-            ".git",
-            "__pycache__",
-            ".venv",
-            "venv",
-            ".mypy_cache",
-            ".pytest_cache",
-        } & parts:
+        if EXCLUDED_DIRS & parts:
             continue
         # Exempt only at the repository root: a module that happens to share a
         # name with a build script deeper in the tree is still application code.
