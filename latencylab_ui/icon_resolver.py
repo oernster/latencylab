@@ -110,7 +110,7 @@ def app_icon_names(platform: str = sys.platform) -> tuple[str, ...]:
     macOS gets the opaque variant ahead of everything else, because its Dock
     draws the icon straight onto the desktop. Windows wants the `.ico` so the
     taskbar and Explorer can pick their own frame. The transparent canonical
-    PNG is the last resort everywhere, and covers the case where
+    PNG is the last resort everywhere and covers the case where
     generate_icons.py has not been run.
     """
 

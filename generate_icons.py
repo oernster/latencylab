@@ -57,7 +57,7 @@ MAC_BACKGROUND_RGBA = (0, 0, 0, 255)
 # Apple's macOS app icon grid. The artwork is not the full canvas: it is a
 # rounded square occupying 824 of a 1024 point canvas, with a corner radius of
 # 185.4 points. A full-bleed square icon renders visibly larger than every
-# system app beside it in the Dock, and with hard corners. Expressed as
+# system app beside it in the Dock, with hard corners. Expressed as
 # fractions so they hold at any rendered size.
 MAC_TILE_FRACTION = 824 / 1024
 MAC_TILE_RADIUS_FRACTION = 185.4 / 824
@@ -72,7 +72,7 @@ MAC_MARK_FRACTION = 0.74
 MAC_MASK_SUPERSAMPLE = 4
 
 # Only the sizes macOS actually consumes, rather than the full hicolor ladder:
-# the largest is the source for the .icns and for the disk image icon, and the
+# the largest is the source for the .icns and for the disk image icon; the
 # canonical one is what the running application hands to setWindowIcon.
 MAC_PNG_SIZES = (ICNS_SIZE,)
 

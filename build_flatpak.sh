@@ -40,7 +40,7 @@ MANIFEST="${PROJECT_ROOT}/${APP_ID}.yml"
 BUNDLE="${PROJECT_ROOT}/latencylab.flatpak"
 PRUNE_SCRIPT="prune_flatpak_tree.py"
 
-# Pinned by hash, and fetched by flatpak-builder on the host rather than inside
+# Pinned by hash and fetched by flatpak-builder on the host rather than inside
 # the sandbox, so the build stays as offline as the wheels above make it.
 # 1.22 or newer: earlier releases still carry pre-C23 declarations that the
 # SDK's compiler rejects outright.
@@ -49,7 +49,7 @@ KRB5_SHA256="1a8832b8cad923ebbf1394f67e2efcf41e3a49f460285a66e35adec8fa0053af"
 
 ICON_SIZES=(16 24 32 48 64 96 128 256 512)
 
-# Where the finished bundle is installed, and whether it is installed at all.
+# Where the finished bundle is installed, plus whether it is installed at all.
 INSTALL_SCOPE="user"
 INSTALL_BUNDLE=1
 
@@ -114,7 +114,7 @@ flatpak remote-add --if-not-exists --user flathub \
 flatpak install --user --noninteractive flathub \
     "${RUNTIME}//${RUNTIME_VERSION}" "${SDK}//${RUNTIME_VERSION}"
 
-# A system-wide app has to find its runtime system-wide too, or it only runs for
+# A system-wide app has to find its runtime system-wide too; otherwise it only runs for
 # whoever built it.
 if [ "${INSTALL_SCOPE}" = "system" ] && [ "${INSTALL_BUNDLE}" -eq 1 ]; then
     as_scope_root flatpak remote-add --if-not-exists --system flathub \
@@ -206,7 +206,7 @@ cat > "${PACKAGING_DIR}/${PRUNE_SCRIPT}" <<'PRUNE'
 
 The Qt wheels are built for every Qt user at once, so most of what they install
 is dead weight here: LatencyLab imports QtCore, QtGui, QtWidgets, QtSvg and
-QtNetwork, and nothing else. What each part of PySide6 belongs to is read from
+QtNetwork and nothing else. What each part of PySide6 belongs to is read from
 the wheels' own install records rather than named here, so a Qt upgrade cannot
 leave this list stale.
 
@@ -327,7 +327,7 @@ def prune_orphaned_plugins(site_packages: Path) -> int:
     """Drop the Qt plugins whose libraries went with the Addons wheel.
 
     The PDF image reader and the WebEngine designer widget, among others, are
-    left dangling once their Qt libraries go. Qt would quietly skip them, but a
+    left dangling once their Qt libraries go. Qt would quietly skip them; a
     plugin that cannot load is exactly the dead weight this script exists to
     remove. Plugins missing a non-Qt system library (a database client, say) are
     left alone: they arrived that way and nothing here made them so.

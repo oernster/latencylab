@@ -154,6 +154,12 @@ python buildinstaller.py
 `build_flatpak.sh` builds the Linux Flatpak (and `clean_flatpak.sh` removes only
 what it produced), while `builddmg.py` builds the macOS disk image on macOS.
 
+`generate_icons.py` derives every platform asset from the single master
+`latencylab.png`, including the opaque macOS variants the Dock, Finder and the
+disk image need. If the mark itself has changed, run `render_master_icon.py`
+first: the published site SVG is the source and the master PNG is a render of
+it, never an independent drawing.
+
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): the layers, the invariants and the tests that enforce them.

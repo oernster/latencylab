@@ -153,7 +153,7 @@ def require_pyinstaller() -> None:
 
 
 def run(command: list[str], *, check: bool = True) -> int:
-    """Run a command, echoing it, and abort the build cleanly if it fails.
+    """Run a command, echoing it, then abort the build cleanly if it fails.
 
     `check` here means "abort", not "raise": a build script failing on a
     traceback out of subprocess buries the command that actually failed.
@@ -253,7 +253,7 @@ def create_dmg(version: str, staging: Path, volume_icon: Path | None) -> Path:
         "--volname",
         f"{APP_NAME} {version} ({DMG_ARCH})",
     ]
-    # create-dmg sets the mounted volume's icon itself, and gets the
+    # create-dmg sets the mounted volume's icon itself and gets the
     # custom-icon bit to survive compression, which doing it by hand afterwards
     # did not.
     if volume_icon is not None:
@@ -369,7 +369,7 @@ def main() -> int:
         dmg = create_dmg(version, staging, volume_icon)
 
         # After the image exists and before it is signed: this writes a
-        # resource fork, and the signature should seal the finished file.
+        # resource fork; the signature should seal the finished file.
         section("Setting the disk image file icon")
         if volume_icon is None:
             print("No icon was built: leaving the generic disk image icon")
