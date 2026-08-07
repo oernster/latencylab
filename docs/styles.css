@@ -220,6 +220,10 @@ section.alt {
   background: var(--border);
 }
 .frame img { display: block; width: 100%; height: auto; }
+/* A shot narrower than the column, held near its own pixel size rather than
+   stretched up to fill it, which only makes a screenshot soft. */
+.shot.narrow .frame { max-width: 900px; margin: 0 auto; }
+.shot.narrow figcaption { margin-left: auto; margin-right: auto; }
 .shot figcaption {
   color: var(--muted);
   margin-top: 16px;

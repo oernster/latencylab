@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Using LatencyLab: first run, composing a model and choosing the settings</title>
-<meta name="description" content="How to use LatencyLab: run the shipped example in six steps, read the three panels, change one thing and run it again, write a model from nothing, and choose runs, seed, concurrency and distributions.">
+<meta name="description" content="How to use LatencyLab: run the shipped example in six steps, read the three panels, change one thing and run it again, write a model from nothing, then choose runs, seed, concurrency and distributions.">
 <meta name="author" content="Oliver Ernster">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#181818">
@@ -55,15 +55,15 @@
         <li>Press <b>Run</b>.</li>
         <li>Read <b>Summary</b>: the percentiles of the makespan, which is how long the whole piece of work took.</li>
         <li>Read <b>Critical path</b>: the chain of work that actually held the run up.</li>
-        <li>Press the <b>application mark</b> in the middle of the toolbar for <b>Distributions</b>, and look at the shape rather than any one number.</li>
+        <li>Press the <b>application mark</b> in the middle of the toolbar for <b>Distributions</b>, then look at the shape rather than any one number.</li>
       </ol>
       <p>That is the whole loop. Everything else is a variation on it.</p>
 
       <h3>What the three panels mean</h3>
       <ul>
         <li><b>Makespan distribution.</b> A shape, not a target. A single run is not representative of anything; the spread is the finding.</li>
-        <li><b>Critical path.</b> Not what was slow, but the chain that prevented progress in that run. Expensive work off the path delayed nobody.</li>
-        <li><b>Critical-path frequency.</b> How often each chain was the one holding things up. A path that dominates is a behavioural mode, and the only kind worth designing against.</li>
+        <li><b>Critical path.</b> Not what was slow. It is the chain that prevented progress in that run. Expensive work off the path delayed nobody.</li>
+        <li><b>Critical-path frequency.</b> How often each chain was the one holding things up. A path that dominates is a behavioural mode, the only kind worth designing against.</li>
       </ul>
 
       <h3>Change one thing, run it again</h3>
@@ -80,10 +80,10 @@
       <ul>
         <li><b>System</b> names the model and sets the entry event, which starts a run.</li>
         <li><b>Contexts</b> are what work runs on: a thread pool, a database, a browser main thread. Their only setting is <b>concurrency</b>, which is where queueing comes from.</li>
-        <li><b>Tasks</b> are units of work: the context they run in, how long they take as a distribution, and the events they emit.</li>
+        <li><b>Tasks</b> are units of work: the context they run in, how long they take as a distribution and the events they emit.</li>
         <li><b>Wiring</b> connects events to tasks, optionally after a delay. Wiring is where the structure lives, so it is the part worth arguing about.</li>
       </ul>
-      <p>Then <b>Validate</b>, and <b>Export</b> when it says so.</p>
+      <p>Then <b>Validate</b> and <b>Export</b> when it says so.</p>
 
       <h3>Choosing the settings</h3>
       <ul>

@@ -57,7 +57,7 @@ The intent is to keep the core deterministic, stdlib-only and testable, while ke
 
 - **Entry points**
   - `python -m latencylab_ui` -> [`latencylab_ui.__main__.main()`](latencylab_ui/__main__.py:6) -> [`latencylab_ui.app.run_app()`](latencylab_ui/app.py:14)
-  - `python runner.py` is a repo-root shim onto the same entry point, and is what the frozen build starts at.
+  - `python runner.py` is a repo-root shim onto the same entry point and is what the frozen build starts at.
 - **Main window and widgets**
   - Top-level window -> [`latencylab_ui.main_window.MainWindow`](latencylab_ui/main_window.py:46)
 - **Threaded run lifecycle**
@@ -98,9 +98,9 @@ The GUI code is intentionally split into smaller modules to keep individual file
 
 - Dialogs:
   - Base that opens on its first usable control -> [`latencylab_ui.first_stop_dialog`](latencylab_ui/first_stop_dialog.py:1)
-  - About, and the credits it renders -> [`latencylab_ui.about_dialog`](latencylab_ui/about_dialog.py:1), [`latencylab_ui.about_text`](latencylab_ui/about_text.py:1)
+  - About and the credits it renders -> [`latencylab_ui.about_dialog`](latencylab_ui/about_dialog.py:1), [`latencylab_ui.about_text`](latencylab_ui/about_text.py:1)
   - Licence viewers -> [`latencylab_ui.main_licence_dialog`](latencylab_ui/main_licence_dialog.py:1), [`latencylab_ui.licence_dialog`](latencylab_ui/licence_dialog.py:1)
-  - How to USE the application, and why each setting -> [`latencylab_ui.guide_dialog`](latencylab_ui/guide_dialog.py:1), [`latencylab_ui.guide_text`](latencylab_ui/guide_text.py:1)
+  - How to USE the application and why each setting -> [`latencylab_ui.guide_dialog`](latencylab_ui/guide_dialog.py:1), [`latencylab_ui.guide_text`](latencylab_ui/guide_text.py:1)
   - How to read the outputs -> [`latencylab_ui.how_to_read_dialog`](latencylab_ui/how_to_read_dialog.py:1)
   - Long text that reads itself -> [`latencylab_ui.auto_scroller`](latencylab_ui/auto_scroller.py:1)
 
@@ -122,7 +122,7 @@ The GUI code is intentionally split into smaller modules to keep individual file
 - Bundled-data lookup (one search, two callers):
   - The search itself -> [`latencylab_ui.packaged_dir`](latencylab_ui/packaged_dir.py:1)
   - Icons -> [`latencylab_ui.icon_resolver`](latencylab_ui/icon_resolver.py:1)
-  - Example models, and the labels the menu shows -> [`latencylab_ui.example_models`](latencylab_ui/example_models.py:1)
+  - Example models and the labels the menu shows -> [`latencylab_ui.example_models`](latencylab_ui/example_models.py:1)
 
 ## Overview diagrams
 
@@ -276,7 +276,7 @@ opts it into the validation test and puts it on the menu, with no second place t
 update:
 
 - Validation: [`tests/test_examples.py`](tests/test_examples.py:1) walks the directory.
-- Menu: [`latencylab_ui.example_models.list_examples()`](latencylab_ui/example_models.py:1) walks the same directory, wherever the packaging put it, and derives each label from the file name. A caption per file would read better and would be a mapping keyed on file names, which is the drift this avoids.
+- Menu: [`latencylab_ui.example_models.list_examples()`](latencylab_ui/example_models.py:1) walks the same directory, wherever the packaging put it, deriving each label from the file name. A caption per file would read better and would be a mapping keyed on file names, which is the drift this avoids.
 - Packaging: all three delivery paths stage `examples/` beside the application, so a fresh install has something to open before the user has a model of their own.
 
 
@@ -328,7 +328,7 @@ A delay is a first-class node precisely so it can be blamed. In `examples/checko
 Cancellation genuinely stops the work. The simulator is CPU-bound and cannot be interrupted safely from outside, so it is **asked** to stop, at the boundary between one run and the next:
 
 - The question is a Protocol, [`latencylab.cancellation.CancellationSignal`](latencylab/cancellation.py:22), so the core never learns what is answering it.
-- The check is once per RUN rather than once per event. Each run seeds its own generator from the run index, so stopping between runs cannot leave a run half simulated, and the cost is one predicate per run rather than one per event.
+- The check is once per RUN rather than once per event. Each run seeds its own generator from the run index, so stopping between runs cannot leave a run half simulated; the cost is one predicate per run rather than one per event.
 - The worst-case delay before a stop takes effect is therefore one run, which is a number the user can be told.
 - Stopping raises [`latencylab.cancellation.RunCancelled`](latencylab/cancellation.py:29) carrying the completed-run count. It does **not** return a shorter result set: aggregating half the runs would produce percentiles that look exactly like real ones while describing a system nobody asked about.
 - The GUI surfaces this as [`latencylab_ui.run_controller.RunController.cancelled`](latencylab_ui/run_controller.py:115), which reports how many runs completed before the stop.
@@ -386,12 +386,12 @@ Invariant: metadata must never affect scheduling; it is only surfaced in summary
 
 Full keyboard reachability is built as one explicit focus ring rather than left to natural Tab traversal.
 
-- `Tab` and `Right` step forward, `Shift+Tab` and `Left` step back, and the ring wraps at both ends. The horizontal arrows are tested first, so they step the ring everywhere rather than being swallowed by the menu bar or a list.
+- `Tab` and `Right` step forward, `Shift+Tab` and `Left` step back; the ring wraps at both ends. The horizontal arrows are tested first, so they step the ring everywhere rather than being swallowed by the menu bar or a list.
 - Ring order is the menu titles, then the body widget stops, then the docks. Docks are siblings of `centralWidget()`, so they are collected explicitly by [`latencylab_ui.focus_cycle_widgets.collect_interactive_widgets_in_layout_order()`](latencylab_ui/focus_cycle_widgets.py:1). The Model Composer used to depend on that and no longer does: it is a dialog, which is a window of its own and owns its focus, so it is reached the way every other dialog is rather than by the main ring being taught to walk into it.
 - A disabled or hidden control is skipped by the ring and shows no ring colour, because every hover and focus rule is gated on `:enabled`.
 - The main window starts neutral: nothing is focused and no menu is open until the first `Tab` or `Right`. Dialogs do the opposite and open already focused on their first usable control ([`latencylab_ui.first_stop_dialog`](latencylab_ui/first_stop_dialog.py:1)), because a dialog was opened on purpose.
-- **Examples is a top-level menu rather than a submenu of File, and the ring is the reason.** The ring claims Left and Right to step between stops, which is the same pair Qt uses to open and close a submenu, so a submenu would be the one part of the menu bar the keyboard could not reach the usual way. A title of its own costs nothing and is walked like any other.
-- Menus are built by [`latencylab_ui.main_window_menus.add_menu()`](latencylab_ui/main_window_menus.py:1) with an explicit parent rather than by `menuBar().addMenu(title)`. The two look equivalent and are not: a menu built the second way is destroyed when the Python wrapper of its QAction is collected, leaving the bar holding a deleted object, and the ring rebuilds exactly that wrapper list on every keystroke.
+- **Examples is a top-level menu rather than a submenu of File; the ring is the reason.** The ring claims Left and Right to step between stops, which is the same pair Qt uses to open and close a submenu, so a submenu would be the one part of the menu bar the keyboard could not reach the usual way. A title of its own costs nothing and is walked like any other.
+- Menus are built by [`latencylab_ui.main_window_menus.add_menu()`](latencylab_ui/main_window_menus.py:1) with an explicit parent rather than by `menuBar().addMenu(title)`. The two look equivalent and are not: a menu built the second way is destroyed when the Python wrapper of its QAction is collected, leaving the bar holding a deleted object; the ring rebuilds exactly that wrapper list on every keystroke.
 
 ### Theme model
 
@@ -401,7 +401,7 @@ The accent is banana yellow and is one value across both themes, like `primary`,
 because a filled block does not need the per-theme adjustment a line drawn on a
 surface does. Anything painted ON it takes `accent_text`, a near-black: the
 accent is far too light to carry the near-white every other filled control uses.
-That applies to drawn icons as well as to text, and a stylesheet cannot reach
+That applies to drawn icons as well as to text; a stylesheet cannot reach
 inside an icon, so a checkable button whose checked fill is the accent supplies
 a second rendering of its glyph in the accent's ink. Without it the glyph stays
 near-white and disappears at exactly the moment the button means something. A
@@ -410,14 +410,14 @@ exception: a picture cannot be recoloured that way, so its checked state is said
 by the fill and the ink alone.
 
 **One place decides how tall an input stands.** A Qt type selector matches a
-class and its subclasses, and `QDoubleSpinBox` is a SIBLING of `QSpinBox` rather
+class and its subclasses; `QDoubleSpinBox` is a SIBLING of `QSpinBox` rather
 than a subclass, so an input rule written for the one never reached the other.
 `QLineEdit` was not named at all. Measured in the composer with a model loaded,
 three controls doing the same job stood at 51px, 19px and 22px. The rule now
 names [`QAbstractSpinBox` and `QLineEdit`](latencylab_ui/theme_stylesheet.py:140),
-which reaches every kind, and resets the `QLineEdit` those controls CONTAIN, or
-the inner field would carry the outer control's border, padding and minimum on
-top of the outer's own.
+which reaches every kind and resets the `QLineEdit` those controls CONTAIN;
+otherwise the inner field would carry the outer control's border, padding and
+minimum on top of the outer's own.
 
 The second half of that rule is that nothing may quietly overrule it. An
 explicit `setMinimumHeight` on a widget is a floor a layout may squeeze down to,
@@ -432,7 +432,7 @@ the offscreen platform does not propagate size hints, so geometry read straight
 after building a panel is whatever it was before the layout ran.
 
 **Scrolling past a control must not change it.** Qt gives the wheel to whatever
-sits under the pointer, and a combo box or spin box accepts it unfocused, so
+sits under the pointer and a combo box or spin box accepts it unfocused, so
 reading down the Model Composer used to walk through every concurrency and every
 distribution on the way past, silently rewriting the model.
 [`latencylab_ui.wheel_guard`](latencylab_ui/wheel_guard.py:1) denies the wheel to
@@ -441,7 +441,7 @@ still scrolls rather than leaving a dead patch under the pointer. It is installe
 once on the application, not per control, because the composer creates and
 destroys cards as the model is edited.
 
-Denying the wheel is not on its own enough, and two further facts are what make
+Denying the wheel is not on its own enough; two further facts are what make
 the rule above true rather than merely stated. Qt gives these controls
 `WheelFocus` by default, which means the wheel FOCUSES them before it reaches
 them, so travelling over one both took the keyboard focus and left the control
@@ -455,16 +455,16 @@ absorbed the wheel and the panel being read never shifted.
 [`enclosing_scroll_area()`](latencylab_ui/wheel_guard.py:108) walks on to the
 first ancestor that can consume it on the axis the wheel was turned.
 
-**A table is as tall as what it holds, and a row is as tall as what stands in
+**A table is as tall as what it holds and a row is as tall as what stands in
 it.** Three constants that had never looked at the contents were stacked on top
-of each other here. Qt's size hint for a scroll area is fixed, and its minimum
+of each other here. Qt's size hint for a scroll area is fixed and its minimum
 allows a squeeze to roughly two rows, so the Contexts table reserved the same
 height whether it held two contexts or twenty and collapsed when the panel was short. Its default column width is fixed, so a long name was clipped inside its
 cell while the room it needed sat empty in the same row and nothing scrolled,
 because the columns together were narrower than the viewport. And its default
 row height is fixed at less than the themed inputs ask for: a spin box wanting
 51px was drawn into a 30px row, so its lower half including the DOWN button fell
-outside the row and was never painted, and its number sat against the bottom of
+outside the row and was never painted; its number sat against the bottom of
 what remained and read as badly aligned. That last one is one fault reported as
 two, the same way the wheel and the focus were.
 
@@ -490,7 +490,7 @@ that is itself scrolling is what silently absorbed the wheel meant for the outer
 
 **Anything that floats gets its own surface.** Menus, tooltips and combo popups are painted on `elevated`, outlined in `elevated_border` and highlight on `elevated_hover`. Without those the toolkit paints a popup in the window colour with no border, which is not a subtle contrast problem: measured in the dark theme, a dropped menu sat at zero luminance difference from the window behind it and its items read as text lying on the page. The rule is asserted against rendered pixels in [`tests/test_ui_menu_contrast.py`](tests/test_ui_menu_contrast.py:1), not against the stylesheet source.
 
-A combo popup cannot be styled the same way, because its colours are palette-driven on purpose (a CSS background on the popup view reintroduces the invisible-text bug that [`latencylab_ui.qt_style_helpers`](latencylab_ui/qt_style_helpers.py:1) exists to prevent). It reads `elevated` back out of the palette instead, where it rides on the `ToolTipBase` role: Qt has no "popup background" role, and the colour has to be read at the moment the popup opens rather than captured when it was built, or switching theme leaves the popup painted in the old one.
+A combo popup cannot be styled the same way, because its colours are palette-driven on purpose (a CSS background on the popup view reintroduces the invisible-text bug that [`latencylab_ui.qt_style_helpers`](latencylab_ui/qt_style_helpers.py:1) exists to prevent). It reads `elevated` back out of the palette instead, where it rides on the `ToolTipBase` role: Qt has no "popup background" role. The colour has to be read at the moment the popup opens rather than captured when it was built; otherwise switching theme leaves the popup painted in the old one.
 
 ### The composer names its parts rather than stacking them
 
@@ -518,29 +518,29 @@ rows come from `card_labels()` rather than `task_names()`, which drops the
 unnamed: right for a model, wrong for a list someone selects from, because the
 row positions would stop matching the cards the moment a task was half-typed.
 
-It is a dialog rather than a dock, and modal, because composing is something you
+It is a modal dialog rather than a dock, because composing is something you
 go and do rather than keep half an eye on. That removed a policy rather than
 moving one: the composer and Distributions used to share the right-hand area, so
 opening either was a question about the other. Opening the composer is now
 [`open_model_composer()`](latencylab_ui/main_window_dock_switching.py:10), which
 asks nothing about layout. It is `show()` rather than `exec()`: both are modal,
-because the dialog says it is, and the difference is that `exec` also starts a
+because the dialog says it is; the difference is that `exec` also starts a
 nested event loop and does not return until the dialog closes, which turns
 opening a panel into a call that never comes back.
 
 The export prompt survived the change, because it was never about layout: it
 asks whether to keep results that are about to stop being the thing on screen.
 The compose button's checked state did not, because it existed to say which of
-two panels had the right-hand area, and a modal dialog IS the window while it is
+two panels had the right-hand area and a modal dialog IS the window while it is
 open.
 
 ### Composing and editing are one surface
 
-The composer could build a model and export it, and nothing could put one back
+The composer could build a model and export it; nothing could put one back
 in, so a model that had just been opened could not be edited. Editing is the
 same four editors driven from the other end:
 [`latencylab_ui.model_composer_load.load_raw_model()`](latencylab_ui/model_composer_load.py:1)
-fills them from a parsed model, and the order is load-bearing. Contexts go in
+fills them from a parsed model; the order is load-bearing. Contexts go in
 first because a task card can only select a context the contexts table already
 knows about; the schema version goes in before the tasks because it decides
 whether a card shows its category field; wiring goes last, once the task and
@@ -550,7 +550,7 @@ Reading a model back in is wider than writing one out. The file format accepts
 three spellings of the version key and three spellings of a wiring listener, so
 [`model_composer_types.read_schema_version()`](latencylab_ui/model_composer_types.py:1)
 and `wiring_edges_from_raw()` widen every one of them: a model the engine will
-run must be a model the editor will open, or a valid file becomes uneditable
+run must be a model the editor will open; otherwise a valid file becomes uneditable
 for a reason the user cannot see.
 
 An open editor follows the model that is opened next
@@ -558,7 +558,7 @@ An open editor follows the model that is opened next
 because an editor showing a model is a view of it and a view that keeps
 displaying the previous one is simply wrong. It follows only while it is BOTH
 open and showing a loaded model: a composer holding something typed from
-scratch is the user's own work, and replacing that would be data loss rather
+scratch is the user's own work; replacing that would be data loss rather
 than a refresh.
 
 Both actions appear twice, on the tray and under the Model menu, wired to the
@@ -570,16 +570,16 @@ control.
 **Guidance is two documents, not one.** The Guide says which button to press
 and why you would pick one setting rather than another; How to Read says what
 the output means. They are deliberately separate because they answer questions
-asked at different moments, and the Guide's own text is ordered on that basis:
+asked at different moments and the Guide's own text is ordered on that basis:
 six numbered steps with no explanation attached, then every reason afterwards,
 once there is something for the reason to attach to. Its button sits
 immediately left of the info button so the pair reads as one idea in two
-halves, and its glyph is an open book precisely because it must share no shape
+halves and its glyph is an open book precisely because it must share no shape
 with an "i" in a circle.
 
-Every drawn glyph in the tray is TWO colours, and they all split the same way
+Every drawn glyph in the tray is TWO colours; they all split the same way
 ([`two_tone_icon()`](latencylab_ui/glyphs.py:1)): the part that merely sits
-there takes the button's own ink, and the part that says what the button DOES
+there takes the button's own ink and the part that says what the button DOES
 takes the accent. The book's covers against its ruled lines and page edge, the
 event graph's edges against its nodes and its plus, the document against its
 pencil. A single-tone glyph on a filled button reads as a watermark; the book's
@@ -593,11 +593,11 @@ application has.
 
 The text lives in [`guide_text`](latencylab_ui/guide_text.py:1) rather than in
 the dialog, for the same reason `about_text` does: the words change far more
-often than the widget, and a change to the words should not be a change to a
+often than the widget; a change to the words should not be a change to a
 file full of Qt. It is HTML on a `QTextBrowser` rather than plain text, which is
 also what
 [`auto_scroller`](latencylab_ui/auto_scroller.py:1) requires: the reading cycle
-moves in PIXELS, and a `QPlainTextEdit` scrolls in LINES, where the same gentle
+moves in PIXELS; a `QPlainTextEdit` scrolls in LINES, where the same gentle
 drift becomes a whole line jumping at a time.
 
 **The application mark is the distributions toggle.** It sat dead centre on the
@@ -608,10 +608,10 @@ is the point of having run anything, so they are now one widget instead of
 competing for attention from opposite ends of the bar.
 
 Centring it is an overlay rather than a row of stretches: three stretches centre
-a widget in the space LEFT OVER between the flanking groups, and those groups
+a widget in the space LEFT OVER between the flanking groups; those groups
 are nowhere near the same width, so it landed 134px right of centre in a 1400px
 window. The controls and the mark occupy the SAME grid cell, that cell is the
-whole bar, and the mark centres itself in it. Measured after the change it sits
+whole bar and the mark centres itself in it. Measured after the change it sits
 exactly on centre in both themes. The mark is added second, so it is the one
 that takes a click where the two overlap.
 
@@ -621,7 +621,7 @@ size and clip it at the widget edge, slicing the bottom border off a ring that
 then stops short. A minimum width holds the centre steady if the icon set is
 ever missing, because a mark that collapses moves the thing it is centring.
 
-The mark's hands and hub are banana, and so is the checked fill, so the mark on
+The mark's hands and hub are banana, as is the checked fill, so the mark on
 its own loses them at exactly the moment the button is saying something. A
 stylesheet cannot reach inside an icon, so
 [`_mark_icon()`](latencylab_ui/main_window_top_bar.py:100) supplies a second
@@ -637,8 +637,8 @@ an opener: a control that only ever opens leaves the dock's own close cross as
 the only way to undo one press. It is deliberately NOT the mirror of Compose.
 Compose carries a switch-to policy because it is going somewhere, away from
 results that may not have been exported; this one only says whether a panel is
-showing, so it leaves the composer alone. The two are allowed up together, and
-the composer no longer competes for that area at all.
+showing, so it leaves the composer alone. The two are allowed up together; the composer no longer
+competes for that area at all.
 
 Its checked state is driven from the DOCK's `visibilityChanged`, never set at
 the click, so the button still tells the truth when the dock is closed by its
@@ -647,7 +647,7 @@ click has to intervene is a refusal: a checkable button has already flipped
 itself by the time the handler runs, so declining the action has to put it back
 or the button would claim a panel that never opened.
 
-### One instance, and the taskbar
+### One instance and the taskbar
 
 The installer registers a shortcut carrying an Application User Model ID; the
 application never claimed the same one, so Windows had no way to know the
@@ -661,7 +661,7 @@ constants match, because two IDs would reproduce the bug in a form that is
 harder to see.
 
 [`latencylab_ui.single_instance`](latencylab_ui/single_instance.py:1) is a local
-socket rather than a mutex, and deliberately so. A bare lock would stop the
+socket rather than a mutex, deliberately so. A bare lock would stop the
 second copy and leave the user with nothing at all, which is worse than the
 duplicate window: the first instance listens, a second connects, says "come
 forward" and exits, so the click does what the user meant. A stale socket name
@@ -671,13 +671,13 @@ a stale lock file has to be aged or PID-checked to tell "still running" from
 
 ### Pointing at what to do next
 
-Loading a model is the moment Run becomes the thing to press, and the change
+Loading a model is the moment Run becomes the thing to press; the change
 happens on the far side of the window from where the user was looking: the path
 label updates on the left while the button that matters is elsewhere.
 [`latencylab_ui.attention_flash`](latencylab_ui/attention_flash.py:1) flashes its
-border twice, well spaced, and then stops.
+border twice, well spaced, then stops.
 
-Finite on purpose. A pulse that continues until it is obeyed is a nag, and the
+Finite on purpose. A pulse that continues until it is obeyed is a nag; the
 user who has read it has no way to say so. The state machine refuses to relight
 once the count is spent rather than relying on nothing firing another tick.
 
@@ -689,7 +689,7 @@ used.
 
 ### Auto-scrolling long text
 
-Licence and guidance text descends slowly, holds at the end, rewinds fast and repeats, and suspends the moment the reader touches it, resuming from where they left it ([`latencylab_ui.auto_scroller`](latencylab_ui/auto_scroller.py:1)).
+Licence and guidance text descends slowly, holds at the end, rewinds fast and repeats; it suspends the moment the reader touches it, resuming from where they left it ([`latencylab_ui.auto_scroller`](latencylab_ui/auto_scroller.py:1)).
 
 The constants are PIXELS, which constrains what it may be attached to. `QTextBrowser` and `QTextEdit` scroll in pixels; `QPlainTextEdit` scrolls in LINES. Measured over the same three hundred lines, that is 4348 units of travel against 293, so the same "one unit" that reads as a drift on one becomes a whole line jumping on the other. It is attached to pixel-scrolling surfaces only.
 
@@ -699,7 +699,7 @@ The constants are PIXELS, which constrains what it may be attached to. `QTextBro
 
 - Core engine: stdlib-only by design (see import surface around [`latencylab.sim.simulate_many()`](latencylab/sim.py:15)).
 - GUI runtime: depends on PySide6 via [`requirements.txt`](requirements.txt:1).
-- Legacy v1 execution: NumPy is optional and lazily imported by [`latencylab.sim_legacy._require_numpy()`](latencylab/sim_legacy.py:46). It is confined to the `legacy` and `dev` extras, and the failure names the extra to install.
+- Legacy v1 execution: NumPy is optional and lazily imported by [`latencylab.sim_legacy._require_numpy()`](latencylab/sim_legacy.py:46). It is confined to the `legacy` and `dev` extras; the failure names the extra to install.
 
 ### Packaging notes (current repository state)
 
@@ -726,7 +726,7 @@ Every path stages the same three things beside the application: the generated ic
 
 Two delivery findings are load-bearing and are recorded here so they are not rediscovered:
 
-- **`runner.py` must not rewrite `sys.argv[0]`.** Nuitka's PySide6 plugin reads `argv[0]` when a Windows icon is compiled in, extracts icons from that file and asserts it found at least one. Pointed at a bare module name it finds no file, and the frozen application dies before its first window, silently, because a release build has no console to print to.
+- **`runner.py` must not rewrite `sys.argv[0]`.** Nuitka's PySide6 plugin reads `argv[0]` when a Windows icon is compiled in, extracts icons from that file and asserts it found at least one. Pointed at a bare module name it finds no file; the frozen application dies before its first window, silently, because a release build has no console to print to.
 - **A Nuitka onefile strips loose executables out of an `--include-data-dir`.** The payload therefore has to be zipped first and extracted at install time.
 
 ### Version (single source of truth)
@@ -746,8 +746,8 @@ Two delivery findings are load-bearing and are recorded here so they are not red
 
 ### Icon (single master, one-way from the site)
 
-- The mark is the amber-cased stopwatch. Its origin is the SVG published on the profile site at `assets/latencylab.svg`; the repository-root `latencylab.png` is a 1024x1024 RGBA raster of that SVG rather than an independent drawing. Its case is deliberately warm against the cool `primary` fill it is drawn on, rather than a shade of it: the two used to be the same colour, and the case disappeared.
-- **The direction is one-way.** A change to the mark is made to the site SVG first, then `latencylab.png` is re-rendered from it by `render_master_icon.py` (no new dependency: it uses `QSvgRenderer`, and PySide6 is already what the front end is built on), then `generate_icons.py` derives the platform set from that PNG. Editing the PNG directly leaves the two silently disagreeing, which is the failure this note exists to prevent. The renderer is a script rather than a documented habit for the same reason the version stamp is: a remembered step that nothing checks is one that eventually does not happen, and a forgotten re-render leaves the site showing one mark and the application another.
+- The mark is the amber-cased stopwatch. Its origin is the SVG published on the profile site at `assets/latencylab.svg`; the repository-root `latencylab.png` is a 1024x1024 RGBA raster of that SVG rather than an independent drawing. Its case is deliberately warm against the cool `primary` fill it is drawn on, rather than a shade of it: the two used to be the same colour; the case disappeared.
+- **The direction is one-way.** A change to the mark is made to the site SVG first, then `latencylab.png` is re-rendered from it by `render_master_icon.py` (no new dependency: it uses `QSvgRenderer` and PySide6 is already what the front end is built on), then `generate_icons.py` derives the platform set from that PNG. Editing the PNG directly leaves the two silently disagreeing, which is the failure this note exists to prevent. The renderer is a script rather than a documented habit for the same reason the version stamp is: a remembered step that nothing checks is one that eventually does not happen; a forgotten re-render leaves the site showing one mark and the application another.
 - `latencylab.png` is the single master every platform asset derives from, via `generate_icons.py`: the PNG size set, the multi-size Windows `.ico`, the macOS `.icns` and the Flatpak hicolor set. Nothing paints an icon at runtime; the application asks [`latencylab_ui.icon_resolver`](latencylab_ui/icon_resolver.py:1) where the assets landed for the packaging it is running under.
 - The glyph is balanced in its tile, 7 units clear at the top and at the base on the SVG's 64-unit grid. The case must not approach y=60 or lower, where the tile's own 14-unit corner radius is already curving inward and the circle reads as clipped.
 
@@ -755,7 +755,7 @@ Two delivery findings are load-bearing and are recorded here so they are not red
 
 - Dependency boundaries: core must not import Qt (see [`tests/test_ui_dependency_boundaries.py`](tests/test_ui_dependency_boundaries.py:1)).
 - Determinism: simulation is stable under a seed (see [`tests/test_determinism.py`](tests/test_determinism.py:1)).
-- Source size guardrail: a file may reach 400 lines and no further, and a file within 5% of the cap is already too close, so it is reduced rather than shaved. Test files count exactly as source files do. The delivery scripts named in the previous section are exempt by name at the repository root only, and a companion test fails if one of those names stops existing, so a rename cannot leave a hole behind.
+- Source size guardrail: a file may reach 400 lines and no further; a file within 5% of the cap is already too close, so it is reduced rather than shaved. Test files count exactly as source files do. The delivery scripts named in the previous section are exempt by name at the repository root only; a companion test fails if one of those names stops existing, so a rename cannot leave a hole behind.
   - Enforced by [`tests/test_codebase_size_limits.py`](tests/test_codebase_size_limits.py:1).
 - Unit test coverage is enforced at 100%. The `--cov` flags and `--cov-fail-under=100` live in the `addopts` of [`pyproject.toml`](pyproject.toml), so a bare `python -m pytest` enforces the gate and there is no way to run the suite without it. The measured source set is scoped by [`.coveragerc`](.coveragerc).
 - Version consistency: the core version, the UI version and the root `VERSION` file must agree (see [`tests/test_version_single_source.py`](tests/test_version_single_source.py:1)).

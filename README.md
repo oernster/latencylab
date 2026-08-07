@@ -60,9 +60,10 @@ The primary interface is a CLI that reads a JSON execution model and produces:
 The same engine is available behind a PySide6 desktop front end, which adds inspection rather than capability: every number it shows comes from the same run the CLI would have produced.
 
 - **Examples menu.** Every model the application ships with is on it, so a fresh install has something to run before you have written a model of your own. Start with **Checkout**: a storefront checkout where a 150ms debounce added for politeness turns out to own the median.
-- **Model Composer.** Author a model in the app rather than by hand, and export it as JSON.
-- **Distributions.** A makespan histogram, binned by the Freedman-Diaconis rule, and a critical-path frequency chart. No resimulation, no smoothing, no inference.
-- **Cancel that cancels.** Stopping a run stops the work, at the boundary between one run and the next, and reports how many runs completed. It never aggregates a partial set.
+- **Model Composer.** Author a model in the app rather than by hand and export it as JSON. It is a two-pane dialog: the four parts of a model down the left, the editor for the selected one on the right. Edit opens the loaded model in the same dialog, so composing and changing are one surface rather than two.
+- **Guide and information panels.** The Guide is the shortest path to a first run: six numbered steps, then the reasons. The information panel is the companion on reading the output. Both read themselves at a pace you can follow and hand control straight back the moment you touch them.
+- **Distributions.** A makespan histogram binned by the Freedman-Diaconis rule, plus a critical-path frequency chart. No resimulation, no smoothing, no inference. The application mark in the middle of the toolbar is the control that opens it.
+- **Cancel that cancels.** Stopping a run stops the work at the boundary between one run and the next, then reports how many runs completed. It never aggregates a partial set.
 - **Full keyboard navigation.** One explicit focus ring: Tab and Right forward, Shift+Tab and Left back, wrapping at both ends. A disabled control is skipped and wears a red ring rather than lighting up.
 - **Light and dark themes**, both built from one token set.
 - Open and Export both start in your Downloads folder.
@@ -165,7 +166,7 @@ The GUI lives in [`latencylab_ui/`](latencylab_ui/__init__.py:1).
 
 Note: the UI is intentionally **not packaged** into the published distribution (see the
 packaging notes in [`ARCHITECTURE.md`](ARCHITECTURE.md)). Run it from a clone of this
-repository, or install one of the desktop builds above.
+repository or install one of the desktop builds above.
 
 Launch via the module entry point:
 

@@ -123,7 +123,7 @@
           <ul>
             <li>Your <b>first run in six steps</b>, using the shipped Checkout example.</li>
             <li>What the <b>makespan distribution</b>, the <b>critical path</b> and the <b>path frequencies</b> each mean.</li>
-            <li>How to <b>change one thing and run it again</b>, and how to write a model from nothing.</li>
+            <li>How to <b>change one thing and run it again</b>, then how to write a model from nothing.</li>
             <li>Why you would pick each <b>runs, seed, concurrency</b> and <b>distribution</b> setting.</li>
           </ul>
           <p><a href="guide.html">Read Using LatencyLab &rarr;</a></p>
@@ -163,6 +163,29 @@
             added so the interface would feel calm, is the critical path in most
             runs; the critical-path frequency on the right names the work and the
             percentiles show how often it decides the outcome.</figcaption>
+        </figure>
+        <figure class="shot narrow">
+          <div class="frame">
+            <img loading="lazy" src="assets/latencylab-compose.png" alt="The Model Composer showing the System pane, with the model name, schema version and entry event, with the validate and export controls below">
+          </div>
+          <figcaption><b>Writing a model from nothing.</b> The composer lists the
+            four parts of a model down the left and you work down them in order,
+            because each uses the one before it. System names the model and sets
+            the entry event that starts a run; Contexts are what work runs on and
+            carry the concurrency that queues form behind; Tasks are the units of
+            work; Wiring connects events to tasks. Nothing is inferred, so the
+            model is the thing you argue about.</figcaption>
+        </figure>
+        <figure class="shot narrow">
+          <div class="frame">
+            <img loading="lazy" src="assets/latencylab-edit.png" alt="The Model Composer showing the Tasks pane with one task selected, its context, lognormal distribution parameters, emitted event and category">
+          </div>
+          <figcaption><b>Changing one thing, to see what it was worth.</b> Editing
+            a loaded model opens the same composer with that model in it. One task
+            here, its context, its duration as a lognormal distribution and the
+            event it emits when it finishes. Change one of them, export and load,
+            then run again on the same seed: the difference you see is the
+            structure rather than the draw.</figcaption>
         </figure>
       </div>
     </div>
