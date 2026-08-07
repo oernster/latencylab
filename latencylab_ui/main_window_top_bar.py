@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -32,6 +32,10 @@ GLYPH_PX = 20
 TRAY_OBJECT_NAME = "top_tray"
 TRAY_PAD_Y = 6
 
+# Named so the stylesheet can say what CHECKED looks like on it. The name is
+# shared with the sheet rather than written out twice.
+DISTRIBUTIONS_BUTTON_NAME = "distributions_btn"
+
 # The application mark, in the middle of the bar. Painted from the generated
 # icon set rather than an emoji glyph, so the mark in the bar, the mark in the
 # taskbar, the mark on the shortcut and the mark in About are all one file.
@@ -40,6 +44,10 @@ TOP_BADGE_PX = 36
 # Ask for a larger source and scale it down: downscaling a slightly-too-big icon
 # looks better than upscaling a slightly-too-small one.
 _BADGE_SOURCE_PX = 64
+
+# The same reasoning for the mark on a toolbar button, which is drawn smaller
+# again, so it asks for the same generous source.
+_MARK_SOURCE_PX = 64
 
 MARGIN_SIDE = 10
 BUTTON_SPACING = 8
@@ -92,6 +100,30 @@ def _icon_button(
     glyph: str, *, tooltip: str, on_clicked: Callable[[], None]
 ) -> QPushButton:
     button = QPushButton(glyph)
+    button.setToolTip(tooltip)
+    button.setProperty("role", "icon-action")
+    button.setFixedHeight(TOOLBAR_BUTTON_PX)
+    button.clicked.connect(on_clicked)
+    return button
+
+
+def _app_mark_button(*, tooltip: str, on_clicked: Callable[[], None]) -> QPushButton:
+    """A toolbar button carrying the application's own mark.
+
+    The mark comes from the generated icon set, the same file the tray badge,
+    the taskbar, the shortcut and About all use, rather than an emoji. An emoji
+    is drawn by whichever font the platform happens to pick, so it is the one
+    thing on the bar whose appearance the application does not control.
+
+    Nothing recolours it on check, unlike the drawn glyphs: it is a picture
+    rather than a stroke, so the button's fill and text colour do the saying.
+    """
+
+    button = QPushButton()
+    mark_path = get_app_icon_png_path(_MARK_SOURCE_PX)
+    if mark_path is not None:
+        button.setIcon(QIcon(str(mark_path)))
+    button.setIconSize(QSize(GLYPH_PX, GLYPH_PX))
     button.setToolTip(tooltip)
     button.setProperty("role", "icon-action")
     button.setFixedHeight(TOOLBAR_BUTTON_PX)
@@ -174,11 +206,18 @@ def build_top_bar(
     )
     layout.addWidget(save_log_btn, 0, Qt.AlignmentFlag.AlignTop)
 
-    distributions_btn = _icon_button(
-        "📊",
+    distributions_btn = _app_mark_button(
         tooltip="Show latency and critical-path distributions",
         on_clicked=on_show_distributions_clicked,
     )
+    distributions_btn.setObjectName(DISTRIBUTIONS_BUTTON_NAME)
+    # Checkable for the same reason the composer's button is: the two docks
+    # share the right-hand area and cannot both be up, so the pair of buttons
+    # is really one three-state answer to "what is showing". A control that
+    # only ever opens leaves the dock's own close cross as the only way to undo
+    # what one press did.
+    distributions_btn.setCheckable(True)
+    distributions_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
     layout.addWidget(distributions_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     how_to_read_btn = _icon_button(

@@ -177,7 +177,13 @@ def harden_combobox_popup(combo: QComboBox) -> None:
     combo.setEditable(False)
     combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
     combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-    combo.setMinimumHeight(26)
+    # No explicit minimum height here. One did sit here, from before the
+    # stylesheet carried input metrics, and it had become a second opinion:
+    # an explicit minimum is a floor the LAYOUT may squeeze down to, so a
+    # combo the stylesheet sized at 48px could still be handed 26px and drawn
+    # clipped wherever a panel was tight. Measured in the Wiring editor at 26
+    # and 29 against a 48px hint. The stylesheet decides how tall an input is,
+    # in one place, for every input.
 
     # Bind popup to a hardened palette immediately (and also at show-time via
     # the installed event filter).

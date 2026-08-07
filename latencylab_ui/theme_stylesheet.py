@@ -137,10 +137,30 @@ QPushButton#compose_model_btn:disabled {{
   border: 2px solid {danger};
 }}
 
+/* The distributions toggle answers the same question from the other side: the
+   two docks share the right-hand area, so at most one of this pair is checked.
+   It carries the application's own mark rather than a drawn glyph, and a
+   picture cannot be recoloured on check the way a stroke can, so the fill and
+   the ink do all of the saying here. Declaring only those two leaves the
+   generic ring rules in force rather than overriding them by id. */
+QPushButton#distributions_btn:checked {{
+  background-color: {accent};
+  color: {accent_text};
+}}
+
 /* Inputs carry the same 2px transparent border as the buttons so that gaining
-   a ring never moves them either. */
-QSpinBox,
+   a ring never moves them either.
+
+   `QAbstractSpinBox` rather than `QSpinBox`, and `QLineEdit` named explicitly.
+   A Qt type selector matches a class and its SUBCLASSES, and QDoubleSpinBox is
+   a sibling of QSpinBox rather than a subclass, so a rule written for the one
+   never reached the other: measured in the composer, a QSpinBox stood 51px tall
+   beside a QDoubleSpinBox at 19px and a QLineEdit at 22px, three controls doing
+   the same job at three heights. Anything a user types into belongs on this
+   list. */
+QAbstractSpinBox,
 QComboBox,
+QLineEdit,
 QPlainTextEdit,
 QTextBrowser {{
   background-color: {base};
@@ -150,15 +170,31 @@ QTextBrowser {{
   padding: 6px 8px;
 }}
 
-QSpinBox:enabled:focus,
+/* A spin box and an editable combo CONTAIN a QLineEdit, so the rule above
+   reaches inside them and would give the inner field its own border, padding
+   and minimum height on top of the outer control's. The nested one is not a
+   field in its own right, so it is reset to nothing and the container keeps
+   the metrics. */
+QAbstractSpinBox QLineEdit,
+QComboBox QLineEdit {{
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  padding: 0;
+}}
+
+QAbstractSpinBox:enabled:focus,
 QComboBox:enabled:focus,
+QLineEdit:enabled:focus,
 QPlainTextEdit:enabled:focus,
 QTextBrowser:enabled:focus {{
   border-color: {ring};
 }}
 
-QSpinBox:disabled,
+QAbstractSpinBox:disabled,
 QComboBox:disabled,
+QLineEdit:disabled,
 QPlainTextEdit:disabled,
 QTextBrowser:disabled {{
   background-color: {panel};
@@ -173,13 +209,13 @@ QComboBox QAbstractItemView::item {{
   padding: 4px 8px;
 }}
 
-QSpinBox {{
+QAbstractSpinBox {{
   /* Reserve space for the up/down buttons so they stay visible. */
   padding-right: 26px;
 }}
 
-QSpinBox::up-button,
-QSpinBox::down-button {{
+QAbstractSpinBox::up-button,
+QAbstractSpinBox::down-button {{
   width: 22px;
 }}
 

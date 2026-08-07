@@ -44,6 +44,26 @@ def toggle_or_switch_to_model_composer(window) -> None:
     _ensure_composer_sane_size(window)
 
 
+def toggle_distributions(window) -> None:
+    """Handle the Distributions button click: show it, or put it away.
+
+    Deliberately NOT the mirror of compose. Compose has a switch-to policy
+    because it is going somewhere, away from results that may not have been
+    exported. This one is only saying whether a panel is up, so it leaves the
+    composer alone: the two are allowed to be up together, which is the case
+    `toggle_or_switch_to_model_composer` reads as "switch" rather than "off".
+
+    A plain toggle rather than an opener, because a control that only ever
+    opens leaves the dock's own close cross as the only way to undo one press.
+    """
+
+    if window._distributions_dock.isVisible():  # noqa: SLF001
+        window._distributions_dock.hide()  # noqa: SLF001
+        return
+
+    window._show_distributions_dock()  # noqa: SLF001
+
+
 def _prompt_export_if_needed(window) -> None:
     # Early-return branches are kept deliberately simple and are covered by unit
     # tests in `tests/test_ui_main_window_dock_switching_coverage.py`.

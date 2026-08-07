@@ -35,7 +35,10 @@ from latencylab_ui import main_window_panels as panels
 from latencylab_ui.main_window_panels import build_left_panel
 from latencylab_ui.distributions_dock import DistributionsDock
 from latencylab_ui.model_composer_dock import ModelComposerDock
-from latencylab_ui.main_window_dock_switching import toggle_or_switch_to_model_composer
+from latencylab_ui.main_window_dock_switching import (
+    toggle_distributions,
+    toggle_or_switch_to_model_composer,
+)
 from latencylab_ui.main_window_editing import (
     open_loaded_model_for_editing,
     refresh_open_editor,
@@ -208,8 +211,12 @@ class MainWindow(QMainWindow):
 
     def _on_show_distributions_clicked(self) -> None:
         if not self._distributions_btn.isEnabled():
+            # A checkable button has already flipped itself by the time the
+            # click arrives, so refusing the action has to put it back or the
+            # button would claim a dock that never opened.
+            self._distributions_btn.setChecked(self._distributions_dock.isVisible())
             return
-        self._show_distributions_dock()
+        toggle_distributions(self)
 
     def _on_toggle_model_composer_clicked(self) -> None:
         # The dock is a held attribute owned by this window, so there is no
@@ -230,6 +237,10 @@ class MainWindow(QMainWindow):
         self._distributions_dock.raise_()
 
     def _on_distributions_visibility_changed(self, visible: bool) -> None:
+        # Tracked from the DOCK, not set at the click, so the button still tells
+        # the truth when the dock is closed by its own cross or hidden because
+        # the composer took the area.
+        self._distributions_btn.setChecked(visible)
         if self._controller.is_running() and not visible:
             self._dist_dock_closed_during_run = True
 

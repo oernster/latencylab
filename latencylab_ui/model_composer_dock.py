@@ -67,7 +67,17 @@ class ModelComposerDock(QDockWidget):
         outer.addWidget(scroll)
 
         body = QWidget(scroll)
-        body.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        # `Maximum` vertically reads as "no taller than it needs" and means
+        # "may be made SHORTER than it needs", which is not what a scrolling
+        # panel wants: the scrollbar exists precisely so the content does not
+        # have to fit. Measured with the checkout model loaded and the layouts
+        # settled, it left nineteen controls drawn under their own minimum,
+        # which is how the Params arrows came out squashed. The trailing
+        # `addStretch(1)` below is what absorbs the surplus when a model is
+        # small, so nothing here needs the shrink permission.
+        body.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding
+        )
         scroll.setWidget(body)
         layout = QVBoxLayout(body)
         layout.setContentsMargins(10, 10, 10, 10)

@@ -401,7 +401,32 @@ accent is far too light to carry the near-white every other filled control uses.
 That applies to drawn icons as well as to text, and a stylesheet cannot reach
 inside an icon, so a checkable button whose checked fill is the accent supplies
 a second rendering of its glyph in the accent's ink. Without it the glyph stays
-near-white and disappears at exactly the moment the button means something.
+near-white and disappears at exactly the moment the button means something. A
+button carrying the application's MARK rather than a drawn glyph is the
+exception: a picture cannot be recoloured that way, so its checked state is said
+by the fill and the ink alone.
+
+**One place decides how tall an input stands.** A Qt type selector matches a
+class and its subclasses, and `QDoubleSpinBox` is a SIBLING of `QSpinBox` rather
+than a subclass, so an input rule written for the one never reached the other.
+`QLineEdit` was not named at all. Measured in the composer with a model loaded,
+three controls doing the same job stood at 51px, 19px and 22px. The rule now
+names [`QAbstractSpinBox` and `QLineEdit`](latencylab_ui/theme_stylesheet.py:140),
+which reaches every kind, and resets the `QLineEdit` those controls CONTAIN, or
+the inner field would carry the outer control's border, padding and minimum on
+top of the outer's own.
+
+The second half of that rule is that nothing may quietly overrule it. An
+explicit `setMinimumHeight` on a widget is a floor a layout may squeeze down to,
+so a combo the sheet sized at 48px could still be handed 26px and drawn clipped;
+and the composer's scrolling body was set to `Maximum` vertically, which reads
+as "no taller than it needs" and means "may be made shorter than it needs",
+leaving nineteen controls under their own minimum. Both are gone.
+[`tests/test_ui_input_metrics.py`](tests/test_ui_input_metrics.py:1) asserts the
+invariant rather than today's numbers: no input is drawn smaller than it asks
+for, in either theme. It measures the SETTLED state, since Qt defers layout and
+the offscreen platform does not propagate size hints, so geometry read straight
+after building a panel is whatever it was before the layout ran.
 
 **Scrolling past a control must not change it.** Qt gives the wheel to whatever
 sits under the pointer, and a combo box or spin box accepts it unfocused, so
@@ -497,6 +522,23 @@ same callable rather than to two handlers that have to be kept in step. Only
 Edit changes availability, so `build_menus` returns that one action and the
 window gates it from the same `availability()` call that gates every other
 control.
+
+**A panel button says whether the panel is up.** Distributions is a toggle
+([`toggle_distributions()`](latencylab_ui/main_window_dock_switching.py:47)), not
+an opener: a control that only ever opens leaves the dock's own close cross as
+the only way to undo one press. It is deliberately NOT the mirror of Compose.
+Compose carries a switch-to policy because it is going somewhere, away from
+results that may not have been exported; this one only says whether a panel is
+showing, so it leaves the composer alone. The two are allowed up together, and
+that is precisely the case `toggle_or_switch_to_model_composer` reads as
+"switch" rather than "off".
+
+Its checked state is driven from the DOCK's `visibilityChanged`, never set at
+the click, so the button still tells the truth when the dock is closed by its
+own cross or hidden because something else took the area. The one place the
+click has to intervene is a refusal: a checkable button has already flipped
+itself by the time the handler runs, so declining the action has to put it back
+or the button would claim a panel that never opened.
 
 ### One instance, and the taskbar
 
