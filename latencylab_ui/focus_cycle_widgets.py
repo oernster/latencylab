@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 # Widgets whose own arrow keys mean "move the caret". They are left alone: a
-# text field is left with Tab, never with the arrows, or editing it becomes
+# text field is left with Tab, never with the arrows; otherwise editing it becomes
 # impossible.
 _TEXT_ENTRY_TYPES = (QLineEdit, QAbstractSpinBox)
 
@@ -97,7 +97,7 @@ def is_interactive_widget(window: QMainWindow, w: QWidget) -> bool:
         return False
     if isinstance(w, QPlainTextEdit):
         # A read-only output pane earns a place on the ring only while it
-        # overflows, and then only to be scrolled. Without this the run output
+        # overflows, then only to be scrolled. Without this the run output
         # cannot be reached from the keyboard at all; with it unconditionally,
         # the ring stalls on panes that have nothing to show.
         return w.isReadOnly() is False or scrolls_vertically(w)
@@ -140,6 +140,22 @@ def walk_layout_for_interactive(
             walk_layout_for_interactive(window, item.layout(), out, seen)
 
 
+def declared_ring_stops(w: QWidget) -> tuple[QWidget, ...] | None:
+    """A container's own reading order, where its layout is not in that order.
+
+    Layout order is the right default and is what the eye follows almost
+    everywhere. It is wrong the moment a container OVERLAYS one child on
+    another, because an overlay has no position in the row it covers: the top
+    bar centres the application mark on the whole bar by putting it in the same
+    grid cell as the row of buttons, so the layout reaches it last however far
+    left it is drawn. Such a container says what its order is; everything else
+    is walked exactly as before.
+    """
+
+    stops = getattr(w, "ring_stops", None)
+    return tuple(stops()) if callable(stops) else None
+
+
 def walk_widget_for_interactive(
     window: QMainWindow,
     w: QWidget | None,
@@ -150,6 +166,12 @@ def walk_widget_for_interactive(
         return
 
     maybe_add_interactive_widget(window, w, out, seen)
+
+    declared = declared_ring_stops(w)
+    if declared is not None:
+        for stop in declared:
+            walk_widget_for_interactive(window, stop, out, seen)
+        return
 
     if w.layout() is not None:
         walk_layout_for_interactive(window, w.layout(), out, seen)

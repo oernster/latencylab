@@ -135,6 +135,10 @@ class MainWindow(QMainWindow):
         self._compose_btn = top_bar.compose_btn
         self._edit_btn = top_bar.edit_btn
         self._theme_toggle = top_bar.theme_toggle
+        # Held because the band owns the ring order across it: the mark is an
+        # overlay, so reading order is not layout order and the band is what
+        # states it.
+        self._top_bar = top_bar.widget
 
         root_layout.addWidget(top_bar.widget)
 
@@ -239,7 +243,7 @@ class MainWindow(QMainWindow):
             self._dist_dock_closed_during_run = True
 
     def _refresh_actions(self, *, running: bool | None = None) -> None:
-        """Apply the availability rules, and say why where they say no.
+        """Apply the availability rules, saying why where they say no.
 
         Every control that can be inert is refreshed together from the same
         three facts. Refreshing them one at a time is how the Run button ended
@@ -330,7 +334,7 @@ class MainWindow(QMainWindow):
         """The run stopped because it was asked to, which is not a failure.
 
         How far it got is worth saying: the stop happens at a run boundary, so
-        the number is exact rather than approximate, and it tells the user
+        the number is exact rather than approximate; it tells the user
         whether Cancel caught the run early or nearly at the end.
         """
 

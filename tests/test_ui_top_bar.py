@@ -4,7 +4,7 @@ import pytest
 
 from PySide6.QtCore import QObject, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget
 
 from latencylab_ui.main_window import MainWindow
 from latencylab_ui.theme import Theme, apply_theme, tokens_for
@@ -135,7 +135,7 @@ def test_the_centre_mark_is_the_distributions_toggle(window: MainWindow) -> None
 
     assert mark.isCheckable() is True
     assert mark.toolTip()
-    # Not transparent to the mouse any more, and on the keyboard ring, because
+    # Not transparent to the mouse any more, plus on the keyboard ring, because
     # there is now something to do to it.
     assert mark.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents) is False
     assert mark.focusPolicy() != Qt.FocusPolicy.NoFocus
@@ -161,6 +161,99 @@ def test_compose_button_is_reachable_and_is_not_a_toggle(window: MainWindow) -> 
     assert compose.isChecked() is False
 
     window._model_composer.reject()
+
+
+def _band_stops(window: MainWindow) -> list:
+    """The ring's stops that live on the top bar, in ring order."""
+
+    from latencylab_ui.focus_cycle_widgets import (
+        collect_interactive_widgets_in_layout_order,
+    )
+
+    band = window._top_bar
+    return [
+        w
+        for w in collect_interactive_widgets_in_layout_order(window)
+        if band.isAncestorOf(w)
+    ]
+
+
+# The mark centres itself on the BAR, so where it falls relative to the group on
+# the left is a function of the window width. Narrow enough and the group runs
+# past the centre, which says nothing about the ring and everything about the
+# window: these tests use a width the application is actually used at.
+BAR_ORDER_WIDTH = 1400
+
+
+def _enable_every_bar_control(window: MainWindow, app: QApplication) -> None:
+    """Every control on the bar live, at a realistic width, laid out.
+
+    Enabled because a disabled control is correctly off the ring, so an order
+    measured with half the bar inert would be measuring the wrong list.
+    """
+
+    window.resize(BAR_ORDER_WIDTH, WINDOW_HEIGHT)
+    for stop in window._top_bar.ring_stops():
+        stop.setEnabled(True)
+    for _ in range(3):
+        window._top_bar.layout().activate()
+        app.processEvents()
+
+
+def test_the_ring_crosses_the_bar_left_to_right(
+    app: QApplication, window: MainWindow
+) -> None:
+    """The mark is an OVERLAY, so layout order is not reading order.
+
+    Centring it on the whole bar means putting it in the same grid cell as the
+    row of buttons, which the layout then reaches last however far left it is
+    drawn. Unfixed, the ring stepped from the leftmost button to the theme
+    toggle at the far right and only then back to the mark in the middle, which
+    is indistinguishable from the mark having been skipped.
+    """
+
+    _enable_every_bar_control(window, app)
+
+    stops = _band_stops(window)
+    centres = [w.mapTo(window, w.rect().center()).x() for w in stops]
+
+    assert stops, "the bar contributes nothing to the ring"
+    assert centres == sorted(centres), [
+        (w.objectName() or type(w).__name__, x) for w, x in zip(stops, centres)
+    ]
+
+
+def test_the_mark_is_reached_before_the_control_to_its_right(
+    app: QApplication, window: MainWindow
+) -> None:
+    """Stated separately from the ordering rule because this is the reported
+    bug: the mark sits mid-bar and was offered after the rightmost control."""
+
+    _enable_every_bar_control(window, app)
+
+    stops = _band_stops(window)
+    assert window._distributions_btn in stops
+    assert stops.index(window._distributions_btn) < stops.index(window._theme_toggle)
+
+
+def test_the_declared_order_holds_every_control_on_the_bar(
+    app: QApplication, window: MainWindow
+) -> None:
+    """A hand-written order is one forgotten line from dropping a new button off
+    the ring entirely, so it is checked against the band's real children."""
+
+    from latencylab_ui.focus_cycle_widgets import is_interactive_widget
+
+    _enable_every_bar_control(window, app)
+    band = window._top_bar
+    declared = set(map(id, band.ring_stops()))
+
+    missing = [
+        child.objectName() or type(child).__name__
+        for child in band.findChildren(QWidget)
+        if is_interactive_widget(window, child) and id(child) not in declared
+    ]
+    assert not missing, missing
 
 
 def _accent_pixels(widget, accent: QColor) -> int:
@@ -190,7 +283,7 @@ def test_the_drawn_glyphs_are_two_tone(
     """A single-tone glyph on a filled button reads as a watermark.
 
     Compose and Edit both split the same way the Guide's book does: the part
-    that merely sits there takes the button's ink, and the part that says what
+    that merely sits there takes the button's ink; the part that says what
     the button DOES takes the accent.
     """
 

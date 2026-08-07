@@ -28,7 +28,7 @@ GLYPH_PX = 20
 
 # The tray is a band of its own rather than controls floating on the window.
 # The stylesheet gives it a surface and a bottom edge; it needs a name to be
-# addressed by, and vertical padding so the band reads as a band.
+# addressed by, plus vertical padding so the band reads as a band.
 TRAY_OBJECT_NAME = "top_tray"
 TRAY_PAD_Y = 6
 
@@ -53,11 +53,39 @@ MARGIN_SIDE = 10
 BUTTON_SPACING = 8
 
 
+class NavBand(QWidget):
+    """The tray, which knows the order its own controls are READ in.
+
+    The mark is an overlay sharing one grid cell with the row of buttons,
+    because centring on the BAR cannot be done with a row of stretches. Layout
+    order therefore reaches every button first and the mark last, so the ring
+    stepped from the leftmost button all the way to the theme toggle at the far
+    right and only THEN back to the mark in the middle. The one control on the
+    bar nobody can miss with their eye was the last one the keyboard offered,
+    which is indistinguishable from the ring having skipped it.
+
+    A container whose layout is deliberately not in reading order has to state
+    the reading order itself rather than leave it to be inferred.
+    """
+
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self._ring_stops: tuple[QWidget, ...] = ()
+
+    def set_ring_stops(self, stops: tuple[QWidget, ...]) -> None:
+        self._ring_stops = stops
+
+    def ring_stops(self) -> tuple[QWidget, ...]:
+        """Left to right as drawn, which is not the order the layout holds."""
+
+        return self._ring_stops
+
+
 @dataclass(frozen=True, slots=True)
 class TopBar:
     """The top bar and every control on it the window needs to reach later."""
 
-    widget: QWidget
+    widget: NavBand
     save_log_btn: QPushButton
     distributions_btn: QPushButton
     guide_btn: QPushButton
@@ -70,7 +98,7 @@ class TopBar:
 def _build_centre_mark(
     parent: QWidget, *, tooltip: str, on_clicked: Callable[[], None]
 ) -> QPushButton:
-    """The application mark, dead centre, and the distributions toggle.
+    """The application mark, dead centre, doubling as the distributions toggle.
 
     It was decoration and is now the control, which is the same widget doing a
     job instead of sitting there: the mark is the most prominent thing on the
@@ -108,7 +136,7 @@ def _mark_icon(source: QPixmap) -> QIcon:
     The mark's hands and hub are banana and the checked fill is banana, so on
     its own the mark loses them at exactly the moment the button is saying
     something. Measured at the 24px the bar draws, the same 74% of the mark
-    clears both fills by luminance, but not the same 74%: on the blue fill the
+    clears both fills by luminance; it is not the same 74%: on the blue fill the
     quarter that does not clear is the case, which is warm against a cool fill
     and so is separated by hue instead, while on the banana fill it is the
     hands, which are that same yellow and therefore genuinely gone. A
@@ -222,11 +250,11 @@ def build_top_bar(
     does not work either, because a column never shrinks below its own content.
 
     What does work is an overlay: the controls and the mark occupy the SAME grid
-    cell, that cell is the whole bar, and the mark centres itself in it. The
+    cell, that cell is the whole bar, then the mark centres itself in it. The
     mark is added second, so it is the one that takes a click where they meet.
     """
 
-    top_bar = QWidget(parent)
+    top_bar = NavBand(parent)
     top_bar.setObjectName(TRAY_OBJECT_NAME)
     grid = QGridLayout(top_bar)
     grid.setContentsMargins(MARGIN_SIDE, TRAY_PAD_Y, MARGIN_SIDE, TRAY_PAD_Y)
@@ -269,7 +297,7 @@ def build_top_bar(
     # Not checkable. It was, back when it toggled a dock that shared the window
     # with the results, so the button was the only thing saying which of the two
     # was up. The composer is a modal dialog now: while it is open it IS the
-    # window, and a button reporting that from underneath it says nothing.
+    # window; a button reporting that from underneath it says nothing.
     compose_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
     layout.addWidget(compose_btn, 0, Qt.AlignmentFlag.AlignTop)
 
@@ -300,6 +328,23 @@ def build_top_bar(
         0,
         0,
         Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
+    )
+
+    # Left to right as the bar is drawn: the action group, then the mark in the
+    # middle, then the theme toggle on the far right. Stated here because this
+    # is the one place every control is in hand at once. It is asserted against
+    # the band's real children by a test, so adding a button and forgetting this
+    # line fails the suite rather than quietly dropping it off the ring.
+    top_bar.set_ring_stops(
+        (
+            save_log_btn,
+            guide_btn,
+            how_to_read_btn,
+            compose_btn,
+            edit_btn,
+            distributions_btn,
+            theme_toggle,
+        )
     )
 
     return TopBar(
