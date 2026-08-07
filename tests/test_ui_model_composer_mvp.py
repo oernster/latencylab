@@ -19,6 +19,7 @@ def test_compose_button_exists_and_toggles_dock_visibility() -> None:
     from PySide6.QtCore import QObject, Signal
     from PySide6.QtWidgets import QPushButton
 
+    from latencylab_ui import main_window_actions as actions
     from latencylab_ui.main_window import MainWindow
 
     class _Controller(QObject):
@@ -43,7 +44,11 @@ def test_compose_button_exists_and_toggles_dock_visibility() -> None:
 
     btn = w.findChild(QPushButton, "compose_model_btn")
     assert btn is not None
-    assert btn.text() == "Compose Model"
+    # A drawn glyph with a tooltip rather than a caption, so the tray is a row
+    # of icons rather than one wide button among them.
+    assert btn.text() == ""
+    assert btn.icon().isNull() is False
+    assert btn.toolTip() == actions.COMPOSE_READY
     assert w._model_composer_dock.isVisible() is False
 
     btn.click()

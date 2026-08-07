@@ -31,6 +31,7 @@
     <nav class="nav-links">
       <a href="index.html#who">Who it's for</a>
       <a href="index.html#what">What it does</a>
+      <a href="reading.html">Reading the output</a>
       <a href="why.html">Why</a>
       <a href="index.html#start">Get started</a>
       <a href="https://github.com/oernster/latencylab">GitHub</a>
@@ -52,9 +53,9 @@
         come concrete critical paths that name the work, queue-wait figures and percentiles split
         between UI events and overall makespan, because those answer different questions. When
         numbers change it is because the model changed, never because the measurement drifted.</p>
-      <p>The results routinely betray intuition. In the shipped music-discovery ingest model most
-        people predict the background work dominates perceived latency; instead the smooth-feeling
-        progress updates competing for one UI thread quietly extend the critical path. The same
+      <p>The results routinely betray intuition. In the shipped checkout model most people predict
+        the slowest back end dominates perceived latency; instead a short debounce, added so the
+        interface would feel calm, is the critical path in most runs. The same
         engine is one of the two instruments behind Relativistic Decision Architecture: it produced
         the book's hierarchy-depth and authority-placement numbers from published models and seeds,
         so every quantitative claim there can be rerun.</p>
@@ -75,7 +76,7 @@
   <div class="container footer-inner">
     <div>
       <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
-      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->2.1.0<!--/VERSION-->
+      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.0<!--/VERSION-->
     </div>
     <div class="footer-links">
       <a href="https://github.com/oernster/latencylab">GitHub</a>

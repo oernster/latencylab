@@ -37,6 +37,11 @@ DISTRIBUTIONS_NEEDS_OUTPUTS = (
     "Run a simulation first, then its distributions appear here"
 )
 
+COMPOSE_READY = "Compose a new model"
+
+EDIT_READY = "Edit the loaded model in the Model Composer"
+EDIT_NEEDS_MODEL = "Open a model first, then it can be edited"
+
 
 @dataclass(frozen=True, slots=True)
 class ActionAvailability:
@@ -47,6 +52,7 @@ class ActionAvailability:
     inputs: bool
     save_log: bool
     distributions: bool
+    edit_model: bool
 
 
 def availability(
@@ -69,6 +75,10 @@ def availability(
         # never while a fresh run is replacing it.
         save_log=have_outputs and not running,
         distributions=have_outputs and not running,
+        # Editing needs something to edit and nothing else. It is deliberately
+        # not gated on `running`: the composer is an authoring surface, and a
+        # run in progress does not make the model that started it unreadable.
+        edit_model=model_loaded,
     )
 
 
@@ -88,6 +98,10 @@ def save_tooltip(*, available: bool) -> str:
 
 def distributions_tooltip(*, available: bool) -> str:
     return DISTRIBUTIONS_READY if available else DISTRIBUTIONS_NEEDS_OUTPUTS
+
+
+def edit_tooltip(*, available: bool) -> str:
+    return EDIT_READY if available else EDIT_NEEDS_MODEL
 
 
 def cancelled_status(completed_runs: int) -> str:

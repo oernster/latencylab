@@ -1,0 +1,114 @@
+{
+  "schema_version": 2,
+  "entry_event": "user.checkout_clicked",
+
+  "contexts": {
+    "ui": { "concurrency": 1 },
+    "net": { "concurrency": 4 },
+    "db": { "concurrency": 1 },
+    "workers": { "concurrency": 2 }
+  },
+
+  "events": {
+    "user.checkout_clicked": { "tags": ["ui"] },
+    "checkout.started": { "tags": [] },
+    "cart.loaded": { "tags": [] },
+    "payment.loaded": { "tags": [] },
+    "shipping.loaded": { "tags": [] },
+    "promotions.loaded": { "tags": [] },
+    "totals.ready": { "tags": [] },
+    "ui.section_rendered": { "tags": ["ui"] }
+  },
+
+  "tasks": {
+    "ui.handle_click": {
+      "context": "ui",
+      "duration_ms": { "dist": "fixed", "value": 4.0 },
+      "emit": ["checkout.started"],
+      "meta": { "category": "interaction", "labels": { "owner": "storefront" } }
+    },
+
+    "db.load_cart": {
+      "context": "db",
+      "duration_ms": { "dist": "lognormal", "mu": 4.4, "sigma": 0.45 },
+      "emit": ["cart.loaded"],
+      "meta": { "category": "persistence", "labels": { "owner": "cart" } }
+    },
+
+    "db.load_saved_cards": {
+      "context": "db",
+      "duration_ms": { "dist": "lognormal", "mu": 4.2, "sigma": 0.5 },
+      "emit": ["payment.loaded"],
+      "meta": { "category": "persistence", "labels": { "owner": "payments" } }
+    },
+
+    "net.quote_shipping": {
+      "context": "net",
+      "duration_ms": { "dist": "normal", "mean": 165.0, "std": 55.0, "min": 5.0 },
+      "emit": ["shipping.loaded"],
+      "meta": { "category": "third-party", "labels": { "owner": "logistics" } }
+    },
+
+    "net.fetch_promotions": {
+      "context": "net",
+      "duration_ms": { "dist": "lognormal", "mu": 4.1, "sigma": 0.7 },
+      "emit": ["promotions.loaded"],
+      "meta": { "category": "third-party", "labels": { "owner": "growth" } }
+    },
+
+    "workers.price_order": {
+      "context": "workers",
+      "duration_ms": { "dist": "normal", "mean": 45.0, "std": 12.0, "min": 5.0 },
+      "emit": ["totals.ready"],
+      "meta": { "category": "compute", "labels": { "owner": "pricing" } }
+    },
+
+    "ui.render_cart": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 18.0, "std": 4.0, "min": 1.0 },
+      "emit": ["ui.section_rendered"],
+      "meta": { "category": "render", "labels": { "owner": "storefront" } }
+    },
+
+    "ui.render_payment": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 12.0, "std": 3.0, "min": 1.0 },
+      "emit": ["ui.section_rendered"],
+      "meta": { "category": "render", "labels": { "owner": "storefront" } }
+    },
+
+    "ui.render_shipping": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 15.0, "std": 4.0, "min": 1.0 },
+      "emit": ["ui.section_rendered"],
+      "meta": { "category": "render", "labels": { "owner": "storefront" } }
+    },
+
+    "ui.render_totals": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 22.0, "std": 5.0, "min": 1.0 },
+      "emit": ["ui.section_rendered"],
+      "meta": { "category": "render", "labels": { "owner": "storefront" } }
+    }
+  },
+
+  "wiring": {
+    "user.checkout_clicked": ["ui.handle_click"],
+
+    "checkout.started": [
+      "db.load_cart",
+      "db.load_saved_cards",
+      "net.quote_shipping",
+      {
+        "task": "net.fetch_promotions",
+        "delay_ms": { "dist": "fixed", "value": 150.0 }
+      }
+    ],
+
+    "cart.loaded": ["ui.render_cart", "workers.price_order"],
+    "payment.loaded": ["ui.render_payment"],
+    "shipping.loaded": ["ui.render_shipping"],
+    "promotions.loaded": ["ui.render_totals"],
+    "totals.ready": ["ui.render_totals"]
+  }
+}

@@ -142,6 +142,7 @@ export QT_PLUGIN_PATH="/app/lib/${PYTHON_DIR}/site-packages/PySide6/Qt/plugins"
 export QT_QPA_PLATFORM_PLUGIN_PATH="/app/lib/${PYTHON_DIR}/site-packages/PySide6/Qt/plugins/platforms"
 export QML2_IMPORT_PATH="/app/lib/${PYTHON_DIR}/site-packages/PySide6/Qt/qml"
 export LATENCYLAB_ASSETS_DIR="/app/assets"
+export LATENCYLAB_EXAMPLES_DIR="/app/examples"
 
 if [ -n "$WAYLAND_DISPLAY" ] && [ -z "$FORCE_X11" ]; then
     export QT_QPA_PLATFORM=wayland
@@ -453,6 +454,8 @@ modules:
       - cp -r latencylab latencylab_ui runner.py VERSION LICENSE /app/share/latencylab/
       # Only the PNGs: the .ico and .icns are for the Windows and macOS builds.
       - install -Dm644 -t /app/assets assets/*.png
+      # The shipped models, so a fresh install has something to open.
+      - install -Dm644 -t /app/examples examples/*.json
       - install -Dm755 packaging/${APP_COMMAND} /app/bin/${APP_COMMAND}
       - install -Dm644 packaging/${APP_ID}.desktop /app/share/applications/${APP_ID}.desktop
       - install -Dm644 packaging/${APP_ID}.metainfo.xml /app/share/metainfo/${APP_ID}.metainfo.xml
@@ -481,6 +484,9 @@ cat <<'MANIFEST_TAIL'
       - type: dir
         path: assets
         dest: assets
+      - type: dir
+        path: examples
+        dest: examples
       - type: dir
         path: packaging
         dest: packaging

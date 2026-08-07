@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from latencylab_ui import model_composer_export as export_mod
+
 
 def _ensure_qapp():
     from PySide6.QtWidgets import QApplication
@@ -175,7 +177,7 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
     monkeypatch.setattr(
         QFileDialog, "getSaveFileName", lambda *a, **k: (str(tmp_path / "noext"), "")
     )
-    p = dock._prompt_save_path(default_filename="x.json")  # noqa: SLF001
+    p = export_mod.prompt_save_path(dock, default_filename="x.json")  # noqa: SLF001
     assert p is not None
     assert p.suffix == ".json"
 
@@ -203,11 +205,11 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
             self.path = path
 
     host._loaded_model = _Loaded(tmp_path / "m.json")  # type: ignore[attr-defined]
-    assert dock._default_export_dir() == tmp_path  # noqa: SLF001
+    assert export_mod.default_export_dir(dock) == tmp_path  # noqa: SLF001
 
     # Stress: generation failure.
     monkeypatch.setattr(
-        _dock_mod,
+        export_mod,
         "build_stress_variant_state",
         lambda *_a, **_k: (_ for _ in ()).throw(ValueError("nope")),
     )
@@ -215,7 +217,7 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
 
     # Stress: cancel path.
     monkeypatch.setattr(
-        _dock_mod, "build_stress_variant_state", _dock_mod.build_stress_variant_state
+        export_mod, "build_stress_variant_state", export_mod.build_stress_variant_state
     )
     monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a, **k: ("", ""))
     dock._on_export_stress_clicked()  # noqa: SLF001
@@ -225,7 +227,12 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
         raise RuntimeError("no")
 
     host._load_model = _boom  # type: ignore[attr-defined]
-    dock._load_into_main_ui(tmp_path / "x.json")  # noqa: SLF001
+    export_mod.load_into_main_ui(dock, tmp_path / "x.json")  # noqa: SLF001
+
+    # A host with no loader at all: nothing to hand it to, and nothing to say
+    # about that. The composer can be opened without a main window behind it.
+    del host._load_model  # type: ignore[attr-defined]
+    export_mod.load_into_main_ui(dock, tmp_path / "x.json")  # noqa: SLF001
 
     dock.close()
     app.processEvents()

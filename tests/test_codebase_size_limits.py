@@ -24,6 +24,7 @@ DANGER_BAND_FLOOR = LINE_CAP - (LINE_CAP * DANGER_BAND_PERCENT // 100)
 BUILD_SCRIPTS = frozenset(
     {
         "generate_icons.py",
+        "render_master_icon.py",
         "generate_scripts.py",
         "stamp_version.py",
         "buildexe.py",

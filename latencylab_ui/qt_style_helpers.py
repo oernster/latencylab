@@ -113,6 +113,16 @@ def _bind_combo_popup_palette(combo: QComboBox) -> None:
             src.color(group, QPalette.ColorRole.Text),
         )
 
+        # The popup FLOATS, so it is painted on the elevated surface rather
+        # than on the same Base as the closed combo. Copying Base straight
+        # across is what the rest of this function does and it is wrong here:
+        # measured in the dark theme, it put the open list within six levels of
+        # luminance of the window behind it, which is the same invisibility the
+        # menus had. `elevated` rides on ToolTipBase; see `theme._apply_common_palette`.
+        elevated = src.color(group, QPalette.ColorRole.ToolTipBase)
+        pal.setColor(group, QPalette.ColorRole.Base, elevated)
+        pal.setColor(group, QPalette.ColorRole.Window, elevated)
+
     view.setPalette(pal)
     if vp is not None:
         vp.setPalette(pal)

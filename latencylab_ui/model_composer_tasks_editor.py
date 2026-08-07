@@ -101,6 +101,34 @@ class _TaskCard(QFrame):
         self._category_label.setVisible(not is_v1)
         self.category_edit.setVisible(not is_v1)
 
+    def set_from_obj(self, name: str, obj: dict[str, object]) -> None:
+        """Fill this card from one task of a model being edited.
+
+        The inverse of `to_task_obj`, and only a partial one: a v1 model has no
+        category to restore, and a task whose context is not in the model's own
+        context list leaves the combo on whatever it already held rather than
+        inventing an entry the contexts table does not have.
+        """
+
+        self.name_edit.setText(str(name))
+
+        context = str(obj.get("context", "") or "").strip()
+        if context and self.context_combo.findText(context) >= 0:
+            self.context_combo.setCurrentText(context)
+
+        duration = obj.get("duration_ms")
+        if isinstance(duration, dict):
+            self.duration.set_from_obj(duration)
+
+        emits = obj.get("emit") or []
+        self.emits_edit.setText(", ".join(str(e) for e in emits))
+
+        meta = obj.get("meta")
+        category = ""
+        if isinstance(meta, dict):
+            category = str(meta.get("category") or "")
+        self.category_edit.setText(category)
+
     def to_task_obj(self, *, version: int) -> tuple[str, dict[str, object]] | None:
         name = self.name_edit.text().strip()
         if not name:
@@ -179,6 +207,33 @@ class TasksEditor(QWidget):
             out[name] = obj
         return out
 
+    def set_tasks(self, tasks: dict[str, dict[str, object]]) -> None:
+        """Replace every card with the tasks of a model being edited.
+
+        Sorted by name for the same reason the contexts table is: the file's
+        key order is an accident of how it was written, and the editor must
+        present the same model the same way twice.
+        """
+
+        for card in self._iter_cards():
+            card.setParent(None)
+            card.deleteLater()
+
+        for name in sorted(tasks):
+            card = self._new_card()
+            card.set_from_obj(name, tasks.get(name) or {})
+            self._cards_col.addWidget(card)
+
+        self.changed.emit()
+
+    def _new_card(self) -> _TaskCard:
+        card = _TaskCard(self)
+        card.set_context_names(self._context_names)
+        card.set_version(self._version)
+        card.changed.connect(self.changed)
+        card.remove_requested.connect(lambda: self._remove_card(card))
+        return card
+
     def _iter_cards(self) -> list[_TaskCard]:
         cards: list[_TaskCard] = []
         for i in range(self._cards_col.count()):
@@ -189,12 +244,8 @@ class TasksEditor(QWidget):
 
     def _on_add(self) -> None:
         idx = len(self._iter_cards()) + 1
-        card = _TaskCard(self)
+        card = self._new_card()
         card.name_edit.setText(f"task_{idx}")
-        card.set_context_names(self._context_names)
-        card.set_version(self._version)
-        card.changed.connect(self.changed)
-        card.remove_requested.connect(lambda: self._remove_card(card))
         self._cards_col.addWidget(card)
         self.changed.emit()
 

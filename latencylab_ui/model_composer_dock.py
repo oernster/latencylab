@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDockWidget,
     QDoubleSpinBox,
-    QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -24,12 +21,9 @@ from latencylab_ui.model_composer_contexts_editor import ContextsEditor
 from latencylab_ui.model_composer_system_editor import SystemEditor
 from latencylab_ui.model_composer_tasks_editor import TasksEditor
 from latencylab_ui.model_composer_wiring_editor import WiringEditor
-from latencylab_ui.model_composer_types import (
-    ComposerState,
-    build_raw_model_dict,
-    build_stress_variant_state,
-    dumps_deterministic,
-)
+from latencylab_ui.model_composer_types import ComposerState, build_raw_model_dict
+from latencylab_ui.model_composer_export import export_model, export_stress_variant
+from latencylab_ui.model_composer_load import load_raw_model
 
 
 class ModelComposerDock(QDockWidget):
@@ -57,6 +51,10 @@ class ModelComposerDock(QDockWidget):
         self.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
 
         self._state = ComposerState()
+
+        # Whether these editors are a view of an opened model or something the
+        # user typed. See `is_showing_loaded_model`.
+        self._showing_loaded_model = False
 
         root = QWidget(self)
         outer = QVBoxLayout(root)
@@ -186,6 +184,30 @@ class ModelComposerDock(QDockWidget):
         self._maybe_autowire_entry_event(task_names=task_names)
         self._on_state_changed()
 
+    def load_raw_model(self, raw: dict, *, model_name: str) -> None:
+        """Fill the composer from a model that already exists on disk."""
+
+        load_raw_model(self, raw, model_name=model_name)
+        self._showing_loaded_model = True
+
+    def is_showing_loaded_model(self) -> bool:
+        """Whether these editors are a view of a model that was opened.
+
+        The difference matters when another model is opened. A composer that is
+        showing a loaded model is stale the moment a different one loads and
+        has to follow it. A composer holding something typed from scratch is
+        the user's own work, and replacing that would be data loss rather than
+        a refresh, so it is left alone.
+        """
+
+        return self._showing_loaded_model
+
+    def clear_validation(self) -> None:
+        """Drop the last validation verdict and re-derive from the editors."""
+
+        self._valid_label.setText("")
+        self._sync_from_ui()
+
     def _on_state_changed(self) -> None:
         self._valid_label.setText("")
         self._sync_from_ui()
@@ -291,78 +313,24 @@ class ModelComposerDock(QDockWidget):
         layout.addWidget(btn_row)
         return box
 
-    def _default_export_dir(self) -> Path:
-        try:
-            mw = self.parent()
-            loaded = getattr(mw, "_loaded_model", None)
-            if loaded is not None and hasattr(loaded, "path"):
-                return Path(loaded.path).parent
-        except Exception:  # noqa: BLE001
-            pass
-        return Path(".").resolve()
-
-    def _prompt_save_path(self, *, default_filename: str) -> Path | None:
-        start_dir = self._default_export_dir()
-        p, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save model JSON",
-            str(start_dir / default_filename),
-            "JSON files (*.json);;All files (*)",
-        )
-        if not p:
-            return None
-        out = Path(p)
-        if out.suffix.lower() != ".json":
-            out = out.with_suffix(".json")
-        return out
-
     def _on_export_clicked(self, *, load_after: bool) -> None:
-        if not self._validate_now(show_dialog=True):
-            return
-        self._sync_from_ui()
-        raw = build_raw_model_dict(self._state)
-        path = self._prompt_save_path(default_filename=f"{self._state.model_name}.json")
-        if path is None:
-            return
-        try:
-            path.write_text(dumps_deterministic(raw), encoding="utf-8")
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.critical(self, "Export failed", str(e))
-            return
-
-        if load_after:
-            self._load_into_main_ui(path)
+        export_model(self, load_after=load_after)
 
     def _on_export_stress_clicked(self) -> None:
-        if not self._validate_now(show_dialog=True):
-            return
+        export_stress_variant(self, multiplier=float(self._stress_mult.value()))
+
+    # ----- What the load and export helpers read -----
+    #
+    # Named rather than reached for through the private attributes, so the two
+    # halves of the composer's file handling are a small stated surface instead
+    # of an open licence over the dock's internals.
+
+    @property
+    def state(self) -> ComposerState:
+        return self._state
+
+    def sync_from_ui(self) -> None:
         self._sync_from_ui()
-        try:
-            stress = build_stress_variant_state(
-                self._state, multiplier=float(self._stress_mult.value())
-            )
-            raw = build_raw_model_dict(stress)
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.critical(self, "Stress generation failed", str(e))
-            return
 
-        path = self._prompt_save_path(
-            default_filename=f"{self._state.model_name}_STRESS.json"
-        )
-        if path is None:
-            return
-        try:
-            path.write_text(dumps_deterministic(raw), encoding="utf-8")
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.critical(self, "Export failed", str(e))
-            return
-
-        self._load_into_main_ui(path)
-
-    def _load_into_main_ui(self, path: Path) -> None:
-        try:
-            mw = self.parent()
-            if mw is not None and hasattr(mw, "_load_model"):
-                mw._load_model(path)  # noqa: SLF001
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.critical(self, "Load failed", str(e))
+    def validate_now(self, *, show_dialog: bool) -> bool:
+        return self._validate_now(show_dialog=show_dialog)

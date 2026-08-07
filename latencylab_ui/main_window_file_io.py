@@ -9,13 +9,14 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 from latencylab.model import Model
 from latencylab.validate import ModelValidationError, validate_model
 from latencylab_ui.outputs_view import format_summary_text
+from latencylab_ui.user_paths import default_dialog_dir, default_export_path
 
 
 def open_model_dialog(window) -> None:
     path_str, _ = QFileDialog.getOpenFileName(
         window,
         "Open LatencyLab model",
-        "",
+        default_dialog_dir(),
         "JSON files (*.json);;All files (*)",
     )
     if not path_str:
@@ -37,7 +38,7 @@ def export_runs(window) -> bool:
     path_str, _ = QFileDialog.getSaveFileName(
         window,
         "Export runs",
-        "",
+        default_export_path(),
         "Zip files (*.zip);;All files (*)",
     )
     if not path_str:

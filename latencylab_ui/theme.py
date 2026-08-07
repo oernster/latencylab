@@ -34,13 +34,22 @@ def _apply_common_palette(pal: QPalette, tokens: ThemeTokens) -> QPalette:
     pal.setColor(QPalette.ColorRole.WindowText, QColor(tokens.text))
     pal.setColor(QPalette.ColorRole.Base, QColor(tokens.base))
     pal.setColor(QPalette.ColorRole.AlternateBase, QColor(tokens.alternate_base))
-    pal.setColor(QPalette.ColorRole.ToolTipBase, QColor(tokens.panel))
+    # ToolTipBase carries `elevated` for EVERY floating surface, not just
+    # tooltips. Qt has no "popup background" role, and a popup needs to read
+    # the colour at the moment it opens rather than capture it when it was
+    # built, or a theme switch leaves it painted in the old theme. The palette
+    # is the only channel with that property, and this is the role in it whose
+    # meaning already is "the background of something floating above the
+    # window". `qt_style_helpers` reads it back for the combo popups.
+    pal.setColor(QPalette.ColorRole.ToolTipBase, QColor(tokens.elevated))
     pal.setColor(QPalette.ColorRole.ToolTipText, QColor(tokens.text))
     pal.setColor(QPalette.ColorRole.Text, QColor(tokens.text))
     pal.setColor(QPalette.ColorRole.Button, QColor(tokens.panel))
     pal.setColor(QPalette.ColorRole.ButtonText, QColor(tokens.text))
     pal.setColor(QPalette.ColorRole.Highlight, QColor(tokens.accent))
-    pal.setColor(QPalette.ColorRole.HighlightedText, QColor(15, 15, 15))
+    # Selected text sits ON the accent, so it takes the accent's own ink rather
+    # than a near-black written out again here.
+    pal.setColor(QPalette.ColorRole.HighlightedText, QColor(tokens.accent_text))
 
     muted = QColor(tokens.muted_text)
     for role in (

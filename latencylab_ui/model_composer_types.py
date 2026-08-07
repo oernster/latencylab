@@ -41,6 +41,67 @@ def dumps_deterministic(obj: Any) -> str:
     return json.dumps(obj, indent=2, sort_keys=True)
 
 
+# The version keys the engine accepts, preferred first. Editing a model has to
+# read every form the simulator will, or a model that runs cannot be opened.
+VERSION_KEYS = ("schema_version", "version", "model_version")
+
+DEFAULT_VERSION = 2
+
+
+def read_schema_version(raw: dict[str, Any]) -> int:
+    """The schema version of a model on disk, however it spelled the key."""
+
+    for key in VERSION_KEYS:
+        if key in raw:
+            try:
+                return int(raw[key])
+            except (TypeError, ValueError):
+                return DEFAULT_VERSION
+    return DEFAULT_VERSION
+
+
+def wiring_edges_from_raw(raw_wiring: Any) -> dict[str, list[dict[str, Any]]]:
+    """Turn a model's `wiring` into the edge form the wiring editor holds.
+
+    The file format accepts three listener spellings and the editor holds one,
+    so opening a model for editing has to widen every one of them. A bare
+    string and an object without a delay are the same edge; a number delay is
+    the shorthand the parser expands to a fixed distribution, and it is
+    expanded here for the same reason: the editor should show what the model
+    means, not how it was typed.
+    """
+
+    out: dict[str, list[dict[str, Any]]] = {}
+    if not isinstance(raw_wiring, dict):
+        return out
+
+    for event, listeners in raw_wiring.items():
+        edges: list[dict[str, Any]] = []
+        for listener in listeners or []:
+            if isinstance(listener, str):
+                edges.append({"task": listener, "delay_ms": None})
+                continue
+            if not isinstance(listener, dict):
+                continue
+            task = str(listener.get("task", "") or "").strip()
+            if not task:
+                continue
+            edges.append({"task": task, "delay_ms": _delay_from_raw(listener)})
+        out[str(event)] = edges
+    return out
+
+
+def _delay_from_raw(listener: dict[str, Any]) -> dict[str, Any] | None:
+    delay = listener.get("delay_ms")
+    if delay is None:
+        return None
+    if isinstance(delay, dict):
+        return dict(delay)
+    if isinstance(delay, (int, float)) and not isinstance(delay, bool):
+        return {"dist": "fixed", "value": float(delay)}
+    return None
+
+
 def _split_csv(text: str) -> list[str]:
     out: list[str] = []
     for raw in (text or "").split(","):

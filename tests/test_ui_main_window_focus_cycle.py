@@ -73,7 +73,10 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     def _focused_widget_text() -> str:
         fw = QApplication.focusWidget()
         if isinstance(fw, QPushButton):
-            return fw.text()
+            # Compose and Edit carry a drawn glyph and no caption, so they are
+            # identified by object name; everything else still reads better as
+            # the text the user can see.
+            return fw.text() or fw.objectName()
         return type(fw).__name__ if fw is not None else "(none)"
 
     def _send(key: Qt.Key, modifier: Qt.KeyboardModifier = Qt.NoModifier) -> None:
@@ -122,7 +125,17 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     _send(Qt.Key_Tab)
     _wait_for_active_menu("File")
 
-    # Next Tab advances to the next menu title.
+    # Next Tab advances to the next menu title. Examples is a top-level menu
+    # rather than a submenu of File, precisely so the ring walks it like any
+    # other title: a submenu would need Right to open, which the ring claims.
+    _send(Qt.Key_Tab)
+    assert w.menuBar().activeAction() is not None
+    assert w.menuBar().activeAction().text() == "Examples"
+
+    _send(Qt.Key_Tab)
+    assert w.menuBar().activeAction() is not None
+    assert w.menuBar().activeAction().text() == "Model"
+
     _send(Qt.Key_Tab)
     assert w.menuBar().activeAction() is not None
     assert w.menuBar().activeAction().text() == "Help"
@@ -140,7 +153,13 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     # Compose is a ring stop. It used to be NoFocus, which made it the one
     # top-bar control the keyboard could not reach.
     _send(Qt.Key_Tab)
-    _wait_for_focus_text("Compose Model")
+    _wait_for_focus_text("compose_model_btn")
+
+    # Edit follows it in the tray, and is reachable here because this test
+    # loads a model first. With nothing loaded it is disabled and the ring
+    # steps straight past it, like every other inert control.
+    _send(Qt.Key_Tab)
+    _wait_for_focus_text("edit_model_btn")
 
     # Theme toggle is a single focus stop; it is toggled with Space, not Tab.
     _send(Qt.Key_Tab)
@@ -167,13 +186,24 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     # Wrap-around.
     _send(Qt.Key_Tab)
     assert w.menuBar().activeAction() is not None
+    assert w.menuBar().activeAction().text() == "Examples"
+
+    _send(Qt.Key_Tab)
+    assert w.menuBar().activeAction() is not None
+    assert w.menuBar().activeAction().text() == "Model"
+
+    _send(Qt.Key_Tab)
+    assert w.menuBar().activeAction() is not None
     assert w.menuBar().activeAction().text() == "Help"
 
     _send(Qt.Key_Tab)
     assert _focused_widget_text() == "ℹ️"
 
     _send(Qt.Key_Tab)
-    assert _focused_widget_text() == "Compose Model"
+    assert _focused_widget_text() == "compose_model_btn"
+
+    _send(Qt.Key_Tab)
+    assert _focused_widget_text() == "edit_model_btn"
 
     _send(Qt.Key_Tab)
     assert _focused_widget_text() == SUN

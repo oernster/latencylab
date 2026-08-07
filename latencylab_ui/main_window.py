@@ -23,6 +23,7 @@ from latencylab_ui.main_window_file_io import (
     open_model_dialog as _open_model_dialog,
 )
 
+from latencylab_ui.attention_flash import AttentionFlash
 from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
 from latencylab_ui.focus_cycle import FocusCycleController
 from latencylab_ui.main_window_menus import build_menus, show_how_to_read_dialog
@@ -35,6 +36,10 @@ from latencylab_ui.main_window_panels import build_left_panel
 from latencylab_ui.distributions_dock import DistributionsDock
 from latencylab_ui.model_composer_dock import ModelComposerDock
 from latencylab_ui.main_window_dock_switching import toggle_or_switch_to_model_composer
+from latencylab_ui.main_window_editing import (
+    open_loaded_model_for_editing,
+    refresh_open_editor,
+)
 
 
 @dataclass
@@ -90,9 +95,12 @@ class MainWindow(QMainWindow):
         self._set_running(False)
 
     def _build_actions(self) -> None:
-        build_menus(
+        self._edit_action = build_menus(
             self,
             on_open_model=self._open_model_dialog,
+            on_open_example=self._load_model,
+            on_compose_model=self._on_toggle_model_composer_clicked,
+            on_edit_model=self._on_edit_model_clicked,
             on_exit=self.close,
         )
 
@@ -109,12 +117,14 @@ class MainWindow(QMainWindow):
             on_show_distributions_clicked=self._on_show_distributions_clicked,
             on_show_how_to_read_clicked=lambda: show_how_to_read_dialog(self),
             on_toggle_model_composer_clicked=self._on_toggle_model_composer_clicked,
+            on_edit_model_clicked=self._on_edit_model_clicked,
             on_theme_changed=self._on_theme_changed,
         )
         self._save_log_btn = top_bar.save_log_btn
         self._distributions_btn = top_bar.distributions_btn
         self._how_to_read_btn = top_bar.how_to_read_btn
         self._compose_btn = top_bar.compose_btn
+        self._edit_btn = top_bar.edit_btn
         self._top_badge = top_bar.badge
         self._theme_toggle = top_bar.theme_toggle
 
@@ -146,6 +156,11 @@ class MainWindow(QMainWindow):
         # so they stay readable when the Distributions dock is open.
         root_layout.addWidget(build_left_panel(self), 1)
 
+        # Built here rather than in the panel, because what it points at is a
+        # window-level event (a model finished loading) and not the button's
+        # own business.
+        self._run_flash = AttentionFlash(self._run_btn)
+
         status = QStatusBar()
         self.setStatusBar(status)
         self._busy_bar = QProgressBar()
@@ -176,6 +191,7 @@ class MainWindow(QMainWindow):
         # If a simulation is active, wait for completion to avoid:
         #   QThread: Destroyed while thread '' is still running
         self._focus_cycle.uninstall()
+        self._run_flash.stop()
         self._controller.shutdown()
         super().closeEvent(event)
 
@@ -199,6 +215,9 @@ class MainWindow(QMainWindow):
         # The dock is a held attribute owned by this window, so there is no
         # deleted-object case to guard against here.
         toggle_or_switch_to_model_composer(self)
+
+    def _on_edit_model_clicked(self) -> None:
+        open_loaded_model_for_editing(self)
 
     def _on_model_composer_visibility_changed(self, visible: bool) -> None:
         # The button is held, not looked up. A findChild by name wrapped in a
@@ -245,6 +264,9 @@ class MainWindow(QMainWindow):
         self._distributions_btn.setToolTip(
             actions.distributions_tooltip(available=state.distributions)
         )
+        self._edit_btn.setEnabled(state.edit_model)
+        self._edit_btn.setToolTip(actions.edit_tooltip(available=state.edit_model))
+        self._edit_action.setEnabled(state.edit_model)
 
     def _load_model(self, path: Path) -> None:
         _load_model(self, path)
@@ -264,6 +286,10 @@ class MainWindow(QMainWindow):
         self._model_version_label.setText(str(model.version))
         self._model_valid_label.setText("OK")
         self._refresh_actions()
+        refresh_open_editor(self)
+        # After the refresh, never before: Run is only enabled by that call, and
+        # the flash declines to point at a control that is still disabled.
+        self._run_flash.start()
 
     def _on_run_clicked(self) -> None:
         # If the run was initiated via the Run button (mouse/keyboard), restore

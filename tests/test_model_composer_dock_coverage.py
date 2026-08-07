@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from latencylab_ui import model_composer_export as export_mod
+
 
 def _ensure_qapp():
     from PySide6.QtWidgets import QApplication
@@ -54,24 +56,22 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
     # Restore real `_validate_now` implementation for subsequent branch tests.
     dock._validate_now = _dock_mod.ModelComposerDock._validate_now.__get__(dock, ModelComposerDock)  # type: ignore[method-assign]
 
-    # _default_export_dir exception branch (attribute access raises).
-    class _BadHost(QWidget):
-        def __getattribute__(self, name: str):
-            if name == "_loaded_model":
-                raise RuntimeError("boom")
-            return super().__getattribute__(name)
-
-    bad = _BadHost()
-    dock2 = ModelComposerDock(bad)
-    assert dock2._default_export_dir().name  # noqa: SLF001
+    # With no model loaded there is no sibling directory to prefer, so the
+    # export dialog falls back to where every other dialog starts.
+    # The host is held, because a dock whose parent is collected goes with it.
+    host2 = QWidget()
+    dock2 = ModelComposerDock(host2)
+    assert str(export_mod.default_export_dir(dock2))
 
     # _prompt_save_path cancel branch.
     monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *_a, **_k: ("", ""))
-    assert dock._prompt_save_path(default_filename="x.json") is None  # noqa: SLF001
+    assert (
+        export_mod.prompt_save_path(dock, default_filename="x.json") is None
+    )  # noqa: SLF001
 
     # _on_export_clicked: prompt returns None.
     monkeypatch.setattr(dock, "_validate_now", lambda **_k: True)
-    monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: None)
+    monkeypatch.setattr(export_mod, "prompt_save_path", lambda _d, **_k: None)
     dock._on_export_clicked(load_after=False)  # noqa: SLF001
 
     # Restore real `_validate_now` implementation for subsequent branch tests.
@@ -79,7 +79,7 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
 
     # Stress generation failure branch.
     monkeypatch.setattr(
-        _dock_mod,
+        export_mod,
         "build_stress_variant_state",
         lambda *_a, **_k: (_ for _ in ()).throw(ValueError("no")),
     )
@@ -87,14 +87,14 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
 
     # Stress cancel branch.
     monkeypatch.setattr(
-        _dock_mod, "build_stress_variant_state", _dock_mod.build_stress_variant_state
+        export_mod, "build_stress_variant_state", export_mod.build_stress_variant_state
     )
-    monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: None)
+    monkeypatch.setattr(export_mod, "prompt_save_path", lambda _d, **_k: None)
     dock._on_export_stress_clicked()  # noqa: SLF001
 
     # Stress write failure branch.
     out = tmp_path / "s.json"
-    monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: out)
+    monkeypatch.setattr(export_mod, "prompt_save_path", lambda _d, **_k: out)
     monkeypatch.setattr(
         Path,
         "write_text",

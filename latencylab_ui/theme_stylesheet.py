@@ -37,9 +37,9 @@ QWidget {{
 }}
 
 QToolTip {{
-  background-color: {panel};
+  background-color: {elevated};
   color: {text};
-  border: 1px solid {border};
+  border: 1px solid {elevated_border};
   padding: 4px 6px;
   font-size: 13px;
 }}
@@ -82,6 +82,14 @@ QPushButton:disabled {{
   border: 2px solid {danger};
 }}
 
+/* A control that has just become usable, saying so. The same green as hover
+   and focus on purpose: all three mean "you can use this", and a fourth colour
+   would be a fourth thing to learn. Driven by `attention_flash`, which only
+   ever sets this on an enabled control, so it cannot argue with the red. */
+QPushButton[flash="true"] {{
+  border-color: {ring};
+}}
+
 QPushButton[role="icon-action"] {{
   font-size: 18px;
   min-width: 34px;
@@ -111,9 +119,11 @@ QPushButton#compose_model_btn {{
   padding: 2px 10px;
 }}
 
+/* Switched ON. The ink goes dark here and only here, because the accent is far
+   too light to carry the near-white every other filled button uses. */
 QPushButton#compose_model_btn:checked {{
   background-color: {accent};
-  color: {primary_text};
+  color: {accent_text};
 }}
 
 QPushButton#compose_model_btn:enabled:hover,
@@ -173,11 +183,70 @@ QSpinBox::down-button {{
   width: 22px;
 }}
 
+/* The icon tray is a band, not controls floating on the window. Given the
+   window's own colour and no edge, the row of buttons appeared to hover in the
+   content area with nothing saying where the chrome stopped. Its own surface
+   and a bottom border say it. */
+QWidget#top_tray {{
+  background-color: {panel};
+  border-bottom: 1px solid {border};
+}}
+
+/* The menu bar is part of the window, so it shares its colour, and a rule of
+   its own is still needed: without the bottom border the bar and the content
+   below it are one undivided field. */
+QMenuBar {{
+  background-color: {surface};
+  color: {text};
+  border-bottom: 1px solid {border};
+}}
+
+QMenuBar::item {{
+  background: transparent;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}}
+
+/* A dropped menu FLOATS, so it gets the elevated surface and the strongest
+   border in the set. Painted in the window colour with no border, which is
+   what Qt does when nothing here says otherwise, a menu is indistinguishable
+   from the window behind it and its items read as text lying on the page. */
+QMenu {{
+  background-color: {elevated};
+  color: {text};
+  border: 1px solid {elevated_border};
+  border-radius: 6px;
+  padding: 4px;
+}}
+
+QMenu::item {{
+  background: transparent;
+  padding: 5px 22px 5px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}}
+
+QMenu::separator {{
+  height: 1px;
+  background-color: {elevated_border};
+  margin: 4px 6px;
+}}
+
+/* A menu item that cannot be chosen is muted rather than ringed: the red ring
+   belongs to controls the user aimed at, and every entry under an open menu is
+   passed over on the way to another. */
+QMenu::item:disabled {{
+  color: {muted_text};
+}}
+
 /* A highlighted menu title or item is the keyboard ring passing through the
-   menu bar, so it wears the same green. */
+   menu bar, so it wears the same green. The fill lifts to the elevated surface
+   as well, so the highlight survives a display where the ring is hard to see,
+   and so a highlighted title matches the menu that drops from it. */
 QMenuBar::item:selected,
 QMenu::item:selected {{
-  background-color: {panel};
+  background-color: {elevated_hover};
   border: 1px solid {ring};
 }}
 """
@@ -190,6 +259,9 @@ def build_stylesheet(tokens: ThemeTokens) -> str:
         surface=tokens.surface,
         panel=tokens.panel,
         base=tokens.base,
+        elevated=tokens.elevated,
+        elevated_hover=tokens.elevated_hover,
+        elevated_border=tokens.elevated_border,
         primary=tokens.primary,
         primary_text=tokens.primary_text,
         text=tokens.text,
@@ -198,6 +270,7 @@ def build_stylesheet(tokens: ThemeTokens) -> str:
         ring=tokens.ring,
         danger=tokens.danger,
         accent=tokens.accent,
+        accent_text=tokens.accent_text,
     ).strip()
 
 

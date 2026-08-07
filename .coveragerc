@@ -17,6 +17,7 @@ omit =
     # the gate is what stops the 100% figure being padded with fake coverage of
     # code that has never actually run.
     generate_icons.py
+    render_master_icon.py
     buildexe.py
     buildinstaller.py
     builddmg.py

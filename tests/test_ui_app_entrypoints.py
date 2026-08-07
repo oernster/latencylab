@@ -70,6 +70,13 @@ def test_ui_app_run_app_no_event_loop(monkeypatch) -> None:
         lambda *_a: calls.__setitem__("apply_theme", calls["apply_theme"] + 1),
     )
 
+    # The single-instance guard is exercised on its own; here it would bind a
+    # real socket for the life of the test process and turn the NEXT test that
+    # calls run_app into "a copy is already running".
+    monkeypatch.setattr(ui_app, "another_instance_is_running", lambda: False)
+    monkeypatch.setattr(ui_app, "InstanceServer", lambda *_a, **_k: None)
+    monkeypatch.setattr(ui_app, "install_wheel_guard", lambda _app: None)
+
     assert ui_app.run_app(argv=["x"]) == 0
     assert calls["apply_theme"] == 1
     assert calls["show"] == 1
@@ -129,9 +136,46 @@ def test_ui_app_starts_without_a_generated_icon(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(ui_app, "MainWindow", _FakeWindow)
     monkeypatch.setattr(ui_app, "apply_theme", lambda *_a: None)
     monkeypatch.setattr(ui_app, "get_app_icon_path", lambda: None)
+    monkeypatch.setattr(ui_app, "another_instance_is_running", lambda: False)
+    monkeypatch.setattr(ui_app, "InstanceServer", lambda *_a, **_k: None)
+    monkeypatch.setattr(ui_app, "install_wheel_guard", lambda _app: None)
 
     assert ui_app.run_app(argv=["x"]) == 0
     assert shown["count"] == 1
+
+
+def test_a_second_copy_hands_over_and_exits_without_building_a_window(
+    monkeypatch,
+) -> None:
+    """The second copy must not get as far as a window.
+
+    Building one and then hiding it would still flash, still cost the startup
+    and still leave two processes; the guard is only worth having if it runs
+    before any of that.
+    """
+
+    import latencylab_ui.app as ui_app
+
+    built = {"windows": 0}
+
+    class _NeverBuilt:
+        def __init__(self, *_a, **_k) -> None:  # pragma: no cover - must not run
+            built["windows"] += 1
+
+    monkeypatch.setattr(ui_app, "QApplication", lambda *_a, **_k: _FakeQApp())
+    monkeypatch.setattr(ui_app, "MainWindow", _NeverBuilt)
+    monkeypatch.setattr(ui_app, "another_instance_is_running", lambda: True)
+
+    assert ui_app.run_app(argv=["x"]) == ui_app.ALREADY_RUNNING_EXIT_CODE
+    assert built["windows"] == 0
+
+
+class _FakeQApp:
+    def setApplicationName(self, _name: str) -> None:  # noqa: N802
+        return None
+
+    def setOrganizationName(self, _name: str) -> None:  # noqa: N802
+        return None
 
 
 def test_ui_main_delegates(monkeypatch) -> None:

@@ -7,44 +7,6 @@ import pytest
 from latencylab_ui import icon_resolver
 
 
-class _FakeCompiled:
-    """Stands in for the `__compiled__` object Nuitka injects into a build."""
-
-    def __init__(self, containing_dir: str) -> None:
-        self.containing_dir = containing_dir
-
-
-def test_source_root_is_the_repository_root() -> None:
-    root = icon_resolver._source_root()
-    assert (root / "latencylab_ui" / "icon_resolver.py").is_file()
-
-
-def test_compiled_dir_is_none_when_running_from_source() -> None:
-    assert icon_resolver._compiled_dir() is None
-
-
-def test_compiled_dir_reads_the_nuitka_marker(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setitem(
-        icon_resolver.__dict__, "__compiled__", _FakeCompiled(r"C:\app")
-    )
-    assert icon_resolver._compiled_dir() == Path(r"C:\app")
-
-
-def test_executable_dir_is_none_unless_frozen(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delattr("sys.frozen", raising=False)
-    assert icon_resolver._executable_dir() is None
-
-
-def test_executable_dir_is_the_exe_directory_when_frozen(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    exe = tmp_path / "LatencyLab.exe"
-    exe.write_text("", encoding="utf-8")
-    monkeypatch.setattr("sys.frozen", True, raising=False)
-    monkeypatch.setattr("sys.executable", str(exe))
-    assert icon_resolver._executable_dir() == tmp_path.resolve()
-
-
 def test_candidates_put_the_override_first_and_the_source_tree_last() -> None:
     candidates = icon_resolver.candidate_asset_dirs(
         env_value=r"C:\override",

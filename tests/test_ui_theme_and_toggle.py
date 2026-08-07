@@ -22,7 +22,7 @@ def test_apply_theme_dark_and_light() -> None:
     light_window = app.palette().color(app.palette().ColorRole.Window).name()
     light_hl = app.palette().color(app.palette().ColorRole.Highlight).name()
 
-    assert dark_hl == light_hl  # teal accent consistent
+    assert dark_hl == light_hl  # one accent across both themes
     assert light_window == "#f8f8f8"
 
 

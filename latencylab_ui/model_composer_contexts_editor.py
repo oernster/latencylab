@@ -71,14 +71,32 @@ class ContextsEditor(QWidget):
         self.changed.emit()
 
     def _on_add(self) -> None:
+        self._append_row(f"ctx_{self.table.rowCount() + 1}", 1)
+        self.changed.emit()
+
+    def _append_row(self, name: str, concurrency: int) -> None:
         r = self.table.rowCount()
         self.table.insertRow(r)
-        self.table.setItem(r, 0, QTableWidgetItem(f"ctx_{r + 1}"))
+        self.table.setItem(r, 0, QTableWidgetItem(name))
         sp = QSpinBox(self.table)
         sp.setRange(1, 1_000_000)
-        sp.setValue(1)
+        sp.setValue(max(1, int(concurrency)))
         sp.valueChanged.connect(self.changed)
         self.table.setCellWidget(r, 1, sp)
+
+    def set_contexts(self, contexts: dict[str, dict[str, object]]) -> None:
+        """Replace the table with the contexts of a model being edited.
+
+        Sorted by name, because a dict from parsed JSON carries the file's
+        order and the table is the user's view of a set rather than a
+        sequence: two loads of the same model must not present differently.
+        """
+
+        self.table.setRowCount(0)
+        for name in sorted(contexts):
+            raw = contexts.get(name) or {}
+            self._append_row(name, int(raw.get("concurrency", 1) or 1))
+        self._ensure_default()
         self.changed.emit()
 
     def _on_remove(self) -> None:

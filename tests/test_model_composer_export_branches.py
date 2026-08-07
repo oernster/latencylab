@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from latencylab_ui import model_composer_export as export_mod
+
 
 def _ensure_qapp():
     from PySide6.QtWidgets import QApplication
@@ -45,12 +47,12 @@ def test_model_composer_dock_export_and_stress_branches(
     monkeypatch.setattr(dock, "_refresh_wiring_events", lambda: None)
 
     # Stress early-return branch when save dialog is cancelled (covers dock.py:280).
-    monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: None)
+    monkeypatch.setattr(export_mod, "prompt_save_path", lambda _d, **_k: None)
     dock._on_export_stress_clicked()  # noqa: SLF001
 
     # Export JSON: write failure branch (covers dock.py:256-258).
     out = tmp_path / "m.json"
-    monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: out)
+    monkeypatch.setattr(export_mod, "prompt_save_path", lambda _d, **_k: out)
     monkeypatch.setattr(
         Path,
         "write_text",
@@ -67,7 +69,7 @@ def test_model_composer_dock_export_and_stress_branches(
     )
 
     stress_out = tmp_path / "m_STRESS.json"
-    monkeypatch.setattr(dock, "_prompt_save_path", lambda **_k: stress_out)
+    monkeypatch.setattr(export_mod, "prompt_save_path", lambda _d, **_k: stress_out)
     dock._on_export_stress_clicked()  # noqa: SLF001
 
     assert seen["p"] == str(stress_out)

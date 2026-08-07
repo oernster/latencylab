@@ -1,4 +1,4 @@
-"""The installer's teal theme and its named layout constants.
+"""The installer's theme and its named layout constants.
 
 One stylesheet and one set of geometry tokens, shared by the window and every
 dialog, so the installer looks like the application it installs without
@@ -37,7 +37,7 @@ BUTTON_GAP = 10
 # The gap between the product name and the version that trails it.
 HEADER_VERSION_GAP = 8
 
-# --- LatencyLab teal palette -------------------------------------------------
+# --- LatencyLab palette -------------------------------------------------------
 # Every QPushButton carries a transparent 2px border by default, so the green
 # hover ring changes the colour and never the layout; every hover and focus
 # reaction is gated on :enabled so a disabled button stays muted.
@@ -47,11 +47,12 @@ _SURFACE_RAISED = "#222831"
 _BORDER = "#2c333d"
 _TEXT = "#e6e9ee"
 _TEXT_MUTED = "#9aa3af"
-# The application's own accent (latencylab_ui/theme.py, _ACCENT_TEAL).
-_ACCENT = "#26a69a"
+# The application's own accent (latencylab_ui/theme_tokens.py, `accent`).
+_ACCENT = "#ffe135"
 # Buttons never wear a filled accent: a green ring is hard to read against a
-# teal or light fill, so every button is dark with a light blue caption and only
-# the ring changes. The accent stays on the headings.
+# light fill, so every button is dark with a light blue caption and only the
+# ring changes. The accent stays on the headings, where it is text on a very
+# dark background rather than a block anything has to be written on.
 _BUTTON_BLUE = "#7fb0ff"
 _DISABLED_TEXT = "#5b6470"
 _HOVER_GREEN = "#22c55e"
