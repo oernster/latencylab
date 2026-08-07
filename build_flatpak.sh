@@ -40,6 +40,13 @@ MANIFEST="${PROJECT_ROOT}/${APP_ID}.yml"
 BUNDLE="${PROJECT_ROOT}/latencylab.flatpak"
 PRUNE_SCRIPT="prune_flatpak_tree.py"
 
+# Pinned by hash, and fetched by flatpak-builder on the host rather than inside
+# the sandbox, so the build stays as offline as the wheels above make it.
+# 1.22 or newer: earlier releases still carry pre-C23 declarations that the
+# SDK's compiler rejects outright.
+KRB5_URL="https://kerberos.org/dist/krb5/1.22/krb5-1.22.1.tar.gz"
+KRB5_SHA256="1a8832b8cad923ebbf1394f67e2efcf41e3a49f460285a66e35adec8fa0053af"
+
 ICON_SIZES=(16 24 32 48 64 96 128 256 512)
 
 # Where the finished bundle is installed, and whether it is installed at all.
@@ -198,9 +205,10 @@ cat > "${PACKAGING_DIR}/${PRUNE_SCRIPT}" <<'PRUNE'
 """Delete what /app carries but never runs.
 
 The Qt wheels are built for every Qt user at once, so most of what they install
-is dead weight here: LatencyLab imports QtCore, QtGui and QtWidgets and nothing
-else. What each part of PySide6 belongs to is read from the wheels' own install
-records rather than named here, so a Qt upgrade cannot leave this list stale.
+is dead weight here: LatencyLab imports QtCore, QtGui, QtWidgets, QtSvg and
+QtNetwork, and nothing else. What each part of PySide6 belongs to is read from
+the wheels' own install records rather than named here, so a Qt upgrade cannot
+leave this list stale.
 
 Run last, once the application itself is staged, so it sweeps that tree too.
 
@@ -435,6 +443,25 @@ finish-args:
   - --filesystem=home
 
 modules:
+  # PySide6's libQt6Network is linked against libgssapi_krb5.so.2, which the
+  # freedesktop runtime does not ship, so importing QtNetwork (the single
+  # instance guard does) fails at load time and the application never starts.
+  # Kerberos itself is never used: only the library has to be present.
+  - name: krb5
+    subdir: src
+    config-opts:
+      - --prefix=/app
+      - --localstatedir=/var/lib
+      - --sbindir=/app/bin
+      - --disable-rpath
+      - --disable-static
+      - --without-ldap
+      - --without-keyutils
+    sources:
+      - type: archive
+        url: ${KRB5_URL}
+        sha256: ${KRB5_SHA256}
+
   - name: python-deps
     buildsystem: simple
     build-commands:
