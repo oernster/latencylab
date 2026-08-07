@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Distributions / Histogram dock (v1).
+"""Distributions / Histogram dock.
 
 UI principles:
 - Non-modal, dockable inspection panel.
@@ -66,7 +66,7 @@ class DistributionsDock(QDockWidget):
         makespan_layout.addWidget(self._makespan_chart)
 
         makespan_note = QLabel(
-            "Bin width uses the Freedman–Diaconis rule computed from observed makespan values."
+            "Bin width uses the Freedman-Diaconis rule computed from observed makespan values."
         )
         makespan_note.setWordWrap(True)
         makespan_layout.addWidget(makespan_note)

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 This module is intentionally Qt-free.
 
-Design constraints (v1):
+Design constraints:
 - No resimulation, inference, or smoothing.
-- Makespan histogram bin width uses the Freedman–Diaconis rule.
+- Makespan histogram bin width uses the Freedman-Diaconis rule.
 - Critical-path frequencies match the ordering rules in
   [`latencylab.metrics.aggregate_runs()`](latencylab/metrics.py:37).
 """
@@ -74,10 +74,10 @@ def _percentile_sorted(values_sorted: list[float], p: float) -> float:
 
 
 def freedman_diaconis_bins(values: list[float]) -> list[HistogramBin]:
-    """Compute histogram bins using the Freedman–Diaconis rule.
+    """Compute histogram bins using the Freedman-Diaconis rule.
 
-    Documentation requirement (v1):
-        "Histogram bin width is computed using the Freedman–Diaconis rule from
+    Documentation requirement:
+        "Histogram bin width is computed using the Freedman-Diaconis rule from
         observed makespan values."
 
     Notes on degenerate inputs:

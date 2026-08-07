@@ -145,9 +145,3 @@ def build_left_panel(window) -> QWidget:
     layout.addWidget(run_box)
     layout.addWidget(outputs_row, 1)
     return root
-
-
-def build_right_panel(window) -> QWidget:
-    # Kept for backward compatibility with older tests/imports.
-    # The main window no longer adds this panel.
-    return QWidget()  # pragma: no cover

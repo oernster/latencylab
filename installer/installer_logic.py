@@ -278,14 +278,3 @@ def original_installer_exe(
             continue
         return path
     return Path(executable)
-
-
-def running_from_inside(running_exe: Path, install_dir: Path) -> bool:
-    """Return True when the running executable lives inside `install_dir`."""
-
-    try:
-        running = running_exe.resolve()
-        root = install_dir.resolve()
-    except OSError:
-        return True
-    return running == root or root in running.parents

@@ -196,10 +196,9 @@ class MainWindow(QMainWindow):
         self._show_distributions_dock()
 
     def _on_toggle_model_composer_clicked(self) -> None:
-        try:
-            toggle_or_switch_to_model_composer(self)
-        except RuntimeError:  # pragma: no cover
-            return  # pragma: no cover
+        # The dock is a held attribute owned by this window, so there is no
+        # deleted-object case to guard against here.
+        toggle_or_switch_to_model_composer(self)
 
     def _on_model_composer_visibility_changed(self, visible: bool) -> None:
         # The button is held, not looked up. A findChild by name wrapped in a
@@ -208,11 +207,8 @@ class MainWindow(QMainWindow):
         self._compose_btn.setChecked(visible)
 
     def _show_distributions_dock(self) -> None:
-        try:
-            self._distributions_dock.show()
-            self._distributions_dock.raise_()
-        except RuntimeError:  # pragma: no cover
-            return  # pragma: no cover
+        self._distributions_dock.show()
+        self._distributions_dock.raise_()
 
     def _on_distributions_visibility_changed(self, visible: bool) -> None:
         if self._controller.is_running() and not visible:

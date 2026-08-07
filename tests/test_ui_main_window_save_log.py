@@ -56,7 +56,7 @@ def test_save_log_button_dumps_right_panel(monkeypatch, tmp_path: Path) -> None:
 
     assert "💾" in btn.text()
 
-    # v1 requirement: export disabled until first successful run.
+    # Requirement: export disabled until first successful run.
     assert btn.isEnabled() is False
 
     # Seed right panel content.

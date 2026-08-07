@@ -354,13 +354,3 @@ def test_argv0_is_used_when_the_environment_variable_is_absent(
         "", str(real), "ignored", temp_root.resolve()
     )
     assert resolved == real.resolve()
-
-
-def test_running_from_inside_the_install_is_detected(tmp_path: Path) -> None:
-    install = tmp_path / "install"
-    inside = install / logic.UNINSTALLER_SUBDIR / logic.UNINSTALLER_NAME
-    inside.parent.mkdir(parents=True)
-    inside.write_text("setup", encoding="utf-8")
-
-    assert logic.running_from_inside(inside, install) is True
-    assert logic.running_from_inside(tmp_path / "elsewhere.exe", install) is False

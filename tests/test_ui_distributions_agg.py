@@ -119,7 +119,7 @@ def test_critical_path_frequency_top10_and_other_sorted_and_full_display() -> No
     assert len(bars) == 11
     assert bars[-1].label_display == "Other (long tail)"
 
-    # v1 UI policy: label_display is the full path; the chart performs pixel-based
+    # UI policy: label_display is the full path; the chart performs pixel-based
     # wrapping/eliding. The tooltip remains the full source of truth.
     assert bars[0].label_display == bars[0].label_full
 

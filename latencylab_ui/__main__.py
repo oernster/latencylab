@@ -6,7 +6,7 @@ import sys
 def main() -> int:
     """Entry point for `python -m latencylab_ui`.
 
-    This keeps packaging optional (source-run only for v1).
+    This is the source-run path. The packaged build starts at `runner.py`.
     """
 
     try:

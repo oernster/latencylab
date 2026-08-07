@@ -73,7 +73,7 @@ class OutputsView:
 def _format_critical_path_for_display(text: str) -> str:
     """Format a critical-path string for readability in a narrow text box.
 
-    Deterministic, v1 UI-only behavior:
+    Deterministic, UI-only behaviour:
     - Insert line breaks after: '>', ',', ')'
     - Collapse accidental whitespace around inserted breaks
 
