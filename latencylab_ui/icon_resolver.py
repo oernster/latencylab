@@ -13,6 +13,7 @@ called.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 from latencylab_ui.packaged_dir import (
@@ -37,6 +38,13 @@ FLATPAK_ASSETS_DIR = FLATPAK_ROOT / ASSETS_DIR_NAME
 ICO_NAME = "latencylab.ico"
 PNG_STEM = "latencylab_icon"
 CANONICAL_PNG_NAME = f"{PNG_STEM}.png"
+
+# The same mark flattened onto opaque black, generated only for macOS. The Dock
+# composites the icon onto the desktop, so the transparent version reads as red
+# and yellow on the pale grey behind it. See generate_icons.py.
+MAC_PNG_STEM = f"{PNG_STEM}_mac"
+MAC_CANONICAL_PNG_NAME = f"{MAC_PNG_STEM}.png"
+MACOS_PLATFORM = "darwin"
 
 # The sizes generate_icons.py writes. Kept here so a caller asking for a size
 # that was never generated gets the nearest one that was, rather than a path
@@ -96,20 +104,32 @@ def nearest_available_size(size: int) -> int:
     )
 
 
-def get_app_icon_path(assets_dir: Path | None = None) -> Path | None:
-    """The window and shortcut icon: the multi-size .ico, else the 256 PNG.
+def app_icon_names(platform: str = sys.platform) -> tuple[str, ...]:
+    """The icon filenames to try for the Dock, taskbar and window, best first.
 
-    Windows wants the `.ico` so the taskbar and Explorer pick their own frame.
-    Every other platform is happy with the PNG, which is also the fallback if
+    macOS gets the opaque variant ahead of everything else, because its Dock
+    draws the icon straight onto the desktop. Windows wants the `.ico` so the
+    taskbar and Explorer can pick their own frame. The transparent canonical
+    PNG is the last resort everywhere, and covers the case where
     generate_icons.py has not been run.
     """
+
+    if platform == MACOS_PLATFORM:
+        return (MAC_CANONICAL_PNG_NAME, ICO_NAME, CANONICAL_PNG_NAME)
+    return (ICO_NAME, CANONICAL_PNG_NAME)
+
+
+def get_app_icon_path(
+    assets_dir: Path | None = None, platform: str = sys.platform
+) -> Path | None:
+    """The first icon file this platform wants that actually exists."""
 
     if assets_dir is None:
         assets_dir = find_assets_dir()
     if assets_dir is None:
         return None
 
-    for name in (ICO_NAME, CANONICAL_PNG_NAME):
+    for name in app_icon_names(platform):
         candidate = assets_dir / name
         if candidate.is_file():
             return candidate

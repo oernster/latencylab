@@ -50,7 +50,10 @@ DIST_DIR = PROJECT_ROOT / "dist"
 WORK_DIR = PROJECT_ROOT / "build"
 APP_BUNDLE = DIST_DIR / f"{APP_NAME}.app"
 
-ICNS_SOURCE_PNG = PROJECT_ROOT / "assets" / "latencylab_icon_1024.png"
+# The opaque macOS variant, not the transparent one the other platforms use:
+# the disk image icon is drawn onto the Finder window and the desktop, where a
+# transparent canvas leaves the mark sitting on pale grey. See generate_icons.py.
+ICNS_SOURCE_PNG = PROJECT_ROOT / "assets" / "latencylab_icon_mac_1024.png"
 ICNS_FILE = PROJECT_ROOT / "assets" / "latencylab.icns"
 
 # The DMG lands at the repository root under a fixed name, because that is

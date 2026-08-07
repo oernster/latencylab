@@ -102,11 +102,14 @@ def test_nearest_available_size_breaks_a_tie_upwards() -> None:
     assert icon_resolver.nearest_available_size(20) == 24
 
 
+NON_MACOS_PLATFORM = "win32"
+
+
 def test_app_icon_prefers_the_multi_size_ico(tmp_path: Path) -> None:
     (tmp_path / icon_resolver.ICO_NAME).write_bytes(b"")
     (tmp_path / icon_resolver.CANONICAL_PNG_NAME).write_bytes(b"")
 
-    assert icon_resolver.get_app_icon_path(tmp_path) == (
+    assert icon_resolver.get_app_icon_path(tmp_path, NON_MACOS_PLATFORM) == (
         tmp_path / icon_resolver.ICO_NAME
     )
 
@@ -114,8 +117,36 @@ def test_app_icon_prefers_the_multi_size_ico(tmp_path: Path) -> None:
 def test_app_icon_falls_back_to_the_canonical_png(tmp_path: Path) -> None:
     (tmp_path / icon_resolver.CANONICAL_PNG_NAME).write_bytes(b"")
 
-    assert icon_resolver.get_app_icon_path(tmp_path) == (
+    assert icon_resolver.get_app_icon_path(tmp_path, NON_MACOS_PLATFORM) == (
         tmp_path / icon_resolver.CANONICAL_PNG_NAME
+    )
+
+
+def test_app_icon_prefers_the_opaque_variant_on_macos(tmp_path: Path) -> None:
+    """The Dock draws onto the desktop, so macOS wants the black-backed mark."""
+
+    (tmp_path / icon_resolver.MAC_CANONICAL_PNG_NAME).write_bytes(b"")
+    (tmp_path / icon_resolver.ICO_NAME).write_bytes(b"")
+    (tmp_path / icon_resolver.CANONICAL_PNG_NAME).write_bytes(b"")
+
+    assert icon_resolver.get_app_icon_path(tmp_path, icon_resolver.MACOS_PLATFORM) == (
+        tmp_path / icon_resolver.MAC_CANONICAL_PNG_NAME
+    )
+
+
+def test_the_opaque_variant_is_offered_to_macos_only() -> None:
+    names = icon_resolver.app_icon_names(NON_MACOS_PLATFORM)
+
+    assert icon_resolver.MAC_CANONICAL_PNG_NAME not in names
+
+
+def test_macos_still_falls_back_when_the_opaque_variant_is_absent(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / icon_resolver.ICO_NAME).write_bytes(b"")
+
+    assert icon_resolver.get_app_icon_path(tmp_path, icon_resolver.MACOS_PLATFORM) == (
+        tmp_path / icon_resolver.ICO_NAME
     )
 
 
@@ -152,6 +183,13 @@ def test_the_real_checkout_resolves_its_generated_icons() -> None:
     if assets is None:  # pragma: no cover - only on a checkout without assets
         pytest.skip("generate_icons.py has not been run in this checkout")
 
-    assert icon_resolver.get_app_icon_path() == assets / icon_resolver.ICO_NAME
+    assert (
+        icon_resolver.get_app_icon_path(assets, NON_MACOS_PLATFORM)
+        == assets / icon_resolver.ICO_NAME
+    )
+    assert (
+        icon_resolver.get_app_icon_path(assets, icon_resolver.MACOS_PLATFORM)
+        == assets / icon_resolver.MAC_CANONICAL_PNG_NAME
+    )
     badge = icon_resolver.get_app_icon_png_path(icon_resolver.BADGE_PNG_SIZE)
     assert badge is not None and badge.is_file()
