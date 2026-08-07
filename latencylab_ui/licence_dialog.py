@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui.auto_scroller import attach
 from latencylab_ui.first_stop_dialog import FirstStopDialog
 
 # Shown when a packaged build did not stage the licence text beside the module
@@ -57,6 +58,7 @@ class LicenceDialog(FirstStopDialog):
         text.setFont(mono)
         text.setPlainText(_read_lgpl3_text())
         root.addWidget(text, 1)
+        attach(text)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         buttons.accepted.connect(self.accept)

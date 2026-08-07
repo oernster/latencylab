@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui.auto_scroller import attach
 from latencylab_ui.first_stop_dialog import FirstStopDialog
 from latencylab_ui.icon_resolver import get_app_icon_path, get_app_icon_png_path
 
@@ -102,6 +103,7 @@ class AboutDialog(FirstStopDialog):
         body.setMinimumHeight(_BODY_MIN_HEIGHT)
         body.setHtml(content.body)
         root.addWidget(body, 1)
+        attach(body)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         buttons.accepted.connect(self.accept)

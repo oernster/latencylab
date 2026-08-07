@@ -3,9 +3,11 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractButton,
+    QAbstractItemView,
     QAbstractScrollArea,
     QAbstractSpinBox,
     QComboBox,
+    QDockWidget,
     QLayout,
     QLineEdit,
     QMainWindow,
@@ -20,13 +22,38 @@ from PySide6.QtWidgets import (
 # impossible.
 _TEXT_ENTRY_TYPES = (QLineEdit, QAbstractSpinBox)
 
-_RING_TYPES = (QAbstractButton, QAbstractSpinBox, QComboBox, QPlainTextEdit)
+# A table or list is ONE stop, never one per cell: its rows are walked with the
+# vertical arrows and Tab leaves it in a single press. See `is_interactive_widget`
+# for the condition that keeps a table with nothing to choose off the ring.
+_RING_TYPES = (
+    QAbstractButton,
+    QAbstractSpinBox,
+    QComboBox,
+    QLineEdit,
+    QPlainTextEdit,
+    QAbstractItemView,
+)
 
 
 def collect_interactive_widgets_in_layout_order(window: QMainWindow) -> list[QWidget]:
+    """Every ring stop in the window, in the order the eye meets them.
+
+    The central widget first, then each VISIBLE dock. Docks are siblings of the
+    central widget rather than children of it, so a walk that starts and ends
+    there reaches none of their controls: with the Model Composer open, every
+    control in it was unreachable from the keyboard, measured at zero.
+
+    Hidden docks are skipped rather than filtered later, so the ring is exactly
+    what is on screen at the moment the key was pressed.
+    """
+
     out: list[QWidget] = []
     seen: set[int] = set()
     walk_widget_for_interactive(window, window.centralWidget(), out, seen)
+
+    for dock in window.findChildren(QDockWidget):
+        if dock.isVisible():
+            walk_widget_for_interactive(window, dock.widget(), out, seen)
     return out
 
 
@@ -74,6 +101,12 @@ def is_interactive_widget(window: QMainWindow, w: QWidget) -> bool:
         # cannot be reached from the keyboard at all; with it unconditionally,
         # the ring stalls on panes that have nothing to show.
         return w.isReadOnly() is False or scrolls_vertically(w)
+    if isinstance(w, QAbstractItemView):
+        # An empty table or list can neither be scrolled nor selected within, so
+        # focusing it lets the user do nothing: it is not a stop until it has a
+        # row. Selecting a row IS the consequence that makes it actionable,
+        # because that is what arms the Remove buttons beside it.
+        return w.model() is not None and w.model().rowCount() > 0
     return True
 
 

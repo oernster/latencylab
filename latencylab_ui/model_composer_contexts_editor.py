@@ -27,6 +27,10 @@ class ContextsEditor(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked)
+        # The table is ONE ring stop, walked with the vertical arrows and left
+        # in a single Tab. Qt's default is on, which spends a Tab press per CELL
+        # and turns a two-column table into a row of dead stops.
+        self.table.setTabKeyNavigation(False)
 
         # UX: Clicking the spinbox arrows (Concurrency) should not paint a loud
         # selection highlight across the whole row.

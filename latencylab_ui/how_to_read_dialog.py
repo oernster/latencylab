@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui.auto_scroller import attach
 from latencylab_ui.first_stop_dialog import FirstStopDialog
 
 HOW_TO_READ_TEXT = """How to Read LatencyLab Output
@@ -60,6 +61,7 @@ class HowToReadDialog(FirstStopDialog):
         text.setReadOnly(True)
         text.setPlainText(HOW_TO_READ_TEXT)
         root.addWidget(text, 1)
+        attach(text)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         buttons.accepted.connect(self.accept)
