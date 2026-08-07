@@ -46,6 +46,72 @@ def _ticks_for(milliseconds: int) -> int:
     return milliseconds // auto_scroller.TICK_MS
 
 
+def test_every_reading_surface_scrolls_in_pixels(app) -> None:
+    """The pace constants are pixels, so a line-scrolling surface breaks them.
+
+    A QPlainTextEdit's scrollbar counts LINES: the same one-unit step that
+    reads as a gentle drift on a pixel-scrolling widget becomes a whole line
+    jumping, and the fast rewind becomes fifteen lines a tick. That is exactly
+    how three of these dialogs shipped before it was reported as jerky. The
+    two are indistinguishable by eye in code, so the difference is measured.
+    """
+
+    from PySide6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
+
+    from latencylab_ui.about_dialog import AboutDialog, AboutDialogContent
+    from latencylab_ui.how_to_read_dialog import HowToReadDialog
+    from latencylab_ui.licence_dialog import LicenceDialog
+    from latencylab_ui.main_licence_dialog import MainLicenceDialog
+
+    host = QWidget()
+    QVBoxLayout(host)
+    host.show()
+    app.processEvents()
+
+    dialogs = [
+        HowToReadDialog(host),
+        LicenceDialog(host),
+        MainLicenceDialog(host),
+        AboutDialog(
+            host, content=AboutDialogContent(title="LatencyLab", body="<p>x</p>")
+        ),
+    ]
+
+    for dialog in dialogs:
+        panes = dialog.findChildren(QTextEdit)
+        assert panes, f"{type(dialog).__name__} has no pixel-scrolling pane"
+        for pane in panes:
+            assert not isinstance(pane, QPlainTextEdit)
+        dialog.close()
+
+    host.close()
+    app.processEvents()
+
+
+def test_a_pixel_surface_travels_far_further_than_a_line_surface(app) -> None:
+    """The measurement behind the rule above, so the number is not folklore."""
+
+    from PySide6.QtWidgets import QTextBrowser
+
+    by_lines = QPlainTextEdit()
+    by_lines.setPlainText(LONG_TEXT)
+    by_lines.resize(PANE_W, PANE_H)
+    by_lines.show()
+
+    by_pixels = QTextBrowser()
+    by_pixels.setPlainText(LONG_TEXT)
+    by_pixels.resize(PANE_W, PANE_H)
+    by_pixels.show()
+    app.processEvents()
+
+    assert by_pixels.verticalScrollBar().maximum() > (
+        by_lines.verticalScrollBar().maximum() * 5
+    )
+
+    by_lines.close()
+    by_pixels.close()
+
+
 def test_a_fresh_surface_holds_still_before_it_reads(pane, app) -> None:
     """The reader orients before anything moves."""
 

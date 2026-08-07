@@ -6,6 +6,7 @@ from __future__ import annotations
 # the RunExecutor abstraction. The NumPy-backed legacy implementation is isolated
 # behind a lazy import.
 
+from latencylab.cancellation import CancellationSignal
 from latencylab.executors import default_executor_for_model
 from latencylab.model import Model
 from latencylab.types import RunResult, TaskInstance
@@ -18,6 +19,7 @@ def simulate_many(
     seed: int,
     max_tasks_per_run: int,
     want_trace: bool,
+    cancel: CancellationSignal | None = None,
 ) -> tuple[list[RunResult], list[TaskInstance]]:
     executor = default_executor_for_model(model)
     return executor.execute(
@@ -26,4 +28,5 @@ def simulate_many(
         seed=seed,
         max_tasks_per_run=max_tasks_per_run,
         want_trace=want_trace,
+        cancel=cancel,
     )

@@ -32,6 +32,7 @@ def test_save_log_button_dumps_right_panel(monkeypatch, tmp_path: Path) -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:

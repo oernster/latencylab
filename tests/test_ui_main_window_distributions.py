@@ -26,6 +26,7 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def __init__(self) -> None:
@@ -158,6 +159,7 @@ def test_distributions_button_click_gate_and_manual_open() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -211,6 +213,7 @@ def test_distributions_visibility_change_sets_closed_during_run_flag() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def __init__(self) -> None:

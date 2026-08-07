@@ -20,6 +20,7 @@ def test_switch_to_compose_no_prompt_when_no_outputs() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -62,6 +63,7 @@ def test_prompt_export_returns_when_no_last_outputs() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -103,6 +105,7 @@ def test_switch_to_compose_prompt_yes_export_cancel_blocks_switch(monkeypatch) -
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -154,6 +157,7 @@ def test_prompt_export_no_path_does_not_raise(monkeypatch) -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -199,6 +203,7 @@ def test_switch_to_compose_prompt_cancel_blocks_switch(monkeypatch) -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:

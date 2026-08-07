@@ -34,6 +34,11 @@ else:
 if TYPE_CHECKING:  # pragma: no cover
     from numpy.random import Generator
 
+from latencylab.cancellation import (
+    CancellationSignal,
+    RunCancelled,
+    should_stop,
+)
 from latencylab.model import Model
 from latencylab.types import EventOccurrence, RunResult, TaskInstance
 
@@ -79,6 +84,7 @@ def simulate_many(
     seed: int,
     max_tasks_per_run: int,
     want_trace: bool,
+    cancel: CancellationSignal | None = None,
 ) -> tuple[list[RunResult], list[TaskInstance]]:
     _require_numpy()
 
@@ -86,6 +92,8 @@ def simulate_many(
     all_traces: list[TaskInstance] = []
 
     for run_id in range(runs):
+        if should_stop(cancel):
+            raise RunCancelled(completed_runs=run_id)
         rng = np.random.default_rng(_seed_for_run(seed, run_id))
         run_res, trace = simulate_one(
             model=model,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialogButtonBox,
-    QPlainTextEdit,
+    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
@@ -57,7 +57,7 @@ class HowToReadDialog(FirstStopDialog):
         root.setContentsMargins(12, 12, 12, 12)
         root.setSpacing(8)
 
-        text = QPlainTextEdit(self)
+        text = QTextBrowser(self)
         text.setReadOnly(True)
         text.setPlainText(HOW_TO_READ_TEXT)
         root.addWidget(text, 1)

@@ -25,6 +25,7 @@ def test_compose_button_exists_and_toggles_dock_visibility() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -75,6 +76,7 @@ def test_export_and_export_load_use_deterministic_json(
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:

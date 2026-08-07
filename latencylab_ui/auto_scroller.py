@@ -10,6 +10,13 @@ they left it, never from the top and never switched off for good.
 The constants below are the application's, not each surface's. A per-dialog pace
 was tried elsewhere in this portfolio and immediately standardised away: if one
 surface needs a different speed, the speed is wrong everywhere.
+
+They are also PIXELS, which is a real constraint on what this can be attached
+to. A QTextEdit or QTextBrowser scrolls in pixels; a QPlainTextEdit scrolls in
+LINES, so the same "one unit" that reads as a gentle drift on one becomes a
+whole line jumping on the other, and the fast rewind becomes fifteen lines a
+tick. Measured on the same three hundred lines of text: 4348 units of travel
+against 293. Attach this to pixel-scrolling surfaces only.
 """
 
 from enum import Enum, auto

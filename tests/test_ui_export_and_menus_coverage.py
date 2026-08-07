@@ -201,6 +201,7 @@ def test_top_bar_how_to_read_button_opens_same_dialog_via_main_window() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:

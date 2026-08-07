@@ -41,7 +41,7 @@ def test_run_worker_success_and_error_paths(monkeypatch, tmp_path: Path) -> None
     monkeypatch.setattr(rc, "aggregate_runs", lambda **_k: {"ok": True})
     monkeypatch.setattr(rc, "add_task_metadata", lambda summary, **_k: summary)
 
-    w = rc.RunWorker(run_token=7, request=req)
+    w = rc.RunWorker(run_token=7, request=req, cancel=rc.CancelFlag())
     seen = {"succeeded": False, "failed": False, "finished": False}
     w.succeeded.connect(
         lambda tok, obj: seen.__setitem__("succeeded", tok == 7 and obj is not None)
@@ -57,7 +57,7 @@ def test_run_worker_success_and_error_paths(monkeypatch, tmp_path: Path) -> None
         "validate_model",
         lambda _m: (_ for _ in ()).throw(ModelValidationError("bad")),
     )
-    w2 = rc.RunWorker(run_token=8, request=req)
+    w2 = rc.RunWorker(run_token=8, request=req, cancel=rc.CancelFlag())
     out2 = {"failed": False, "finished": False}
     w2.failed.connect(
         lambda tok, txt: out2.__setitem__("failed", tok == 8 and "bad" in txt)
@@ -73,7 +73,7 @@ def test_run_worker_success_and_error_paths(monkeypatch, tmp_path: Path) -> None
         "simulate_many",
         lambda **_k: (_ for _ in ()).throw(RuntimeError("boom")),
     )
-    w3 = rc.RunWorker(run_token=9, request=req)
+    w3 = rc.RunWorker(run_token=9, request=req, cancel=rc.CancelFlag())
     out3 = {"failed": False, "finished": False}
     w3.failed.connect(
         lambda tok, txt: out3.__setitem__("failed", tok == 9 and "RuntimeError" in txt)
@@ -126,9 +126,10 @@ def test_run_controller_lifecycle_paths(monkeypatch, tmp_path: Path) -> None:
             return None
 
     class _FakeWorker:
-        def __init__(self, *, run_token: int, request) -> None:
+        def __init__(self, *, run_token: int, request, cancel=None) -> None:
             self.succeeded = _Sig()
             self.failed = _Sig()
+            self.cancelled = _Sig()
             self.finished = _Sig()
             self._run_token = run_token
 

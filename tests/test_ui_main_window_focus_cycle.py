@@ -51,6 +51,7 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -199,6 +200,7 @@ def test_enter_key_activates_focused_button_but_not_spinbox() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -252,6 +254,7 @@ def test_current_run_selection_keeps_focus_until_tab() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:

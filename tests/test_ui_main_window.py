@@ -44,6 +44,7 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def __init__(self) -> None:

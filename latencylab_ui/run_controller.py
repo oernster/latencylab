@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
 import traceback
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from typing import Any
 
 from PySide6.QtCore import QObject, QThread, Signal, Slot
 
+from latencylab.cancellation import RunCancelled
 from latencylab.metrics import add_task_metadata, aggregate_runs
 from latencylab.model import Model
 from latencylab.sim import simulate_many
@@ -32,15 +34,37 @@ class RunOutputs:
     summary: dict[str, Any]
 
 
+class CancelFlag:
+    """The cancellation signal, shared across the thread boundary.
+
+    A `threading.Event` rather than a plain bool: it is set on the interface
+    thread and read on the worker thread, and an Event is the primitive that
+    makes that safe without a lock at either end.
+    """
+
+    def __init__(self) -> None:
+        self._event = threading.Event()
+
+    def cancel(self) -> None:
+        self._event.set()
+
+    def is_cancelled(self) -> bool:
+        return self._event.is_set()
+
+
 class RunWorker(QObject):
     succeeded = Signal(int, object)  # (run_token, RunOutputs)
     failed = Signal(int, str)  # (run_token, error_text)
+    cancelled = Signal(int, int)  # (run_token, completed_runs)
     finished = Signal(int)  # (run_token)
 
-    def __init__(self, *, run_token: int, request: RunRequest) -> None:
+    def __init__(
+        self, *, run_token: int, request: RunRequest, cancel: CancelFlag
+    ) -> None:
         super().__init__()
         self._run_token = run_token
         self._request = request
+        self._cancel = cancel
 
     @Slot()
     def run(self) -> None:
@@ -55,6 +79,7 @@ class RunWorker(QObject):
                 seed=int(self._request.seed),
                 max_tasks_per_run=int(self._request.max_tasks_per_run),
                 want_trace=bool(self._request.want_trace),
+                cancel=self._cancel,
             )
 
             summary = aggregate_runs(model=model, runs=runs)
@@ -63,6 +88,10 @@ class RunWorker(QObject):
             self.succeeded.emit(
                 self._run_token, RunOutputs(model=model, runs=runs, summary=summary)
             )
+        except RunCancelled as cancelled:
+            # Its own signal, not a failure: the user asked for this, and a
+            # traceback in a message box is not the answer to a button press.
+            self.cancelled.emit(self._run_token, cancelled.completed_runs)
         except ModelValidationError as e:
             self.failed.emit(self._run_token, str(e))
         except Exception:  # noqa: BLE001 - show traceback for unexpected failures
@@ -74,14 +103,16 @@ class RunWorker(QObject):
 class RunController(QObject):
     """Owns the background-run lifecycle.
 
-    Cancellation semantics (v1): cancel does *not* interrupt the core simulation.
-    It marks the active run token as cancelled; results will be discarded on
-    completion.
+    Cancellation genuinely stops the work. The simulator is CPU-bound and
+    cannot be interrupted from outside, so it is ASKED to stop, at the boundary
+    between one run and the next. The worst case is therefore one run's worth of
+    delay, and no run is ever left half simulated.
     """
 
     started = Signal(int)  # run_token
     succeeded = Signal(int, object)  # (run_token, RunOutputs)
     failed = Signal(int, str)  # (run_token, error_text)
+    cancelled = Signal(int, int)  # (run_token, completed_runs)
     finished = Signal(int, float)  # (run_token, elapsed_seconds)
 
     def __init__(self) -> None:
@@ -89,6 +120,7 @@ class RunController(QObject):
         self._next_token = 1
         self._active_token: int | None = None
         self._cancelled_tokens: set[int] = set()
+        self._cancel_flag: CancelFlag | None = None
 
         # Keep strong references to QThread/QObject wrappers until the thread has
         # actually finished. Dropping the last Python ref before the underlying
@@ -116,13 +148,15 @@ class RunController(QObject):
         self._active_token = run_token
         self._started_at = time.monotonic()
 
+        cancel_flag = CancelFlag()
         thread = QThread()
-        worker = RunWorker(run_token=run_token, request=request)
+        worker = RunWorker(run_token=run_token, request=request, cancel=cancel_flag)
         worker.moveToThread(thread)
 
         thread.started.connect(worker.run)
         worker.succeeded.connect(self.succeeded)
         worker.failed.connect(self.failed)
+        worker.cancelled.connect(self.cancelled)
         worker.finished.connect(self._on_worker_finished)
         worker.finished.connect(thread.quit)
 
@@ -132,25 +166,31 @@ class RunController(QObject):
 
         self._thread = thread
         self._worker = worker
+        self._cancel_flag = cancel_flag
 
         self.started.emit(run_token)
         thread.start()
         return run_token
 
     def cancel_active(self) -> None:
+        """Ask the active run to stop at the next run boundary."""
+
         if self._active_token is None:
             return
         self._cancelled_tokens.add(self._active_token)
+        if self._cancel_flag is not None:
+            self._cancel_flag.cancel()
 
     @Slot()
     def shutdown(self) -> None:
-        """Best-effort shutdown.
+        """Stop any active run, then wait for its thread to end.
 
-        Important: the core simulation is CPU-bound and has no cancellation hook in v1.
-        If a run is active, we mark it cancelled and then **wait** for the worker
-        thread to finish to avoid Qt warnings like:
-
-            QThread: Destroyed while thread is still running
+        The wait is still here and still necessary, because the thread has to
+        have actually stopped before its wrapper is dropped or Qt warns that a
+        running thread was destroyed. What has changed is how long it waits:
+        the run now stops at the next boundary rather than running to
+        completion, so closing the window mid-run no longer blocks on the whole
+        remaining run set.
         """
 
         if self._thread is None:
@@ -158,7 +198,6 @@ class RunController(QObject):
 
         self.cancel_active()
 
-        # The worker is not interruptible; wait for completion.
         try:
             self._thread.wait()
         except RuntimeError:
@@ -182,3 +221,4 @@ class RunController(QObject):
         self._worker = None
         self._active_token = None
         self._started_at = None
+        self._cancel_flag = None

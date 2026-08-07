@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+from latencylab.cancellation import CancellationSignal
 from latencylab.model import Model
 from latencylab.types import RunResult, TaskInstance
 
@@ -16,6 +17,7 @@ class RunExecutor(Protocol):
         seed: int,
         max_tasks_per_run: int,
         want_trace: bool,
+        cancel: CancellationSignal | None = None,
     ) -> tuple[list[RunResult], list[TaskInstance]]:
         raise NotImplementedError
 
@@ -30,6 +32,7 @@ class LegacyNumpyExecutor:
         seed: int,
         max_tasks_per_run: int,
         want_trace: bool,
+        cancel: CancellationSignal | None = None,
     ) -> tuple[list[RunResult], list[TaskInstance]]:
         from latencylab.sim_legacy import simulate_many
 
@@ -39,6 +42,7 @@ class LegacyNumpyExecutor:
             seed=seed,
             max_tasks_per_run=max_tasks_per_run,
             want_trace=want_trace,
+            cancel=cancel,
         )
 
 
@@ -52,6 +56,7 @@ class StdlibV2Executor:
         seed: int,
         max_tasks_per_run: int,
         want_trace: bool,
+        cancel: CancellationSignal | None = None,
     ) -> tuple[list[RunResult], list[TaskInstance]]:
         from latencylab.sim_v2 import simulate_many
 
@@ -61,6 +66,7 @@ class StdlibV2Executor:
             seed=seed,
             max_tasks_per_run=max_tasks_per_run,
             want_trace=want_trace,
+            cancel=cancel,
         )
 
 

@@ -60,6 +60,7 @@ def test_tab_after_mouse_focus_does_not_restart_at_menu() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:
@@ -110,6 +111,7 @@ def test_run_button_focus_restored_after_run_finishes_when_requested() -> None:
         started = Signal(int)
         succeeded = Signal(int, object)
         failed = Signal(int, str)
+        cancelled = Signal(int, int)
         finished = Signal(int, float)
 
         def is_running(self) -> bool:

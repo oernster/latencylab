@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QTextOption
 from PySide6.QtWidgets import (
     QDialogButtonBox,
-    QPlainTextEdit,
+    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
@@ -45,10 +45,10 @@ class LicenceDialog(FirstStopDialog):
         root.setContentsMargins(14, 14, 14, 14)
         root.setSpacing(10)
 
-        text = QPlainTextEdit()
+        text = QTextBrowser()
         text.setReadOnly(True)
         # Wrap long lines so nothing is horizontally truncated.
-        text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        text.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
         text.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
         text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 

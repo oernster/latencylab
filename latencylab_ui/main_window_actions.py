@@ -23,6 +23,12 @@ RUN_IN_PROGRESS = "A run is already in progress"
 CANCEL_READY = "Stop the run"
 CANCEL_IDLE = "Nothing is running"
 
+# Cancel now genuinely stops the work, at the boundary between one run and the
+# next, so the copy says "stopping" rather than the old "results will be
+# discarded when it finishes".
+CANCELLING_STATUS = "Stopping at the end of the run in progress…"
+CANCELLED_STATUS = "Cancelled"
+
 SAVE_READY = "Export runs as zip…"
 SAVE_NEEDS_OUTPUTS = "Run a simulation first, then the runs can be exported"
 
@@ -82,3 +88,16 @@ def save_tooltip(*, available: bool) -> str:
 
 def distributions_tooltip(*, available: bool) -> str:
     return DISTRIBUTIONS_READY if available else DISTRIBUTIONS_NEEDS_OUTPUTS
+
+
+def cancelled_status(completed_runs: int) -> str:
+    """What a cancelled run reports.
+
+    The count is exact rather than approximate, because the stop happens at a
+    run boundary: it tells the user whether Cancel caught the run early or
+    almost at the end, which is the only thing they can act on.
+    """
+
+    if completed_runs == 1:
+        return f"{CANCELLED_STATUS} after 1 run"
+    return f"{CANCELLED_STATUS} after {completed_runs} runs"

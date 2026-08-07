@@ -28,6 +28,7 @@ class _IdleController(QObject):
     started = Signal(int)
     succeeded = Signal(int, object)
     failed = Signal(int, str)
+    cancelled = Signal(int, int)
     finished = Signal(int, float)
 
     def is_running(self) -> bool:

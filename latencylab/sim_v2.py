@@ -7,6 +7,11 @@ import heapq
 import math
 import random
 
+from latencylab.cancellation import (
+    CancellationSignal,
+    RunCancelled,
+    should_stop,
+)
 from latencylab.model import DurationDist, Model, WiringEdge
 from latencylab.types import EventOccurrence, RunResult, TaskInstance
 
@@ -41,10 +46,13 @@ def simulate_many(
     seed: int,
     max_tasks_per_run: int,
     want_trace: bool,
+    cancel: CancellationSignal | None = None,
 ) -> tuple[list[RunResult], list[TaskInstance]]:
     all_runs: list[RunResult] = []
     all_traces: list[TaskInstance] = []
     for run_id in range(runs):
+        if should_stop(cancel):
+            raise RunCancelled(completed_runs=run_id)
         rng = random.Random((seed << 32) ^ run_id)
         res, trace = simulate_one(
             model=model,

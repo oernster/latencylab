@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QApplication,
     QLabel,
     QMainWindow,
-    QMessageBox,
     QProgressBar,
     QStatusBar,
     QVBoxLayout,
@@ -30,6 +29,7 @@ from latencylab_ui.main_window_menus import build_menus, show_how_to_read_dialog
 from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.main_window_top_bar import build_top_bar
 from latencylab_ui import main_window_actions as actions
+from latencylab_ui import main_window_run as run_lifecycle
 from latencylab_ui import main_window_panels as panels
 from latencylab_ui.main_window_panels import build_left_panel
 from latencylab_ui.distributions_dock import DistributionsDock
@@ -168,6 +168,7 @@ class MainWindow(QMainWindow):
     def _wire_controller(self) -> None:
         self._controller.started.connect(self._on_run_started)
         self._controller.succeeded.connect(self._on_run_succeeded)
+        self._controller.cancelled.connect(self._on_run_cancelled)
         self._controller.failed.connect(self._on_run_failed)
         self._controller.finished.connect(self._on_run_finished)
 
@@ -296,65 +297,30 @@ class MainWindow(QMainWindow):
             return
         self._active_cancelled = True
         self._controller.cancel_active()
-        self._status_label.setText("Cancelling (will discard results when finished)…")
+        self._status_label.setText(actions.CANCELLING_STATUS)
+
+    def _on_run_cancelled(self, run_token: int, completed_runs: int) -> None:
+        """The run stopped because it was asked to, which is not a failure.
+
+        How far it got is worth saying: the stop happens at a run boundary, so
+        the number is exact rather than approximate, and it tells the user
+        whether Cancel caught the run early or nearly at the end.
+        """
+
+        self._status_label.setText(actions.cancelled_status(completed_runs))
+        self._auto_open_distributions_on_finish = False
 
     def _on_run_started(self, run_token: int) -> None:
-        self._active_run_token = run_token
-        self._dist_dock_closed_during_run = False
-        self._auto_open_distributions_on_finish = False
-        self._set_running(True)
-        self._status_label.setText("Running…")
-        self._elapsed_started_at = time.monotonic()
-        self._elapsed_label.setText("0.0s")
-        self._elapsed_timer.start()
+        run_lifecycle.on_run_started(self, run_token)
 
     def _on_run_succeeded(self, run_token: int, outputs_obj: object) -> None:
-        if self._controller.is_cancelled(run_token) or self._active_cancelled:
-            # Discard per v1 cancel semantics.
-            return
-        if isinstance(outputs_obj, RunOutputs):
-            self._last_outputs = outputs_obj
-            self._have_unexported_outputs = True
-            self._outputs_view.render(outputs_obj)
-            self._run_select.setEnabled(True)
-
-            # Refreshed against the controller's ACTUAL state, which is still
-            # running at this point: `succeeded` arrives before `finished`.
-            # Claiming otherwise here is what previously let the export button
-            # arm mid-run while the distributions button correctly did not.
-            self._refresh_actions()
-
-            # Render distributions from the same deterministic outputs.
-            self._distributions_dock.render(outputs_obj)
-        self._status_label.setText("Completed")
-
-        # Auto-open exactly once per successful completion, unless the user closed
-        # the dock during the active run. We delay the open until `finished` so the
-        # UI is no longer in the running state.
-        self._auto_open_distributions_on_finish = not self._dist_dock_closed_during_run
+        run_lifecycle.on_run_succeeded(self, run_token, outputs_obj)
 
     def _on_run_failed(self, run_token: int, error_text: str) -> None:
-        if self._controller.is_cancelled(run_token) or self._active_cancelled:
-            self._status_label.setText("Cancelled")
-            return
-        self._status_label.setText("Failed")
-        QMessageBox.critical(self, "Simulation failed", error_text)
-        self._auto_open_distributions_on_finish = False
-        self._refresh_actions()
+        run_lifecycle.on_run_failed(self, run_token, error_text)
 
     def _on_run_finished(self, run_token: int, elapsed_seconds: float) -> None:
-        self._elapsed_timer.stop()
-        self._elapsed_label.setText(f"{elapsed_seconds:0.2f}s")
-        self._elapsed_started_at = None
-        self._set_running(False)
-        if self._controller.is_cancelled(run_token) or self._active_cancelled:
-            self._status_label.setText("Cancelled (results discarded)")
-            self._auto_open_distributions_on_finish = False
-            return
-
-        if self._auto_open_distributions_on_finish and self._last_outputs is not None:
-            self._auto_open_distributions_on_finish = False
-            self._show_distributions_dock()
+        run_lifecycle.on_run_finished(self, run_token, elapsed_seconds)
 
     def _set_running(self, running: bool) -> None:
         self._busy_bar.setVisible(running)
