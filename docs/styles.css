@@ -124,6 +124,33 @@ header.nav {
 .btn-primary:hover { background: var(--banana); color: var(--banana-ink); }
 .btn-ghost { border-color: var(--border); color: var(--text); }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent-bright); }
+/* A call to action inside a panel. It was a line of text that happened to be a
+   link, which asks the reader to discover it; this is a pressable that says so
+   before the click. It lifts under the pointer and sits back down while held.
+   The highlight is the same banana the primary button already uses, so the site
+   has one hover language rather than two. */
+.btn-panel {
+  background: var(--raised);
+  border-color: var(--border);
+  color: var(--text);
+  padding: 11px 20px;
+  font-size: 15px;
+}
+.btn-panel:hover {
+  background: var(--banana);
+  border-color: var(--banana-bright);
+  color: var(--banana-ink);
+  transform: translateY(-1px);
+}
+.btn-panel:focus-visible {
+  outline: none;
+  border-color: var(--banana);
+  color: var(--text);
+}
+.btn-panel:active {
+  background: var(--banana-bright);
+  transform: translateY(1px);
+}
 .badges {
   margin-top: 24px;
   color: var(--muted);
