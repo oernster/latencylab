@@ -36,7 +36,7 @@
       <a href="guide.html">Using it</a>
       <a href="reading.html">Reading the output</a>
       <a href="why.html">Why</a>
-      <a href="#start">Get started</a>
+      <a href="download.html">Download</a>
       <a href="https://github.com/oernster/latencylab">GitHub</a>
     </nav>
   </div>
@@ -51,10 +51,11 @@
         systems. It is not a profiler, tracer or runtime observer. It exists to
         prevent confident people from shipping bad architecture.</p>
       <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/oernster/latencylab">View on GitHub</a>
+        <a class="btn btn-primary" href="download.html">Download</a>
         <a class="btn btn-ghost" href="guide.html">How to use it</a>
       </div>
-      <p class="release-note">If the output surprises you, that is the point.</p>
+      <p class="release-note">Windows, macOS and Linux. Builds are published on the
+        <a href="https://github.com/oernster/latencylab/releases">releases page</a> as they ship.</p>
       <div class="badges">
         <span>Local-first</span>·<span>No cloud, no account</span>
         ·<span>Deterministic, seeded runs</span>·<span>GPL-3.0 + LGPL-3.0</span>
@@ -194,29 +195,26 @@
   <section id="start">
     <div class="container">
       <div class="eyebrow">Get started</div>
-      <h2 class="section-title">Run it from a clone</h2>
-      <p class="section-sub">LatencyLab is a Python tool. The primary interface is
-        a CLI that reads a JSON execution model; the desktop UI is a client of the
-        same headless core. Core outputs are written as plain files you can plot
-        or diff.</p>
+      <h2 class="section-title">Install it and run the shipped example</h2>
+      <p class="section-sub">One installer per platform, per-user on Windows, no
+        administrator rights and no toolchain. Open the Examples menu, choose
+        Checkout, press Run: you have a distribution and a critical path inside a
+        minute, before you have written a model of your own.</p>
+      <div class="cta" style="justify-content:flex-start;margin-bottom:34px;">
+        <a class="btn btn-primary" href="download.html">Download for Windows, macOS or Linux</a>
+        <a class="btn btn-ghost" href="guide.html">Read the guide first</a>
+      </div>
+      <p class="section-sub">Underneath the desktop application is a Python
+        library with a CLI in front of it, reading a JSON execution model. Every
+        run writes plain files you can plot or diff, whichever way you drove it.</p>
       <div class="outputs">
         <div class="output"><code>summary.json</code><p>Aggregate latency and contention statistics for the whole run.</p></div>
         <div class="output"><code>runs.csv</code><p>Per-run metrics, suitable for analysis or plotting.</p></div>
         <div class="output"><code>trace.csv</code><p>Optional per-task-instance timing and causality data.</p></div>
       </div>
-      <div class="codeblock">
-<pre><span class="c"># Clone and install (dev)</span>
-git clone https://github.com/oernster/latencylab.git
-cd latencylab
-python -m pip install -e <span class="p">.[dev]</span>
-python -m pip install -r requirements.txt
-
-<span class="c"># Run the desktop UI (client of the headless core)</span>
-python -m latencylab_ui
-
-<span class="c"># Run the test suite (the strict 100% coverage gate is built in)</span>
-python -m pytest</pre>
-      </div>
+      <p class="release-note" style="text-align:left;">Prefer to build it yourself, or
+        to read it before running it? The
+        <a href="download.html#source">source route</a> is on the download page.</p>
     </div>
   </section>
 </main>
@@ -227,10 +225,10 @@ python -m pytest</pre>
       (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.1<!--/VERSION-->
     </div>
     <div class="footer-links">
+      <a href="https://github.com/oernster/latencylab/releases">Releases</a>
       <a href="https://github.com/oernster/latencylab">GitHub</a>
       <a href="https://www.crankthecode.com/posts/latencylab">The long read</a>
       <a href="https://ernster.dev/">Project hub</a>
-      <a href="https://www.crankthecode.com/">crankthecode.com</a>
     </div>
   </div>
 </footer>

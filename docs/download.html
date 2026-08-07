@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download LatencyLab for Windows, macOS or Linux</title>
+<meta name="description" content="Download the latest LatencyLab for Windows, macOS (Apple Silicon) or Linux. Free, GPL-3.0 + LGPL-3.0, local-first with no cloud and no account. One installer per platform, always the newest release.">
+<meta name="author" content="Oliver Ernster">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#181818">
+<link rel="canonical" href="https://ernster.dev/latencylab/download.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LatencyLab">
+<meta property="og:title" content="Download LatencyLab for Windows, macOS or Linux">
+<meta property="og:description" content="One installer per platform, always the newest release. Free, local-first, no cloud and no account.">
+<meta property="og:url" content="https://ernster.dev/latencylab/download.html">
+<meta property="og:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<meta property="og:image:alt" content="The LatencyLab UI showing a makespan distribution, critical-path frequencies and percentiles">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Download LatencyLab for Windows, macOS or Linux">
+<meta name="twitter:description" content="One installer per platform, always the newest release. Free, local-first, no cloud and no account.">
+<meta name="twitter:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<link rel="icon" type="image/svg+xml" href="assets/latencylab.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="./">
+      <img src="assets/latencylab.svg" alt="LatencyLab icon">LatencyLab</a>
+    <nav class="nav-links">
+      <a href="index.html#who">Who it's for</a>
+      <a href="index.html#what">What it does</a>
+      <a href="guide.html">Using it</a>
+      <a href="reading.html">Reading the output</a>
+      <a href="why.html">Why</a>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section id="download" class="alt">
+    <div class="container">
+      <div class="eyebrow">Get LatencyLab</div>
+      <h2 class="section-title">Download LatencyLab</h2>
+      <p class="section-sub">Pick your platform and you have the newest release. Free and
+        GPL-3.0 + LGPL-3.0 with no cloud and no account; everything stays local on your machine.</p>
+      <span class="dl-version" id="dl-version">Latest release</span>
+      <div class="downloads">
+        <div class="dl-card">
+          <div class="ico">🪟</div>
+          <h3>Windows</h3>
+          <p class="req">Windows 10 or 11, 64-bit</p>
+          <a class="btn btn-primary" href="https://github.com/oernster/latencylab/releases/latest/download/LatencyLabSetup.exe">
+            Download for Windows</a>
+          <p class="meta" data-asset="LatencyLabSetup.exe">Setup program (.exe)</p>
+          <p class="how">Run the setup: it installs per-user, so no administrator rights are needed.</p>
+        </div>
+        <div class="dl-card">
+          <div class="ico">🍎</div>
+          <h3>macOS</h3>
+          <p class="req">Apple Silicon (M1 or later)</p>
+          <a class="btn btn-primary" href="https://github.com/oernster/latencylab/releases/latest/download/latencylab.dmg">
+            Download for macOS</a>
+          <p class="meta" data-asset="latencylab.dmg">Disk image (.dmg)</p>
+          <p class="how">Open the DMG and drag LatencyLab into Applications.</p>
+        </div>
+        <div class="dl-card">
+          <div class="ico">🐧</div>
+          <h3>Linux</h3>
+          <p class="req">Any distribution with Flatpak</p>
+          <a class="btn btn-primary" href="https://github.com/oernster/latencylab/releases/latest/download/latencylab.flatpak">
+            Download for Linux</a>
+          <p class="meta" data-asset="latencylab.flatpak">Flatpak bundle (.flatpak)</p>
+          <p class="how">Install with <code>flatpak install latencylab.flatpak</code>.</p>
+        </div>
+      </div>
+      <p class="dl-links">
+        <a id="dl-whats-new" href="https://github.com/oernster/latencylab/releases/latest">What's new in this release</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/oernster/latencylab/releases">All releases</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/oernster/latencylab">Source on GitHub</a>
+      </p>
+    </div>
+  </section>
+
+  <section id="source">
+    <div class="container prose">
+      <div class="eyebrow">Or build it yourself</div>
+      <h2 class="section-title">Running from source</h2>
+      <p>You do not need to. The installers above are the same application, and
+        nothing about the tool assumes a checkout. This is here because the engine
+        is a Python library with a CLI in front of it, so some people would rather
+        drive it that way or read it before running it.</p>
+      <div class="codeblock">
+<pre><span class="c"># Clone and install (dev)</span>
+git clone https://github.com/oernster/latencylab.git
+cd latencylab
+python -m pip install -e <span class="p">.[dev]</span>
+python -m pip install -r requirements.txt
+
+<span class="c"># Run the desktop UI (client of the headless core)</span>
+python -m latencylab_ui
+
+<span class="c"># Run the test suite (the strict 100% coverage gate is built in)</span>
+python -m pytest</pre>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
+      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.1<!--/VERSION-->
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/oernster/latencylab/releases">Releases</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The long read</a>
+      <a href="https://ernster.dev/">Project hub</a>
+    </div>
+  </div>
+</footer>
+<script>
+    // The download buttons never go stale: each points at GitHub's releases/latest/download
+    // redirect, which always serves the newest release's asset (the asset names are version-free
+    // by design). This script only decorates the page with live details: the version chip and
+    // each installer's size, fetched from the GitHub API. If the call fails
+    // (offline, rate-limited), the static text above stands on its own.
+    (function () {
+        var api = 'https://api.github.com/repos/oernster/latencylab/releases/latest';
+        fetch(api).then(function (r) {
+            if (!r.ok) { throw new Error('release lookup failed'); }
+            return r.json();
+        }).then(function (rel) {
+            var version = (rel.tag_name || '').replace(/^v/, '');
+            if (version) {
+                document.getElementById('dl-version').textContent = 'Version ' + version;
+            }
+            if (rel.html_url) {
+                document.getElementById('dl-whats-new').href = rel.html_url;
+            }
+            (rel.assets || []).forEach(function (asset) {
+                var meta = document.querySelector('[data-asset="' + asset.name + '"]');
+                if (meta && asset.size) {
+                    var mb = (asset.size / (1024 * 1024)).toFixed(1);
+                    meta.textContent = meta.textContent + ' · ' + mb + ' MB';
+                }
+            });
+        }).catch(function () { /* The static page already says everything essential. */ });
+    })();
+</script>
+</body>
+</html>
