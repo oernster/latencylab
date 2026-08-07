@@ -12,6 +12,8 @@ from latencylab_ui import main_window_actions as actions
 from latencylab_ui.about_dialog import AboutDialog, AboutDialogContent
 from latencylab_ui.about_text import APP_NAME, about_html
 from latencylab_ui.example_models import ExampleModel, list_examples
+from latencylab_ui.guide_dialog import GuideDialog
+from latencylab_ui.guide_text import GUIDE_TITLE
 from latencylab_ui.how_to_read_dialog import HowToReadDialog
 
 EXAMPLES_MENU_TITLE = "Examples"
@@ -68,6 +70,11 @@ def build_menus(
     edit_action.triggered.connect(on_edit_model)
 
     help_menu = add_menu(window, "Help")
+
+    # First, and above How to Read, because it is the one that assumes nothing:
+    # which button to press comes before what the output means.
+    guide_action = help_menu.addAction(GUIDE_TITLE)
+    guide_action.triggered.connect(lambda: show_guide_dialog(window))
 
     how_to_read_action = help_menu.addAction("How to Read LatencyLab Output")
     how_to_read_action.triggered.connect(lambda: show_how_to_read_dialog(window))
@@ -170,6 +177,12 @@ def show_main_licence_dialog(parent: QWidget) -> None:
 def show_how_to_read_dialog(parent: QWidget) -> None:
     dlg = HowToReadDialog(parent)
     setattr(parent, "_how_to_read_dialog", dlg)
+    dlg.open()
+
+
+def show_guide_dialog(parent: QWidget) -> None:
+    dlg = GuideDialog(parent)
+    setattr(parent, "_guide_dialog", dlg)
     dlg.open()
 
 

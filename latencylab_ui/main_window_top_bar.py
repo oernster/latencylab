@@ -14,7 +14,8 @@ from PySide6.QtWidgets import (
 )
 
 from latencylab_ui import main_window_actions as actions
-from latencylab_ui.glyphs import COMPOSE_BODY, EDIT_BODY, glyph_icon
+from latencylab_ui.glyphs import COMPOSE_BODY, EDIT_BODY, GUIDE_BODY, glyph_icon
+from latencylab_ui.guide_text import GUIDE_TITLE
 from latencylab_ui.icon_resolver import get_app_icon_png_path
 from latencylab_ui.theme import Theme, tokens_for
 from latencylab_ui.theme_toggle import ThemeToggle
@@ -59,6 +60,7 @@ class TopBar:
     widget: QWidget
     save_log_btn: QPushButton
     distributions_btn: QPushButton
+    guide_btn: QPushButton
     how_to_read_btn: QPushButton
     compose_btn: QPushButton
     edit_btn: QPushButton
@@ -190,6 +192,7 @@ def build_top_bar(
     *,
     on_save_log_clicked: Callable[[], None],
     on_show_distributions_clicked: Callable[[], None],
+    on_show_guide_clicked: Callable[[], None],
     on_show_how_to_read_clicked: Callable[[], None],
     on_toggle_model_composer_clicked: Callable[[], None],
     on_edit_model_clicked: Callable[[], None],
@@ -223,6 +226,18 @@ def build_top_bar(
         "💾", tooltip="Export runs as zip…", on_clicked=on_save_log_clicked
     )
     layout.addWidget(save_log_btn, 0, Qt.AlignmentFlag.AlignTop)
+
+    # Immediately left of the info button, because the pair is one idea in two
+    # halves: this one says which button to press, that one says what the
+    # output means.
+    guide_btn = _drawn_icon_button(
+        GUIDE_BODY,
+        tooltip=GUIDE_TITLE,
+        on_clicked=on_show_guide_clicked,
+    )
+    guide_btn.setObjectName("guide_btn")
+    guide_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+    layout.addWidget(guide_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     how_to_read_btn = _icon_button(
         "ℹ️",
@@ -278,6 +293,7 @@ def build_top_bar(
         widget=top_bar,
         save_log_btn=save_log_btn,
         distributions_btn=distributions_btn,
+        guide_btn=guide_btn,
         how_to_read_btn=how_to_read_btn,
         compose_btn=compose_btn,
         edit_btn=edit_btn,

@@ -26,7 +26,11 @@ from latencylab_ui.main_window_file_io import (
 from latencylab_ui.attention_flash import AttentionFlash
 from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
 from latencylab_ui.focus_cycle import FocusCycleController
-from latencylab_ui.main_window_menus import build_menus, show_how_to_read_dialog
+from latencylab_ui.main_window_menus import (
+    build_menus,
+    show_guide_dialog,
+    show_how_to_read_dialog,
+)
 from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.main_window_top_bar import build_top_bar
 from latencylab_ui import main_window_actions as actions
@@ -118,6 +122,7 @@ class MainWindow(QMainWindow):
             self,
             on_save_log_clicked=self._on_save_log_clicked,
             on_show_distributions_clicked=self._on_show_distributions_clicked,
+            on_show_guide_clicked=lambda: show_guide_dialog(self),
             on_show_how_to_read_clicked=lambda: show_how_to_read_dialog(self),
             on_toggle_model_composer_clicked=self._on_toggle_model_composer_clicked,
             on_edit_model_clicked=self._on_edit_model_clicked,
@@ -125,6 +130,7 @@ class MainWindow(QMainWindow):
         )
         self._save_log_btn = top_bar.save_log_btn
         self._distributions_btn = top_bar.distributions_btn
+        self._guide_btn = top_bar.guide_btn
         self._how_to_read_btn = top_bar.how_to_read_btn
         self._compose_btn = top_bar.compose_btn
         self._edit_btn = top_bar.edit_btn

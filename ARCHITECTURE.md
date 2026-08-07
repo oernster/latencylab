@@ -100,6 +100,7 @@ The GUI code is intentionally split into smaller modules to keep individual file
   - Base that opens on its first usable control -> [`latencylab_ui.first_stop_dialog`](latencylab_ui/first_stop_dialog.py:1)
   - About, and the credits it renders -> [`latencylab_ui.about_dialog`](latencylab_ui/about_dialog.py:1), [`latencylab_ui.about_text`](latencylab_ui/about_text.py:1)
   - Licence viewers -> [`latencylab_ui.main_licence_dialog`](latencylab_ui/main_licence_dialog.py:1), [`latencylab_ui.licence_dialog`](latencylab_ui/licence_dialog.py:1)
+  - How to USE the application, and why each setting -> [`latencylab_ui.guide_dialog`](latencylab_ui/guide_dialog.py:1), [`latencylab_ui.guide_text`](latencylab_ui/guide_text.py:1)
   - How to read the outputs -> [`latencylab_ui.how_to_read_dialog`](latencylab_ui/how_to_read_dialog.py:1)
   - Long text that reads itself -> [`latencylab_ui.auto_scroller`](latencylab_ui/auto_scroller.py:1)
 
@@ -565,6 +566,25 @@ same callable rather than to two handlers that have to be kept in step. Only
 Edit changes availability, so `build_menus` returns that one action and the
 window gates it from the same `availability()` call that gates every other
 control.
+
+**Guidance is two documents, not one.** The Guide says which button to press
+and why you would pick one setting rather than another; How to Read says what
+the output means. They are deliberately separate because they answer questions
+asked at different moments, and the Guide's own text is ordered on that basis:
+six numbered steps with no explanation attached, then every reason afterwards,
+once there is something for the reason to attach to. Its button sits
+immediately left of the info button so the pair reads as one idea in two
+halves, and its glyph is an open book precisely because it must share no shape
+with an "i" in a circle.
+
+The text lives in [`guide_text`](latencylab_ui/guide_text.py:1) rather than in
+the dialog, for the same reason `about_text` does: the words change far more
+often than the widget, and a change to the words should not be a change to a
+file full of Qt. It is HTML on a `QTextBrowser` rather than plain text, which is
+also what
+[`auto_scroller`](latencylab_ui/auto_scroller.py:1) requires: the reading cycle
+moves in PIXELS, and a `QPlainTextEdit` scrolls in LINES, where the same gentle
+drift becomes a whole line jumping at a time.
 
 **The application mark is the distributions toggle.** It sat dead centre on the
 tray as decoration, transparent to the mouse and off the keyboard ring, while

@@ -49,6 +49,15 @@ EDIT_BODY = (
     '<path d="M19.8 2.8 L21.9 4.9 L14.6 12.2 L11.8 12.9 L12.5 10.1 Z"/>'
 )
 
+# An open book: a manual. It sits immediately left of the info button, so it
+# deliberately shares no shape with an "i" in a circle; and its spine plus two
+# curved pages read differently at 20px from Edit's rectangular document.
+GUIDE_BODY = (
+    '<path d="M12 7v12.5"/>'
+    '<path d="M12 7C10.2 5.6 7.4 5.1 4 5.4v12.2c3.4-.3 6.2.2 8 1.6"/>'
+    '<path d="M12 7c1.8-1.4 4.6-1.9 8-1.6v12.2c-3.4-.3-6.2.2-8 1.6"/>'
+)
+
 
 def glyph_svg(body: str, *, stroke: str) -> str:
     """One glyph's complete SVG, drawn in `stroke`."""
