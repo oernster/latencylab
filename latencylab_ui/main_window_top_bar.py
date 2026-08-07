@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from latencylab_ui import main_window_actions as actions
-from latencylab_ui.glyphs import COMPOSE_BODY, EDIT_BODY, GUIDE_BODY, glyph_icon
+from latencylab_ui.glyphs import COMPOSE_BODY, EDIT_BODY, glyph_icon, guide_icon
 from latencylab_ui.guide_text import GUIDE_TITLE
 from latencylab_ui.icon_resolver import get_app_icon_png_path
 from latencylab_ui.theme import Theme, tokens_for
@@ -151,6 +151,21 @@ def _icon_button(
     return button
 
 
+def _glyph_button(
+    icon: QIcon, *, tooltip: str, on_clicked: Callable[[], None]
+) -> QPushButton:
+    """A toolbar button carrying an already-drawn icon."""
+
+    button = QPushButton()
+    button.setIcon(icon)
+    button.setIconSize(QSize(GLYPH_PX, GLYPH_PX))
+    button.setToolTip(tooltip)
+    button.setProperty("role", "icon-action")
+    button.setFixedHeight(TOOLBAR_BUTTON_PX)
+    button.clicked.connect(on_clicked)
+    return button
+
+
 def _drawn_icon_button(
     body: str,
     *,
@@ -166,8 +181,7 @@ def _drawn_icon_button(
     """
 
     tokens = tokens_for(Theme.DARK)
-    button = QPushButton()
-    button.setIcon(
+    return _glyph_button(
         glyph_icon(
             body,
             stroke=tokens.primary_text,
@@ -177,14 +191,10 @@ def _drawn_icon_button(
             # vanishes at the moment the button is saying something.
             checked_stroke=tokens.accent_text if checkable else None,
             size=GLYPH_PX,
-        )
+        ),
+        tooltip=tooltip,
+        on_clicked=on_clicked,
     )
-    button.setIconSize(QSize(GLYPH_PX, GLYPH_PX))
-    button.setToolTip(tooltip)
-    button.setProperty("role", "icon-action")
-    button.setFixedHeight(TOOLBAR_BUTTON_PX)
-    button.clicked.connect(on_clicked)
-    return button
 
 
 def build_top_bar(
@@ -229,9 +239,16 @@ def build_top_bar(
 
     # Immediately left of the info button, because the pair is one idea in two
     # halves: this one says which button to press, that one says what the
-    # output means.
-    guide_btn = _drawn_icon_button(
-        GUIDE_BODY,
+    # output means. Two-tone, unlike the rest of the tray: the book's covers
+    # take the button's ink and its ruled lines and page edge take the accent.
+    guide_tokens = tokens_for(Theme.DARK)
+    guide_btn = _glyph_button(
+        guide_icon(
+            ink=guide_tokens.primary_text,
+            accent=guide_tokens.accent,
+            disabled=guide_tokens.muted_text,
+            size=GLYPH_PX,
+        ),
         tooltip=GUIDE_TITLE,
         on_clicked=on_show_guide_clicked,
     )

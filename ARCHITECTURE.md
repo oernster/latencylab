@@ -577,6 +577,17 @@ immediately left of the info button so the pair reads as one idea in two
 halves, and its glyph is an open book precisely because it must share no shape
 with an "i" in a circle.
 
+That book is the only glyph drawn in TWO colours: covers in the button's own
+ink, ruled lines and the near page's edge in the accent
+([`guide_icon()`](latencylab_ui/glyphs.py:110)). A single-tone version of it was
+two blank curves, which said "a document" rather than "a manual with something
+in it". It carries two ruled lines per page rather than three because three
+were measured at the 20px the tray actually draws and blurred into each other,
+so the sense of several pages comes from the page edge instead, which has room
+to be seen. Disabled mutes BOTH tones: a glyph that kept its accent while the
+rest of it greyed out would read as half-available, which is not a state this
+application has.
+
 The text lives in [`guide_text`](latencylab_ui/guide_text.py:1) rather than in
 the dialog, for the same reason `about_text` does: the words change far more
 often than the widget, and a change to the words should not be a change to a

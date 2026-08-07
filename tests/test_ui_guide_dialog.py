@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QMenu, QPushButton, QTextBrowser
 
 from latencylab_ui.auto_scroller import AutoScroller
@@ -10,6 +11,11 @@ from latencylab_ui.guide_dialog import GuideDialog
 from latencylab_ui.guide_text import GUIDE_HTML, GUIDE_TITLE
 from latencylab_ui.main_window import MainWindow
 from latencylab_ui.main_window_menus import show_guide_dialog
+from latencylab_ui.theme import Theme, apply_theme, tokens_for
+
+# Rasterising blends the ink against transparency at every edge, so an exact
+# match would only hold in the middle of a stroke.
+ACCENT_TOLERANCE = 55
 
 # The steps somebody has to be able to follow without knowing anything first.
 # Named rather than counted, so a rewrite that quietly drops one fails here.
@@ -194,3 +200,52 @@ def test_the_guide_button_is_a_tray_button_like_the_others(
     assert isinstance(window._guide_btn, QPushButton)
     assert window._guide_btn.property("role") == "icon-action"
     assert window._guide_btn.isCheckable() is False
+
+
+def _accent_pixels(widget, accent: QColor) -> int:
+    image = widget.grab().toImage()
+    return sum(
+        1
+        for y in range(image.height())
+        for x in range(image.width())
+        if _near(QColor(image.pixel(x, y)), accent)
+    )
+
+
+def _near(pixel: QColor, want: QColor) -> bool:
+    return (
+        abs(pixel.red() - want.red()) < ACCENT_TOLERANCE
+        and abs(pixel.green() - want.green()) < ACCENT_TOLERANCE
+        and abs(pixel.blue() - want.blue()) < ACCENT_TOLERANCE
+    )
+
+
+def test_the_book_is_drawn_in_two_colours(
+    app: QApplication, window: MainWindow
+) -> None:
+    """A single-tone version came out as two blank curves: it said "a document"
+    where it needed to say "a manual with something in it"."""
+
+    apply_theme(app, Theme.DARK)
+    app.processEvents()
+    accent = QColor(tokens_for(Theme.DARK).accent)
+
+    assert _accent_pixels(window._guide_btn, accent) > 0
+
+
+def test_a_disabled_book_mutes_both_of_its_colours(
+    app: QApplication, window: MainWindow
+) -> None:
+    """A glyph that keeps its accent while the rest of it greys out reads as
+    half-available, which is not a state this application has."""
+
+    apply_theme(app, Theme.DARK)
+    accent = QColor(tokens_for(Theme.DARK).accent)
+
+    window._guide_btn.setEnabled(False)
+    app.processEvents()
+
+    assert _accent_pixels(window._guide_btn, accent) == 0
+
+    window._guide_btn.setEnabled(True)
+    app.processEvents()

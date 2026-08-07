@@ -52,11 +52,79 @@ EDIT_BODY = (
 # An open book: a manual. It sits immediately left of the info button, so it
 # deliberately shares no shape with an "i" in a circle; and its spine plus two
 # curved pages read differently at 20px from Edit's rectangular document.
-GUIDE_BODY = (
-    '<path d="M12 7v12.5"/>'
-    '<path d="M12 7C10.2 5.6 7.4 5.1 4 5.4v12.2c3.4-.3 6.2.2 8 1.6"/>'
-    '<path d="M12 7c1.8-1.4 4.6-1.9 8-1.6v12.2c-3.4-.3-6.2.2-8 1.6"/>'
+#
+# It is the one glyph drawn in more than one colour. Covers in the button's own
+# ink and everything else in the accent, because a single-tone version came out
+# as two blank curves: it said "a document" where it needed to say "a manual
+# with something in it".
+_GUIDE_COVERS = (
+    '<path d="M12 7.2v12.4"/>'
+    '<path d="M12 7.2C9.9 5.6 7 5.1 3.6 5.5v12.4c3.4-.4 6.3.1 8.4 1.7"/>'
+    '<path d="M12 7.2c2.1-1.6 5-2.1 8.4-1.7v12.4c-3.4-.4-6.3.1-8.4 1.7"/>'
 )
+
+# Where the ruled lines sit. TWO rather than three: measured at the 20px the
+# tray actually draws, a third line blurs into the two beside it and the page
+# turns to mush, so the sense of several pages comes from the edge below
+# instead, which has room to be seen.
+_GUIDE_RULES = (9.6, 12.6)
+_RULE_WIDTH = 1.3
+
+# The near page's edge, showing the book has thickness rather than being two
+# flat leaves.
+_EDGE_OFFSET = 1.5
+_EDGE_WIDTH = 1.1
+
+
+def _guide_marks(accent: str) -> str:
+    """The ruled lines and the page edge, all in one colour."""
+
+    marks = []
+    for y in _GUIDE_RULES:
+        marks.append(
+            f'<path stroke="{accent}" stroke-width="{_RULE_WIDTH}" '
+            f'd="M5.6 {y}c1.5-.1 2.9.1 4.1.6"/>'
+        )
+        marks.append(
+            f'<path stroke="{accent}" stroke-width="{_RULE_WIDTH}" '
+            f'd="M18.4 {y}c-1.5-.1-2.9.1-4.1.6"/>'
+        )
+    edge_y = 17.9 + _EDGE_OFFSET
+    marks.append(
+        f'<path stroke="{accent}" stroke-width="{_EDGE_WIDTH}" '
+        f'd="M3.6 {edge_y}c3.4-.4 6.3.1 8.4 1.7"/>'
+    )
+    marks.append(
+        f'<path stroke="{accent}" stroke-width="{_EDGE_WIDTH}" '
+        f'd="M20.4 {edge_y}c-3.4-.4-6.3.1-8.4 1.7"/>'
+    )
+    return "".join(marks)
+
+
+def guide_body(*, accent: str) -> str:
+    """The book, with its marks in `accent` and its covers left to the head."""
+
+    return _GUIDE_COVERS + _guide_marks(accent)
+
+
+def guide_icon(*, ink: str, accent: str, disabled: str, size: int) -> QIcon:
+    """The two-tone book, and a single-tone version of it for disabled.
+
+    Disabled mutes BOTH tones rather than only the covers. A glyph that keeps
+    its accent while the rest of it greys out reads as half-available, which is
+    not a state this application has.
+    """
+
+    icon = QIcon()
+    icon.addPixmap(
+        glyph_pixmap(guide_body(accent=accent), stroke=ink, size=size),
+        QIcon.Mode.Normal,
+    )
+    icon.addPixmap(
+        glyph_pixmap(guide_body(accent=disabled), stroke=disabled, size=size),
+        QIcon.Mode.Disabled,
+    )
+    return icon
 
 
 def glyph_svg(body: str, *, stroke: str) -> str:
