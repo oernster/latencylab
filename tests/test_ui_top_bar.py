@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication
 
@@ -53,12 +53,12 @@ def window(app: QApplication) -> MainWindow:
 
 
 @pytest.mark.parametrize("width", WINDOW_WIDTHS)
-def test_badge_is_centred_on_the_bar_not_on_the_leftover_space(
+def test_the_mark_is_centred_on_the_bar_not_on_the_leftover_space(
     app: QApplication, window: MainWindow, width: int
 ) -> None:
     """The reported defect, measured.
 
-    The badge used to sit between two stretches, which centres it in the gap
+    The mark used to sit between two stretches, which centres it in the gap
     between the flanking control groups. Those groups are nowhere near the same
     width, so it landed 134px right of centre in a 1400px window.
     """
@@ -66,21 +66,41 @@ def test_badge_is_centred_on_the_bar_not_on_the_leftover_space(
     window.resize(width, WINDOW_HEIGHT)
     app.processEvents()
 
-    badge = window._top_badge
-    bar = badge.parentWidget()
-    badge_centre = badge.geometry().x() + badge.geometry().width() / 2
+    mark = window._distributions_btn
+    bar = mark.parentWidget()
+    mark_centre = mark.geometry().x() + mark.geometry().width() / 2
 
-    assert abs(badge_centre - bar.width() / 2) <= CENTRING_TOLERANCE_PX
+    assert abs(mark_centre - bar.width() / 2) <= CENTRING_TOLERANCE_PX
 
 
-def test_badge_is_the_generated_icon_and_not_a_font_glyph(window: MainWindow) -> None:
+def test_the_mark_is_the_generated_icon_and_not_a_font_glyph(
+    window: MainWindow,
+) -> None:
     """A glyph is whatever font happens to be installed; a file is the mark."""
 
-    badge = window._top_badge
-    assert badge.text() == ""
-    pixmap = badge.pixmap()
-    assert pixmap is not None
-    assert not pixmap.isNull()
+    mark = window._distributions_btn
+    assert mark.text() == ""
+    assert mark.icon().isNull() is False
+
+
+def test_the_centre_mark_is_the_distributions_toggle(window: MainWindow) -> None:
+    """It was decoration; it is now the control. The mark is the most prominent
+    thing on the bar and the panel it opens is the point of running anything, so
+    the two belong together rather than competing from opposite ends."""
+
+    mark = window._distributions_btn
+
+    assert mark.isCheckable() is True
+    assert mark.toolTip()
+    # Not transparent to the mouse any more, and on the keyboard ring, because
+    # there is now something to do to it.
+    assert mark.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents) is False
+    assert mark.focusPolicy() != Qt.FocusPolicy.NoFocus
+
+    window._distributions_dock.setVisible(True)
+    assert mark.isChecked() is True
+    window._distributions_dock.setVisible(False)
+    assert mark.isChecked() is False
 
 
 def test_compose_button_is_reachable_and_is_not_a_toggle(window: MainWindow) -> None:

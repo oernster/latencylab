@@ -4,11 +4,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
-    QLabel,
     QPushButton,
     QSizePolicy,
     QWidget,
@@ -41,12 +40,12 @@ DISTRIBUTIONS_BUTTON_NAME = "distributions_btn"
 # taskbar, the mark on the shortcut and the mark in About are all one file.
 TOP_BADGE_PX = 36
 
+# The mark is the centrepiece, so it is drawn a little larger than the glyphs
+# flanking it, while still fitting inside a button of the tray's own height.
+CENTRE_MARK_PX = 24
+
 # Ask for a larger source and scale it down: downscaling a slightly-too-big icon
 # looks better than upscaling a slightly-too-small one.
-_BADGE_SOURCE_PX = 64
-
-# The same reasoning for the mark on a toolbar button, which is drawn smaller
-# again, so it asks for the same generous source.
 _MARK_SOURCE_PX = 64
 
 MARGIN_SIDE = 10
@@ -63,67 +62,48 @@ class TopBar:
     how_to_read_btn: QPushButton
     compose_btn: QPushButton
     edit_btn: QPushButton
-    badge: QLabel
     theme_toggle: ThemeToggle
 
 
-def _build_badge(parent: QWidget) -> QLabel:
-    """The application mark, sized whether or not its file resolves.
+def _build_centre_mark(
+    parent: QWidget, *, tooltip: str, on_clicked: Callable[[], None]
+) -> QPushButton:
+    """The application mark, dead centre, and the distributions toggle.
 
-    The size is fixed either way. A badge that collapses when the icon set is
-    missing would silently move the thing it is supposed to centre.
+    It was decoration and is now the control, which is the same widget doing a
+    job instead of sitting there: the mark is the most prominent thing on the
+    bar and the panel it opens is the point of running anything, so the two
+    belong together rather than competing for attention from opposite ends.
+
+    The height is fixed and the WIDTH is left natural. Fixing both to a size
+    smaller than the frame the stylesheet computes makes Qt lay the frame out at
+    its natural size and clip it at the widget edge, which slices the bottom
+    border off and leaves a ring that stops short. A minimum width holds the
+    centre steady if the icon set is ever missing, since a mark that collapses
+    would move the thing it is supposed to centre.
     """
 
-    badge = QLabel(parent)
-    badge.setObjectName("top_app_badge")
-    badge.setFixedSize(TOP_BADGE_PX, TOP_BADGE_PX)
-    badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    # Decoration, not a control: nothing can be done to it, so it is not on the
-    # keyboard ring, and it must not swallow a click meant for what is behind it.
-    badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-    badge.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+    mark = QPushButton(parent)
+    mark.setObjectName(DISTRIBUTIONS_BUTTON_NAME)
+    mark.setProperty("role", "icon-action")
+    mark.setFixedHeight(TOOLBAR_BUTTON_PX)
+    mark.setMinimumWidth(TOP_BADGE_PX)
+    mark.setToolTip(tooltip)
+    mark.setCheckable(True)
+    mark.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+    mark.clicked.connect(on_clicked)
 
-    badge_path = get_app_icon_png_path(_BADGE_SOURCE_PX)
-    if badge_path is not None:
-        badge.setPixmap(
-            QPixmap(str(badge_path)).scaled(
-                TOP_BADGE_PX,
-                TOP_BADGE_PX,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-        )
-    return badge
+    mark_path = get_app_icon_png_path(_MARK_SOURCE_PX)
+    if mark_path is not None:
+        mark.setIcon(QIcon(str(mark_path)))
+        mark.setIconSize(QSize(CENTRE_MARK_PX, CENTRE_MARK_PX))
+    return mark
 
 
 def _icon_button(
     glyph: str, *, tooltip: str, on_clicked: Callable[[], None]
 ) -> QPushButton:
     button = QPushButton(glyph)
-    button.setToolTip(tooltip)
-    button.setProperty("role", "icon-action")
-    button.setFixedHeight(TOOLBAR_BUTTON_PX)
-    button.clicked.connect(on_clicked)
-    return button
-
-
-def _app_mark_button(*, tooltip: str, on_clicked: Callable[[], None]) -> QPushButton:
-    """A toolbar button carrying the application's own mark.
-
-    The mark comes from the generated icon set, the same file the tray badge,
-    the taskbar, the shortcut and About all use, rather than an emoji. An emoji
-    is drawn by whichever font the platform happens to pick, so it is the one
-    thing on the bar whose appearance the application does not control.
-
-    Nothing recolours it on check, unlike the drawn glyphs: it is a picture
-    rather than a stroke, so the button's fill and text colour do the saying.
-    """
-
-    button = QPushButton()
-    mark_path = get_app_icon_png_path(_MARK_SOURCE_PX)
-    if mark_path is not None:
-        button.setIcon(QIcon(str(mark_path)))
-    button.setIconSize(QSize(GLYPH_PX, GLYPH_PX))
     button.setToolTip(tooltip)
     button.setProperty("role", "icon-action")
     button.setFixedHeight(TOOLBAR_BUTTON_PX)
@@ -177,17 +157,17 @@ def build_top_bar(
     on_edit_model_clicked: Callable[[], None],
     on_theme_changed: Callable[[Theme], None],
 ) -> TopBar:
-    """Build the top bar: actions at the edges, the app badge dead centre.
+    """Build the top bar: actions at the edges, the app mark dead centre.
 
-    The badge is centred on the BAR, which a row of stretches cannot do. Three
+    The mark is centred on the BAR, which a row of stretches cannot do. Three
     stretches centre it in the space LEFT OVER between the flanking groups, and
-    those groups are nowhere near the same width, so the badge lands well right
-    of centre (134px out of 1400, measured). Equalising two grid columns by
-    stretch does not work either, because a column never shrinks below its own
-    content.
+    those groups are nowhere near the same width, so it lands well right of
+    centre (134px out of 1400, measured). Equalising two grid columns by stretch
+    does not work either, because a column never shrinks below its own content.
 
-    What does work is an overlay: the controls and the badge occupy the SAME
-    grid cell, that cell is the whole bar, and the badge centres itself in it.
+    What does work is an overlay: the controls and the mark occupy the SAME grid
+    cell, that cell is the whole bar, and the mark centres itself in it. The
+    mark is added second, so it is the one that takes a click where they meet.
     """
 
     top_bar = QWidget(parent)
@@ -205,20 +185,6 @@ def build_top_bar(
         "💾", tooltip="Export runs as zip…", on_clicked=on_save_log_clicked
     )
     layout.addWidget(save_log_btn, 0, Qt.AlignmentFlag.AlignTop)
-
-    distributions_btn = _app_mark_button(
-        tooltip="Show latency and critical-path distributions",
-        on_clicked=on_show_distributions_clicked,
-    )
-    distributions_btn.setObjectName(DISTRIBUTIONS_BUTTON_NAME)
-    # Checkable for the same reason the composer's button is: the two docks
-    # share the right-hand area and cannot both be up, so the pair of buttons
-    # is really one three-state answer to "what is showing". A control that
-    # only ever opens leaves the dock's own close cross as the only way to undo
-    # what one press did.
-    distributions_btn.setCheckable(True)
-    distributions_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-    layout.addWidget(distributions_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     how_to_read_btn = _icon_button(
         "ℹ️",
@@ -256,11 +222,18 @@ def build_top_bar(
     theme_toggle.theme_changed.connect(on_theme_changed)
     layout.addWidget(theme_toggle, 0, Qt.AlignmentFlag.AlignTop)
 
-    badge = _build_badge(top_bar)
+    distributions_btn = _build_centre_mark(
+        top_bar,
+        tooltip=actions.DISTRIBUTIONS_NEEDS_OUTPUTS,
+        on_clicked=on_show_distributions_clicked,
+    )
 
     grid.addWidget(controls, 0, 0)
     grid.addWidget(
-        badge, 0, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+        distributions_btn,
+        0,
+        0,
+        Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
     )
 
     return TopBar(
@@ -270,6 +243,5 @@ def build_top_bar(
         how_to_read_btn=how_to_read_btn,
         compose_btn=compose_btn,
         edit_btn=edit_btn,
-        badge=badge,
         theme_toggle=theme_toggle,
     )

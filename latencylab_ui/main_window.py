@@ -128,7 +128,6 @@ class MainWindow(QMainWindow):
         self._how_to_read_btn = top_bar.how_to_read_btn
         self._compose_btn = top_bar.compose_btn
         self._edit_btn = top_bar.edit_btn
-        self._top_badge = top_bar.badge
         self._theme_toggle = top_bar.theme_toggle
 
         root_layout.addWidget(top_bar.widget)

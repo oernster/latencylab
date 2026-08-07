@@ -566,6 +566,27 @@ Edit changes availability, so `build_menus` returns that one action and the
 window gates it from the same `availability()` call that gates every other
 control.
 
+**The application mark is the distributions toggle.** It sat dead centre on the
+tray as decoration, transparent to the mouse and off the keyboard ring, while
+the control that opens the distributions panel was one more small glyph in the
+left-hand group. The mark is the most prominent thing on the bar and the panel
+is the point of having run anything, so they are now one widget instead of
+competing for attention from opposite ends of the bar.
+
+Centring it is an overlay rather than a row of stretches: three stretches centre
+a widget in the space LEFT OVER between the flanking groups, and those groups
+are nowhere near the same width, so it landed 134px right of centre in a 1400px
+window. The controls and the mark occupy the SAME grid cell, that cell is the
+whole bar, and the mark centres itself in it. Measured after the change it sits
+exactly on centre in both themes. The mark is added second, so it is the one
+that takes a click where the two overlap.
+
+Its height is fixed and its WIDTH is left natural. Fixing both to a size smaller
+than the frame the stylesheet computes makes Qt lay the frame out at its natural
+size and clip it at the widget edge, slicing the bottom border off a ring that
+then stops short. A minimum width holds the centre steady if the icon set is
+ever missing, because a mark that collapses moves the thing it is centring.
+
 **A panel button says whether the panel is up.** Distributions is a toggle
 ([`toggle_distributions()`](latencylab_ui/main_window_dock_switching.py:47)), not
 an opener: a control that only ever opens leaves the dock's own close cross as

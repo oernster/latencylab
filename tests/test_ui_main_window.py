@@ -78,18 +78,19 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     w.show()
     app.processEvents()
 
-    # The centre badge is the generated application mark, never a font glyph,
-    # and it is decoration rather than a control.
-    from PySide6.QtCore import Qt
-    from PySide6.QtWidgets import QLabel
+    # The centre mark is the generated application mark, never a font glyph,
+    # and it is the distributions toggle rather than decoration.
+    from PySide6.QtWidgets import QPushButton as _QPushButton
 
-    badge = w.findChild(QLabel, "top_app_badge")
-    assert badge is not None
-    assert badge.text() == ""
-    assert not badge.pixmap().isNull()
-    assert badge.focusPolicy() == Qt.FocusPolicy.NoFocus
-    assert badge.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-    assert badge.minimumWidth() >= 36
+    mark = w.findChild(_QPushButton, "distributions_btn")
+    assert mark is not None
+    assert mark.text() == ""
+    assert mark.icon().isNull() is False
+    assert mark.isCheckable() is True
+    # A minimum width rather than a fixed size: a mark that collapses when the
+    # icon set is missing would move the thing it is supposed to centre, and
+    # fixing the height too would clip the frame the stylesheet computes.
+    assert mark.minimumWidth() >= 36
 
     # Top bar: How-to-read info button should exist and be enabled.
     from PySide6.QtWidgets import QPushButton
