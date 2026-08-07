@@ -86,29 +86,6 @@
     </div>
   </section>
 
-  <section id="source">
-    <div class="container prose">
-      <div class="eyebrow">Or build it yourself</div>
-      <h2 class="section-title">Running from source</h2>
-      <p>You do not need to. The installers above are the same application, and
-        nothing about the tool assumes a checkout. This is here because the engine
-        is a Python library with a CLI in front of it, so some people would rather
-        drive it that way or read it before running it.</p>
-      <div class="codeblock">
-<pre><span class="c"># Clone and install (dev)</span>
-git clone https://github.com/oernster/latencylab.git
-cd latencylab
-python -m pip install -e <span class="p">.[dev]</span>
-python -m pip install -r requirements.txt
-
-<span class="c"># Run the desktop UI (client of the headless core)</span>
-python -m latencylab_ui
-
-<span class="c"># Run the test suite (the strict 100% coverage gate is built in)</span>
-python -m pytest</pre>
-      </div>
-    </div>
-  </section>
 </main>
 <footer>
   <div class="container footer-inner">
