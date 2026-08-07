@@ -5,6 +5,7 @@ import pytest
 from PySide6.QtWidgets import (
     QApplication,
     QHeaderView,
+    QSpinBox,
     QTableWidget,
     QTableWidgetItem,
 )
@@ -12,9 +13,15 @@ from PySide6.QtWidgets import (
 from latencylab_ui.model_composer_contexts_editor import NAME_COLUMN, ContextsEditor
 from latencylab_ui.qt_style_helpers import (
     MAX_VISIBLE_TABLE_ROWS,
+    fit_rows_to_contents,
     size_table_to_rows,
     stretch_table_columns,
 )
+
+# The themed inputs carry a min-height, padding and a border, which together
+# come to more than Qt's default row height. This is that rule in miniature, so
+# the test states the condition rather than depending on the whole stylesheet.
+TALL_INPUT_QSS = "QSpinBox { min-height: 32px; padding: 6px 8px; border: 2px solid; }"
 
 # A count comfortably past the cap, so the capped case is unambiguous.
 OVER_THE_CAP = MAX_VISIBLE_TABLE_ROWS * 2
@@ -97,6 +104,61 @@ def test_the_named_column_takes_the_slack(app: QApplication) -> None:
         sum(table.columnWidth(c) for c in range(table.columnCount()))
         == table.viewport().width()
     )
+
+    table.close()
+    table.deleteLater()
+
+
+def _table_with_a_tall_control(rows: int) -> tuple[QTableWidget, list[QSpinBox]]:
+    table = QTableWidget(rows, 2)
+    spins = []
+    for row in range(rows):
+        table.setItem(row, 0, QTableWidgetItem(f"context_{row}"))
+        spin = QSpinBox()
+        spin.setStyleSheet(TALL_INPUT_QSS)
+        table.setCellWidget(row, 1, spin)
+        spins.append(spin)
+    table.show()
+    return table, spins
+
+
+def test_a_row_is_as_tall_as_the_control_standing_in_it(app: QApplication) -> None:
+    """The reported fault: a spin box asking for more than the default row
+    height had its lower half, including the DOWN button, drawn outside the row
+    and never painted, and its number then sat against the bottom of what was
+    left, which is the same fault seen as bad alignment."""
+
+    table, spins = _table_with_a_tall_control(3)
+    app.processEvents()
+    wanted = spins[0].minimumSizeHint().height()
+    assert wanted > table.verticalHeader().defaultSectionSize()
+
+    fit_rows_to_contents(table)
+    size_table_to_rows(table)
+    app.processEvents()
+
+    for spin in spins:
+        assert spin.height() >= wanted
+
+    table.close()
+    table.deleteLater()
+
+
+def test_the_table_counts_the_height_a_row_will_take(app: QApplication) -> None:
+    """A header on ResizeToContents recalculates lazily, so measuring the table
+    straight after filling a row used to leave it short by whatever Qt had not
+    got round to yet."""
+
+    table, _spins = _table_with_a_tall_control(2)
+    fit_rows_to_contents(table)
+    size_table_to_rows(table)
+
+    # Deliberately NOT flushed: the height has to be right before Qt catches up.
+    expected = sum(table.sizeHintForRow(r) for r in range(2)) + _chrome(table)
+    assert table.height() == expected
+
+    app.processEvents()
+    assert table.height() == expected
 
     table.close()
     table.deleteLater()

@@ -7,7 +7,10 @@ from PySide6.QtWidgets import QComboBox, QHeaderView, QTableWidget
 # How many rows a table shows before it starts scrolling on its own. Beyond
 # this it would be taking the whole panel and pushing everything below it out
 # of reach, which is a worse failure than a short scroll inside the table.
-MAX_VISIBLE_TABLE_ROWS = 8
+# A row is as tall as the controls in it, and the themed inputs are around 50px,
+# so this is a claim about how much of a panel one table may occupy rather than
+# a count that can be raised for free.
+MAX_VISIBLE_TABLE_ROWS = 5
 
 
 def _apply_combo_model_roles(combo: QComboBox) -> None:
@@ -238,6 +241,38 @@ def stretch_table_columns(table: QTableWidget, stretch_column: int) -> None:
         header.setSectionResizeMode(column, mode)
 
 
+def fit_rows_to_contents(table: QTableWidget) -> None:
+    """Let a row be as tall as the tallest thing in it.
+
+    Qt's default row height is a constant that knows nothing about the cell
+    widgets put into it, and the themed inputs are taller than it: a spin box
+    asking for 51px was drawn into a 30px row, so its lower half including the
+    DOWN button fell outside the row and was never painted. The number then sat
+    against the bottom of what was left and read as badly aligned, which is the
+    same fault described from the other side. Deriving the height removes both,
+    and it keeps deriving it if the theme's control metrics ever change.
+    """
+
+    table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+
+
+def _settled_row_height(table: QTableWidget, row: int) -> int:
+    """How tall a row WILL be, rather than how tall it currently reads.
+
+    A header on `ResizeToContents` recalculates lazily, so straight after a row
+    is filled `rowHeight()` still reports the old default and a table measured
+    then comes out short by whatever has not been recalculated yet. In that mode
+    the content hint is the authoritative answer and it is available at once.
+    Under any other mode the row's height is a setting rather than a
+    consequence, so the setting is what counts.
+    """
+
+    mode = table.verticalHeader().sectionResizeMode(row)
+    if mode == QHeaderView.ResizeMode.ResizeToContents:
+        return table.sizeHintForRow(row)
+    return table.rowHeight(row)
+
+
 def size_table_to_rows(
     table: QTableWidget, max_visible_rows: int = MAX_VISIBLE_TABLE_ROWS
 ) -> None:
@@ -256,6 +291,10 @@ def size_table_to_rows(
     """
 
     visible_rows = min(table.rowCount(), max_visible_rows)
-    rows = sum(table.rowHeight(row) for row in range(visible_rows))
+    rows = sum(_settled_row_height(table, row) for row in range(visible_rows))
     chrome = table.horizontalHeader().sizeHint().height() + 2 * table.frameWidth()
-    table.setFixedHeight(rows + chrome)
+    wanted = rows + chrome
+    # Only when it differs, because this is driven by the signals that fire when
+    # rows change and resizing the table is itself a change.
+    if table.height() != wanted:
+        table.setFixedHeight(wanted)

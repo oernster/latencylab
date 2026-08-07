@@ -11,7 +11,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from latencylab_ui.qt_style_helpers import size_table_to_rows, stretch_table_columns
+from latencylab_ui.qt_style_helpers import (
+    fit_rows_to_contents,
+    size_table_to_rows,
+    stretch_table_columns,
+)
 
 # The column that takes the slack. A context name has no natural width and is
 # the part that was being clipped; a concurrency is a small number and needs
@@ -50,6 +54,7 @@ class ContextsEditor(QWidget):
             "QTableView { selection-background-color: transparent; selection-color: palette(text); }"
         )
         stretch_table_columns(self.table, NAME_COLUMN)
+        fit_rows_to_contents(self.table)
         layout.addWidget(self.table)
 
         btn_row = QWidget(self)
@@ -64,18 +69,18 @@ class ContextsEditor(QWidget):
         btns.addStretch(1)
         layout.addWidget(btn_row)
 
-        # Bound to the model rather than called from each mutator. The height
-        # is a fact about the row count, so it is derived from the row count
-        # changing rather than from every caller remembering to say so.
-        model = self.table.model()
-        model.rowsInserted.connect(self._fit_to_rows)
-        model.rowsRemoved.connect(self._fit_to_rows)
-        model.modelReset.connect(self._fit_to_rows)
-
         self._ensure_default()
-        self._fit_to_rows()
 
-    def _fit_to_rows(self, *_args: object) -> None:
+    def _fit_to_rows(self) -> None:
+        """Re-measure after a row change, once the row is fully built.
+
+        Binding this to the model's own row signals looked tidier and was
+        wrong: they fire while the row exists but is still empty, so the height
+        was measured before the widget that decides it had been put in, and the
+        table came out one row short every time. The call therefore sits at the
+        END of each mutator, where the thing being measured is true.
+        """
+
         size_table_to_rows(self.table)
 
     def _ensure_default(self) -> None:
@@ -88,6 +93,7 @@ class ContextsEditor(QWidget):
         sp.setValue(1)
         sp.valueChanged.connect(self.changed)
         self.table.setCellWidget(0, 1, sp)
+        self._fit_to_rows()
         self.changed.emit()
 
     def _on_add(self) -> None:
@@ -103,6 +109,7 @@ class ContextsEditor(QWidget):
         sp.setValue(max(1, int(concurrency)))
         sp.valueChanged.connect(self.changed)
         self.table.setCellWidget(r, 1, sp)
+        self._fit_to_rows()
 
     def set_contexts(self, contexts: dict[str, dict[str, object]]) -> None:
         """Replace the table with the contexts of a model being edited.
@@ -123,6 +130,7 @@ class ContextsEditor(QWidget):
         rows = sorted({i.row() for i in self.table.selectedIndexes()}, reverse=True)
         for r in rows:
             self.table.removeRow(r)
+        self._fit_to_rows()
         self.changed.emit()
 
     def context_names(self) -> list[str]:

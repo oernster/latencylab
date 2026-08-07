@@ -87,8 +87,8 @@ The GUI code is intentionally split into smaller modules to keep individual file
   - Light/dark switch -> [`latencylab_ui.theme_toggle`](latencylab_ui/theme_toggle.py:1)
   - QComboBox popup hardening (palette plus per-item roles, reasserted on popup show) ->
     [`latencylab_ui.qt_style_helpers.harden_combobox_popup()`](latencylab_ui/qt_style_helpers.py:163)
-  - Table height and column widths derived from the contents ->
-    [`latencylab_ui.qt_style_helpers.size_table_to_rows()`](latencylab_ui/qt_style_helpers.py:241)
+  - Table height, row heights and column widths derived from the contents ->
+    [`latencylab_ui.qt_style_helpers.size_table_to_rows()`](latencylab_ui/qt_style_helpers.py:276)
 
 - Keyboard navigation (one explicit focus ring, not natural Tab order):
   - Traversal controller and ring order -> [`latencylab_ui.focus_cycle`](latencylab_ui/focus_cycle.py:1)
@@ -427,20 +427,39 @@ absorbed the wheel and the panel being read never shifted.
 [`enclosing_scroll_area()`](latencylab_ui/wheel_guard.py:108) walks on to the
 first ancestor that can consume it on the axis the wheel was turned.
 
-**A table is as tall as what it holds.** Qt's size hint for a scroll area is a
-constant that has never looked at the model, and its minimum allows a squeeze to
-roughly two rows, so the Contexts table reserved the same height whether it held
-two contexts or twenty and collapsed when the dock was short.
-[`size_table_to_rows()`](latencylab_ui/qt_style_helpers.py:241) fixes the height
+**A table is as tall as what it holds, and a row is as tall as what stands in
+it.** Three constants that had never looked at the contents were stacked on top
+of each other here. Qt's size hint for a scroll area is fixed, and its minimum
+allows a squeeze to roughly two rows, so the Contexts table reserved the same
+height whether it held two contexts or twenty and collapsed when the dock was
+short. Its default column width is fixed, so a long name was clipped inside its
+cell while the room it needed sat empty in the same row and nothing scrolled,
+because the columns together were narrower than the viewport. And its default
+row height is fixed at less than the themed inputs ask for: a spin box wanting
+51px was drawn into a 30px row, so its lower half including the DOWN button fell
+outside the row and was never painted, and its number sat against the bottom of
+what remained and read as badly aligned. That last one is one fault reported as
+two, the same way the wheel and the focus were.
+
+[`size_table_to_rows()`](latencylab_ui/qt_style_helpers.py:276) fixes the height
 to the rows present, capped at `MAX_VISIBLE_TABLE_ROWS` so a large model cannot
-push the rest of the panel out of reach, and
-[`stretch_table_columns()`](latencylab_ui/qt_style_helpers.py:221) gives the name
-column the slack rather than clipping it inside a fixed width while the room it
-needed sits empty in the same row. The height is bound to the model's
-row-count signals rather than called from each mutator, so it is derived from
-the contents changing rather than from every caller remembering to say so. One
-scrolling surface is the point: a nested scrollbar inside a panel that is itself
-scrolling is what silently absorbed the wheel meant for the outer.
+push the rest of the panel out of reach;
+[`stretch_table_columns()`](latencylab_ui/qt_style_helpers.py:224) gives the name
+column the slack; and
+[`fit_rows_to_contents()`](latencylab_ui/qt_style_helpers.py:244) lets a row be
+as tall as the tallest thing in it, so the control metrics decide the row rather
+than the row silently cropping the control.
+
+The height is measured with
+[`_settled_row_height()`](latencylab_ui/qt_style_helpers.py:259) rather than
+`rowHeight()`, because a header on `ResizeToContents` recalculates lazily and the
+old value is still being reported at the moment a row is filled. Measuring is
+also deliberately called at the END of each mutator rather than bound to the
+model's row signals: those fire while the row exists but is still empty, which
+is the same class of mistake, a fact read before it is true.
+
+One scrolling surface is the point throughout: a nested scrollbar inside a panel
+that is itself scrolling is what silently absorbed the wheel meant for the outer.
 
 **Anything that floats gets its own surface.** Menus, tooltips and combo popups are painted on `elevated`, outlined in `elevated_border` and highlight on `elevated_hover`. Without those the toolkit paints a popup in the window colour with no border, which is not a subtle contrast problem: measured in the dark theme, a dropped menu sat at zero luminance difference from the window behind it and its items read as text lying on the page. The rule is asserted against rendered pixels in [`tests/test_ui_menu_contrast.py`](tests/test_ui_menu_contrast.py:1), not against the stylesheet source.
 
