@@ -86,7 +86,9 @@ The GUI code is intentionally split into smaller modules to keep individual file
   - One stylesheet template, built from the tokens -> [`latencylab_ui.theme_stylesheet`](latencylab_ui/theme_stylesheet.py:1)
   - Light/dark switch -> [`latencylab_ui.theme_toggle`](latencylab_ui/theme_toggle.py:1)
   - QComboBox popup hardening (palette plus per-item roles, reasserted on popup show) ->
-    [`latencylab_ui.qt_style_helpers.harden_combobox_popup()`](latencylab_ui/qt_style_helpers.py:148)
+    [`latencylab_ui.qt_style_helpers.harden_combobox_popup()`](latencylab_ui/qt_style_helpers.py:163)
+  - Table height and column widths derived from the contents ->
+    [`latencylab_ui.qt_style_helpers.size_table_to_rows()`](latencylab_ui/qt_style_helpers.py:241)
 
 - Keyboard navigation (one explicit focus ring, not natural Tab order):
   - Traversal controller and ring order -> [`latencylab_ui.focus_cycle`](latencylab_ui/focus_cycle.py:1)
@@ -110,7 +112,7 @@ The GUI code is intentionally split into smaller modules to keep individual file
   - Dock container -> [`latencylab_ui.model_composer_dock.ModelComposerDock`](latencylab_ui/model_composer_dock.py:35)
   - Editors:
     - System -> [`latencylab_ui.model_composer_system_editor.SystemEditor`](latencylab_ui/model_composer_system_editor.py:9)
-    - Contexts -> [`latencylab_ui.model_composer_contexts_editor.ContextsEditor`](latencylab_ui/model_composer_contexts_editor.py:15)
+    - Contexts -> [`latencylab_ui.model_composer_contexts_editor.ContextsEditor`](latencylab_ui/model_composer_contexts_editor.py:22)
     - Tasks -> [`latencylab_ui.model_composer_tasks_editor.TasksEditor`](latencylab_ui/model_composer_tasks_editor.py:127)
     - Wiring -> [`latencylab_ui.model_composer_wiring_editor.WiringEditor`](latencylab_ui/model_composer_wiring_editor.py:30)
 
@@ -410,6 +412,35 @@ an unfocused control and forwards it to the enclosing scroll area, so the panel
 still scrolls rather than leaving a dead patch under the pointer. It is installed
 once on the application, not per control, because the composer creates and
 destroys cards as the model is edited.
+
+Denying the wheel is not on its own enough, and two further facts are what make
+the rule above true rather than merely stated. Qt gives these controls
+`WheelFocus` by default, which means the wheel FOCUSES them before it reaches
+them, so travelling over one both took the keyboard focus and left the control
+focused, which is exactly the case the guard hands its wheel back to: values
+changing and focus getting stuck were one fault seen from either end.
+[`deny_wheel_focus()`](latencylab_ui/wheel_guard.py:81) narrows the policy on
+`Polish`, which an application filter sees for controls built long after it was
+installed. And the forwarded event has to skip an ancestor that cannot move: a
+spin box in a table sits inside the TABLE's scroll area, so the nearest ancestor
+absorbed the wheel and the panel being read never shifted.
+[`enclosing_scroll_area()`](latencylab_ui/wheel_guard.py:108) walks on to the
+first ancestor that can consume it on the axis the wheel was turned.
+
+**A table is as tall as what it holds.** Qt's size hint for a scroll area is a
+constant that has never looked at the model, and its minimum allows a squeeze to
+roughly two rows, so the Contexts table reserved the same height whether it held
+two contexts or twenty and collapsed when the dock was short.
+[`size_table_to_rows()`](latencylab_ui/qt_style_helpers.py:241) fixes the height
+to the rows present, capped at `MAX_VISIBLE_TABLE_ROWS` so a large model cannot
+push the rest of the panel out of reach, and
+[`stretch_table_columns()`](latencylab_ui/qt_style_helpers.py:221) gives the name
+column the slack rather than clipping it inside a fixed width while the room it
+needed sits empty in the same row. The height is bound to the model's
+row-count signals rather than called from each mutator, so it is derived from
+the contents changing rather than from every caller remembering to say so. One
+scrolling surface is the point: a nested scrollbar inside a panel that is itself
+scrolling is what silently absorbed the wheel meant for the outer.
 
 **Anything that floats gets its own surface.** Menus, tooltips and combo popups are painted on `elevated`, outlined in `elevated_border` and highlight on `elevated_hover`. Without those the toolkit paints a popup in the window colour with no border, which is not a subtle contrast problem: measured in the dark theme, a dropped menu sat at zero luminance difference from the window behind it and its items read as text lying on the page. The rule is asserted against rendered pixels in [`tests/test_ui_menu_contrast.py`](tests/test_ui_menu_contrast.py:1), not against the stylesheet source.
 

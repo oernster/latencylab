@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from PySide6.QtGui import QBrush, QPalette
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtWidgets import QComboBox
+from PySide6.QtWidgets import QComboBox, QHeaderView, QTableWidget
+
+# How many rows a table shows before it starts scrolling on its own. Beyond
+# this it would be taking the whole panel and pushing everything below it out
+# of reach, which is a worse failure than a short scroll inside the table.
+MAX_VISIBLE_TABLE_ROWS = 8
 
 
 def _apply_combo_model_roles(combo: QComboBox) -> None:
@@ -211,3 +216,46 @@ def harden_combobox_popup(combo: QComboBox) -> None:
         model._ll_combo_role_hooked = True  # type: ignore[attr-defined]
 
     # Debug-only instrumentation removed.
+
+
+def stretch_table_columns(table: QTableWidget, stretch_column: int) -> None:
+    """Give one column the slack and size the others to what they hold.
+
+    A table left on Qt's default column width paints every column the same
+    fixed width whatever is in it, so a long name is clipped inside its cell
+    while the space it needed sits empty further along the same row. Nothing
+    scrolls, because the columns together are NARROWER than the viewport: the
+    text is simply cut, and there is no scrollbar to suggest otherwise.
+    """
+
+    header = table.horizontalHeader()
+    for column in range(table.columnCount()):
+        mode = (
+            QHeaderView.ResizeMode.Stretch
+            if column == stretch_column
+            else QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(column, mode)
+
+
+def size_table_to_rows(
+    table: QTableWidget, max_visible_rows: int = MAX_VISIBLE_TABLE_ROWS
+) -> None:
+    """Give a table the height its rows actually need, up to the cap.
+
+    Qt's size hint for a scroll area is a constant that has never looked at the
+    model, so a two-row table asked for exactly as much room as a twenty-row
+    one. Both readings were wrong in opposite directions: the short table
+    reserved empty space, and the long one truncated to a scrollbar of its own
+    inside a panel that was already scrolling. Two nested scrolling surfaces
+    are what made the panel feel stuck, since the inner one silently absorbed
+    the wheel meant for the outer.
+
+    Call it after any change to the row count, because the height is a fact
+    about the contents and the contents are what change.
+    """
+
+    visible_rows = min(table.rowCount(), max_visible_rows)
+    rows = sum(table.rowHeight(row) for row in range(visible_rows))
+    chrome = table.horizontalHeader().sizeHint().height() + 2 * table.frameWidth()
+    table.setFixedHeight(rows + chrome)

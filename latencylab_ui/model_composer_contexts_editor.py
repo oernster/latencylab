@@ -11,6 +11,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui.qt_style_helpers import size_table_to_rows, stretch_table_columns
+
+# The column that takes the slack. A context name has no natural width and is
+# the part that was being clipped; a concurrency is a small number and needs
+# only as much room as it prints in.
+NAME_COLUMN = 0
+
 
 class ContextsEditor(QWidget):
     changed = Signal()
@@ -42,6 +49,7 @@ class ContextsEditor(QWidget):
             "QTableView::item:focus { outline: none; }\n"
             "QTableView { selection-background-color: transparent; selection-color: palette(text); }"
         )
+        stretch_table_columns(self.table, NAME_COLUMN)
         layout.addWidget(self.table)
 
         btn_row = QWidget(self)
@@ -56,7 +64,19 @@ class ContextsEditor(QWidget):
         btns.addStretch(1)
         layout.addWidget(btn_row)
 
+        # Bound to the model rather than called from each mutator. The height
+        # is a fact about the row count, so it is derived from the row count
+        # changing rather than from every caller remembering to say so.
+        model = self.table.model()
+        model.rowsInserted.connect(self._fit_to_rows)
+        model.rowsRemoved.connect(self._fit_to_rows)
+        model.modelReset.connect(self._fit_to_rows)
+
         self._ensure_default()
+        self._fit_to_rows()
+
+    def _fit_to_rows(self, *_args: object) -> None:
+        size_table_to_rows(self.table)
 
     def _ensure_default(self) -> None:
         if self.table.rowCount() > 0:
