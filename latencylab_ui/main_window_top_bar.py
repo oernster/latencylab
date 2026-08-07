@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -95,9 +95,47 @@ def _build_centre_mark(
 
     mark_path = get_app_icon_png_path(_MARK_SOURCE_PX)
     if mark_path is not None:
-        mark.setIcon(QIcon(str(mark_path)))
+        mark.setIcon(_mark_icon(QPixmap(str(mark_path))))
         mark.setIconSize(QSize(CENTRE_MARK_PX, CENTRE_MARK_PX))
     return mark
+
+
+def _mark_icon(source: QPixmap) -> QIcon:
+    """The mark, plus a second rendering of it for the checked state.
+
+    The mark's hands and hub are banana and the checked fill is banana, so on
+    its own the mark loses them at exactly the moment the button is saying
+    something: measured, 95% of it stands clear of the purple fill and only 25%
+    of the banana one. A stylesheet cannot reach inside an icon, so the second
+    rendering is the same answer the drawn glyphs already use, in the same ink.
+    """
+
+    icon = QIcon()
+    icon.addPixmap(source, QIcon.Mode.Normal, QIcon.State.Off)
+    icon.addPixmap(
+        _inked(source, tokens_for(Theme.DARK).accent_text),
+        QIcon.Mode.Normal,
+        QIcon.State.On,
+    )
+    return icon
+
+
+def _inked(source: QPixmap, colour: str) -> QPixmap:
+    """The same shape in one flat colour, keeping its alpha.
+
+    The mark is strokes rather than a solid body, so flattening it reads as the
+    same stopwatch drawn in a different ink rather than as a blob of its
+    outline.
+    """
+
+    out = QPixmap(source.size())
+    out.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(out)
+    painter.drawPixmap(0, 0, source)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(out.rect(), QColor(colour))
+    painter.end()
+    return out
 
 
 def _icon_button(

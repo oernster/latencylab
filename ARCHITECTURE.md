@@ -587,6 +587,16 @@ size and clip it at the widget edge, slicing the bottom border off a ring that
 then stops short. A minimum width holds the centre steady if the icon set is
 ever missing, because a mark that collapses moves the thing it is centring.
 
+The mark's hands and hub are banana, and so is the checked fill, so the mark on
+its own loses them at exactly the moment the button is saying something. A
+stylesheet cannot reach inside an icon, so
+[`_mark_icon()`](latencylab_ui/main_window_top_bar.py:100) supplies a second
+rendering for `QIcon.State.On`, flattened to `accent_text`: the same answer the
+drawn glyphs already use, in the same ink. It is a flat re-ink rather than a
+silhouette because the mark is strokes rather than a solid body, so flattening
+it reads as the same stopwatch in a different ink instead of a blob of its
+outline.
+
 **A panel button says whether the panel is up.** Distributions is a toggle
 ([`toggle_distributions()`](latencylab_ui/main_window_dock_switching.py:47)), not
 an opener: a control that only ever opens leaves the dock's own close cross as

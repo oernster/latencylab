@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtCore import QObject, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import QApplication
 
 from latencylab_ui.main_window import MainWindow
@@ -12,6 +12,14 @@ from latencylab_ui.theme import Theme, apply_theme, tokens_for
 # Widths chosen either side of the default so centring is shown to be a property
 # of the layout rather than of one lucky size.
 WINDOW_WIDTHS = (900, 1400, 1920)
+
+# Large enough that scaling leaves solid interior pixels rather than only the
+# blended edges an icon this size is mostly made of.
+ICON_PROBE_PX = 64
+
+# Rasterising blends the ink against transparency at every edge, so an exact
+# match would only ever hold in the middle of a stroke.
+INK_TOLERANCE = 60
 WINDOW_HEIGHT = 720
 
 # A badge one pixel off centre is not a defect; a badge 134 pixels off centre
@@ -81,6 +89,41 @@ def test_the_mark_is_the_generated_icon_and_not_a_font_glyph(
     mark = window._distributions_btn
     assert mark.text() == ""
     assert mark.icon().isNull() is False
+
+
+def test_the_mark_is_re_inked_for_the_checked_state(window: MainWindow) -> None:
+    """The mark's hands and hub are banana and the checked fill is banana, so
+    on its own the mark loses them at exactly the moment the button is saying
+    something. A stylesheet cannot reach inside an icon, so the checked state
+    gets a second rendering, the same answer the drawn glyphs already use."""
+
+    icon = window._distributions_btn.icon()
+    size = QSize(ICON_PROBE_PX, ICON_PROBE_PX)
+
+    unchecked = icon.pixmap(size, QIcon.Mode.Normal, QIcon.State.Off).toImage()
+    checked = icon.pixmap(size, QIcon.Mode.Normal, QIcon.State.On).toImage()
+
+    assert unchecked != checked
+
+    ink = QColor(tokens_for(Theme.DARK).accent_text)
+    opaque = 0
+    inked = 0
+    for y in range(checked.height()):
+        for x in range(checked.width()):
+            pixel = QColor(checked.pixel(x, y))
+            if checked.pixelColor(x, y).alpha() == 0:
+                continue
+            opaque += 1
+            if (
+                abs(pixel.red() - ink.red()) <= INK_TOLERANCE
+                and abs(pixel.green() - ink.green()) <= INK_TOLERANCE
+                and abs(pixel.blue() - ink.blue()) <= INK_TOLERANCE
+            ):
+                inked += 1
+
+    assert opaque > 0
+    # Every visible part of it, not most of it: the whole mark is re-inked.
+    assert inked == opaque
 
 
 def test_the_centre_mark_is_the_distributions_toggle(window: MainWindow) -> None:
