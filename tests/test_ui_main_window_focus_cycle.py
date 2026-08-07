@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from latencylab_ui.theme_toggle import SUN
+
 
 def _ensure_qapp():
     from PySide6.QtWidgets import QApplication
@@ -97,7 +99,7 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
 
     # Theme toggle is a single focus stop; it is toggled with Space, not Tab.
     _send(Qt.Key_Tab)
-    _wait_for_focus_text("☀")
+    _wait_for_focus_text(SUN)
 
     _send(Qt.Key_Tab)
     assert _focused_widget_text() == "Open model…"
@@ -129,7 +131,7 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     assert _focused_widget_text() == "Compose Model"
 
     _send(Qt.Key_Tab)
-    assert _focused_widget_text() == "☀"
+    assert _focused_widget_text() == SUN
 
     # Ensure a Help menu exists (covered earlier: File -> Help).
 
