@@ -15,7 +15,24 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui import main_window_actions as actions
 from latencylab_ui.outputs_view import OutputsView
+
+# How many runs a fresh window offers. Enough that a distribution has a shape,
+# few enough that the first run returns while the user is still watching.
+DEFAULT_RUNS = 200
+MIN_RUNS = 1
+MAX_RUNS = 1_000_000
+
+# The seed is an unsigned 32-bit value, which is what the executors mix into
+# each run's generator.
+DEFAULT_SEED = 1
+MIN_SEED = 0
+MAX_SEED = 2**31 - 1
+
+# A ceiling on task instances per run, so a model with a runaway loop fails
+# loudly instead of consuming the machine.
+MAX_TASKS_PER_RUN = 200_000
 
 
 def build_left_panel(window) -> QWidget:
@@ -46,13 +63,13 @@ def build_left_panel(window) -> QWidget:
     run_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
 
     window._runs_spin = QSpinBox()
-    window._runs_spin.setRange(1, 1_000_000)
-    window._runs_spin.setValue(200)
+    window._runs_spin.setRange(MIN_RUNS, MAX_RUNS)
+    window._runs_spin.setValue(DEFAULT_RUNS)
     run_form.addRow("Runs", window._runs_spin)
 
     window._seed_spin = QSpinBox()
-    window._seed_spin.setRange(0, 2**31 - 1)
-    window._seed_spin.setValue(1)
+    window._seed_spin.setRange(MIN_SEED, MAX_SEED)
+    window._seed_spin.setValue(DEFAULT_SEED)
     run_form.addRow("Seed", window._seed_spin)
 
     btn_row = QWidget()
@@ -60,20 +77,19 @@ def build_left_panel(window) -> QWidget:
     btn_row_layout.setContentsMargins(0, 0, 0, 0)
 
     window._run_btn = QPushButton("Run")
+    window._run_btn.setToolTip(actions.RUN_NEEDS_MODEL)
     window._run_btn.clicked.connect(window._on_run_clicked)
     btn_row_layout.addWidget(window._run_btn)
 
     window._cancel_btn = QPushButton("Cancel")
-    window._cancel_btn.setToolTip(
-        "Cancel does not interrupt the simulation. Results will be discarded when it finishes."
-    )
+    window._cancel_btn.setToolTip(actions.CANCEL_IDLE)
     window._cancel_btn.clicked.connect(window._on_cancel_clicked)
     btn_row_layout.addWidget(window._cancel_btn)
     run_form.addRow("", btn_row)
 
-    note = QLabel("Cancel discards results after completion\n(no mid-run stop in v1).")
-    note.setWordWrap(True)
-    run_form.addRow("", note)
+    # The standing note that used to sit here explained that Cancel could not
+    # interrupt a run. Both buttons now carry their own state in a tooltip, so a
+    # permanent paragraph of caveat is not the right place for it.
 
     # Outputs (moved here to avoid truncation when the Distributions dock is open).
     summary_box = QGroupBox("Summary")

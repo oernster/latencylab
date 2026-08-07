@@ -104,8 +104,16 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     w._on_theme_changed(Theme.LIGHT)
     w._on_theme_changed(Theme.DARK)
 
-    # Run clicked: no model.
+    # No model: Run is inert and says so, rather than being pressable and then
+    # interrupting with a dialog to explain what it should have shown.
+    from latencylab_ui import main_window_actions as actions
+
     w._loaded_model = None
+    w._refresh_actions()
+
+    assert w._run_btn.isEnabled() is False
+    assert w._run_btn.toolTip() == actions.RUN_NEEDS_MODEL
+
     warned = {"called": False}
 
     def _warn(*_a, **_k):
@@ -113,7 +121,7 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
 
     monkeypatch.setattr(QMessageBox, "warning", _warn)
     w._on_run_clicked()
-    assert warned["called"]
+    assert warned["called"] is False, "the no-model dialog should be gone"
 
     # Cancel clicked: not running.
     controller._running = False

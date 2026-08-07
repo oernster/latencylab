@@ -122,7 +122,7 @@ def test_save_log_button_dumps_right_panel(monkeypatch, tmp_path: Path) -> None:
     )
 
     # Enable export now that we have outputs.
-    w._save_log_btn_refresh_enabled_state(running=False)
+    w._refresh_actions(running=False)
 
     btn.click()
 

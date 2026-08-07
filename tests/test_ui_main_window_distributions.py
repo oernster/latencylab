@@ -78,6 +78,11 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
         },
     )
 
+    # `succeeded` arrives while the controller is STILL running: `finished`
+    # comes after it. The controller has to say so, or this asserts that the
+    # button stays disabled for the wrong reason.
+    c._running = True
+
     # Success alone should NOT enable (we only enable when not running), but it
     # should arm the auto-open-on-finish.
     w._on_run_succeeded(1, outputs)
@@ -85,6 +90,7 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
     assert w._auto_open_distributions_on_finish is True
 
     # Finish transitions out of running and triggers the auto-open.
+    c._running = False
     w._on_run_finished(1, 0.1)
     app.processEvents()
 
@@ -183,7 +189,7 @@ def test_distributions_button_click_gate_and_manual_open() -> None:
     )
     w._last_outputs = RunOutputs(model=m, runs=[], summary={})
     w._set_running(False)
-    assert w._distributions_btn_is_enabled() is True
+    assert w._distributions_btn.isEnabled() is True
 
     # Manual open: should show the dock.
     w._on_show_distributions_clicked()

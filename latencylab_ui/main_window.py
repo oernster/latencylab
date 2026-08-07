@@ -29,6 +29,8 @@ from latencylab_ui.focus_cycle import FocusCycleController
 from latencylab_ui.main_window_menus import build_menus, show_how_to_read_dialog
 from latencylab_ui.theme import Theme, apply_theme
 from latencylab_ui.main_window_top_bar import build_top_bar
+from latencylab_ui import main_window_actions as actions
+from latencylab_ui import main_window_panels as panels
 from latencylab_ui.main_window_panels import build_left_panel
 from latencylab_ui.distributions_dock import DistributionsDock
 from latencylab_ui.model_composer_dock import ModelComposerDock
@@ -82,9 +84,10 @@ class MainWindow(QMainWindow):
         self._wire_controller()
 
         self.setWindowTitle("LatencyLab")
+        # One call settles every action's enabled state and its tooltip: on a
+        # cold start nothing has been loaded and nothing has been run, so Run,
+        # Cancel, Export and Distributions all open inert and say why.
         self._set_running(False)
-        # v1 requirement: export button disabled until first successful run.
-        self._save_log_btn_refresh_enabled_state(running=False)
 
     def _build_actions(self) -> None:
         build_menus(
@@ -157,8 +160,8 @@ class MainWindow(QMainWindow):
         self._elapsed_label = QLabel("")
         status.addPermanentWidget(self._elapsed_label)
 
-        # v1 requirement: distributions button disabled until first successful run.
-        self._distributions_btn_refresh_enabled_state(running=False)
+        # Availability is settled once, at the end of __init__, rather than
+        # piecemeal as each control is built.
 
     # Panel builders live in latencylab_ui/main_window_panels.py.
 
@@ -187,7 +190,7 @@ class MainWindow(QMainWindow):
         _on_save_log_clicked(self)
 
     def _on_show_distributions_clicked(self) -> None:
-        if not self._distributions_btn_is_enabled():
+        if not self._distributions_btn.isEnabled():
             return
         self._show_distributions_dock()
 
@@ -214,22 +217,37 @@ class MainWindow(QMainWindow):
         if self._controller.is_running() and not visible:
             self._dist_dock_closed_during_run = True
 
-    def _distributions_btn_is_enabled(self) -> bool:
-        try:
-            return bool(self._distributions_btn.isEnabled())
-        except Exception:  # noqa: BLE001  # pragma: no cover
-            return False  # pragma: no cover
+    def _refresh_actions(self, *, running: bool | None = None) -> None:
+        """Apply the availability rules, and say why where they say no.
 
-    def _distributions_btn_refresh_enabled_state(self, *, running: bool) -> None:
-        # Enabled iff we have a last successful output AND no run is currently active.
-        enabled = (self._last_outputs is not None) and (not running)
-        self._distributions_btn.setEnabled(enabled)
+        Every control that can be inert is refreshed together from the same
+        three facts. Refreshing them one at a time is how the Run button ended
+        up as the only one whose availability did not track the model.
+        """
 
-    def _save_log_btn_refresh_enabled_state(self, *, running: bool) -> None:
-        # Enabled iff we have a last successful output AND no run is currently active.
-        # This prevents exporting an empty/placeholder state before the first run.
-        enabled = (self._last_outputs is not None) and (not running)
-        self._save_log_btn.setEnabled(enabled)
+        if running is None:
+            running = self._controller.is_running()
+        model_loaded = self._loaded_model is not None
+        state = actions.availability(
+            running=running,
+            model_loaded=model_loaded,
+            have_outputs=self._last_outputs is not None,
+        )
+
+        self._run_btn.setEnabled(state.run)
+        self._run_btn.setToolTip(
+            actions.run_tooltip(running=running, model_loaded=model_loaded)
+        )
+        self._cancel_btn.setEnabled(state.cancel)
+        self._cancel_btn.setToolTip(actions.cancel_tooltip(running=running))
+        self._runs_spin.setEnabled(state.inputs)
+        self._seed_spin.setEnabled(state.inputs)
+        self._save_log_btn.setEnabled(state.save_log)
+        self._save_log_btn.setToolTip(actions.save_tooltip(available=state.save_log))
+        self._distributions_btn.setEnabled(state.distributions)
+        self._distributions_btn.setToolTip(
+            actions.distributions_tooltip(available=state.distributions)
+        )
 
     def _load_model(self, path: Path) -> None:
         _load_model(self, path)
@@ -241,12 +259,14 @@ class MainWindow(QMainWindow):
         self._model_path_label.setText(str(path))
         self._model_version_label.setText(version_text)
         self._model_valid_label.setText(validation_text)
+        self._refresh_actions()
 
     def _set_model_load_ok(self, path: Path, model: Model) -> None:
         self._loaded_model = _LoadedModel(path=path, model=model)
         self._model_path_label.setText(str(path))
         self._model_version_label.setText(str(model.version))
         self._model_valid_label.setText("OK")
+        self._refresh_actions()
 
     def _on_run_clicked(self) -> None:
         # If the run was initiated via the Run button (mouse/keyboard), restore
@@ -254,17 +274,18 @@ class MainWindow(QMainWindow):
         # from the expected control.
         self._restore_focus_to_run_btn = self.sender() is self._run_btn
 
-        if self._loaded_model is None:
-            QMessageBox.warning(self, "No model", "Open a model JSON file first.")
-            return
-        if self._controller.is_running():
+        # Preconditions, not error reporting. The button is disabled and wearing
+        # a red ring in both of these cases, so there is nothing left to tell
+        # the user that they cannot already see; the old "No model" dialog
+        # interrupted them to say what the button should have said all along.
+        if self._loaded_model is None or self._controller.is_running():
             return
 
         req = RunRequest(
             model_path=self._loaded_model.path,
             runs=int(self._runs_spin.value()),
             seed=int(self._seed_spin.value()),
-            max_tasks_per_run=200_000,
+            max_tasks_per_run=panels.MAX_TASKS_PER_RUN,
             want_trace=False,
         )
         self._active_cancelled = False
@@ -297,8 +318,11 @@ class MainWindow(QMainWindow):
             self._outputs_view.render(outputs_obj)
             self._run_select.setEnabled(True)
 
-            # Post-run actions now become available.
-            self._save_log_btn_refresh_enabled_state(running=False)
+            # Refreshed against the controller's ACTUAL state, which is still
+            # running at this point: `succeeded` arrives before `finished`.
+            # Claiming otherwise here is what previously let the export button
+            # arm mid-run while the distributions button correctly did not.
+            self._refresh_actions()
 
             # Render distributions from the same deterministic outputs.
             self._distributions_dock.render(outputs_obj)
@@ -316,7 +340,7 @@ class MainWindow(QMainWindow):
         self._status_label.setText("Failed")
         QMessageBox.critical(self, "Simulation failed", error_text)
         self._auto_open_distributions_on_finish = False
-        self._save_log_btn_refresh_enabled_state(running=False)
+        self._refresh_actions()
 
     def _on_run_finished(self, run_token: int, elapsed_seconds: float) -> None:
         self._elapsed_timer.stop()
@@ -334,14 +358,7 @@ class MainWindow(QMainWindow):
 
     def _set_running(self, running: bool) -> None:
         self._busy_bar.setVisible(running)
-        self._run_btn.setEnabled(not running)
-        self._cancel_btn.setEnabled(running)
-        self._runs_spin.setEnabled(not running)
-        self._seed_spin.setEnabled(not running)
-
-        # During a run we disable post-run inspection actions.
-        self._save_log_btn_refresh_enabled_state(running=running)
-        self._distributions_btn_refresh_enabled_state(running=running)
+        self._refresh_actions(running=running)
 
         if not running and self._restore_focus_to_run_btn:
             self._restore_focus_to_run_btn = False
