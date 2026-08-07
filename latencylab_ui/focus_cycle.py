@@ -7,6 +7,9 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
 from latencylab_ui.focus_cycle_keys import (
     activate_focused_button,
     dismiss_active_popup,
+    handle_combo_box,
+    handle_space,
+    horizontal_arrow_belongs_elsewhere,
     is_menu_hover,
     suppress_menu_hover,
 )
@@ -21,14 +24,20 @@ class FocusCycleController(QObject):
     """Enforce a deterministic keyboard focus cycle for a specific window.
 
     Rules implemented:
-    - Pre-Tab: no child widget focused; no menu title selected.
-    - First Tab: selects the first top-level menu title (left-to-right).
-    - Then: cycle through interactive controls (excluding text areas), using
-      layout insertion order (which corresponds to left-to-right, then
-      top-to-bottom for this UI).
-    - Tab / Right advance; Shift+Tab / Left go backwards.
-    - Wrap in both directions.
-    - Skip disabled/hidden controls.
+    - Neutral start: no child widget focused, no menu title selected. A window
+      is looked at before it is acted in, so nothing lights up unasked.
+    - The first forward key selects the first menu title (left to right); then
+      the ring runs through the interactive controls in layout order.
+    - Tab and Right advance; Shift+Tab and Left go back. The arrows are aliases
+      at EVERY stop, including the neutral start, so the ring can never be
+      trapped in the menu bar or in a pane.
+    - Wrap in both directions; skip disabled, hidden and non-actionable stops.
+    - A read-only output pane joins the ring only while it OVERFLOWS, and only
+      to be scrolled: focus that lets the user do nothing is not a stop.
+
+    The keys that mean something other than "step the ring" are decided in
+    focus_cycle_keys, and the menu bar's own clashes in focus_cycle_menu, so
+    this module holds one idea: the order things are visited in.
     """
 
     def __init__(self, window: QMainWindow) -> None:
@@ -37,6 +46,9 @@ class FocusCycleController(QObject):
         self._focus_cycle_started = False
         self._installed = False
         self._last_index: int | None = None
+        # The stop the ring most recently aimed at, so a stale settle callback
+        # can tell that it has been overtaken.
+        self._pending_stop: QAction | QWidget | None = None
 
     def install(self) -> None:
         if self._installed:  # pragma: no cover
@@ -131,17 +143,24 @@ class FocusCycleController(QObject):
         key = key_event.key()
         mods = key_event.modifiers()
 
+        is_press = event.type() == event.Type.KeyPress
+
         # Enter activates a focused button, the way Space already does. See
         # `activate_focused_button` for why the answer is three-valued.
-        if event.type() == event.Type.KeyPress and key in (
-            Qt.Key.Key_Return,
-            Qt.Key.Key_Enter,
-        ):
+        if is_press and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             activated = activate_focused_button(window)
             if activated is False:
                 return super().eventFilter(watched, event)
             if activated:
                 return True
+
+        # Only reachable when Space has something to do in the menus, which the
+        # offscreen platform the tests run on cannot set up: see `handle_space`.
+        if is_press and handle_space(window, key):
+            return True  # pragma: no cover - see above
+
+        if is_press and handle_combo_box(key):
+            return True
 
         is_tab = key == Qt.Key.Key_Tab
         is_backtab = key == Qt.Key.Key_Backtab or (
@@ -151,6 +170,11 @@ class FocusCycleController(QObject):
         is_left = key == Qt.Key.Key_Left
 
         if not (is_tab or is_backtab or is_right or is_left):
+            return super().eventFilter(watched, event)
+
+        if (is_right or is_left) and horizontal_arrow_belongs_elsewhere(
+            forward=is_right
+        ):
             return super().eventFilter(watched, event)
 
         # Only handle the key if it originated from within this window.
@@ -172,14 +196,12 @@ class FocusCycleController(QObject):
         if event.type() == event.Type.KeyRelease:
             # Swallow the release event for keys we handle on press; some
             # platforms/styles update menu focus on release.
-            if (is_right or is_left) and not self._focus_cycle_started:
-                return super().eventFilter(watched, event)
             return True
 
-        if (is_right or is_left) and not self._focus_cycle_started:
-            # Arrow-key traversal is only enabled after first Tab starts the cycle.
-            return super().eventFilter(watched, event)
-
+        # Right and Left are aliases for Tab and Shift+Tab at EVERY stop,
+        # including the neutral start. They used to be inert until a first Tab
+        # had "started" the cycle, which made the arrows mean one thing on a
+        # freshly opened window and another thereafter.
         forward = is_tab or is_right
         if is_backtab or is_left:
             forward = False  # pragma: no cover
@@ -313,6 +335,12 @@ class FocusCycleController(QObject):
 
     def _apply(self, item: tuple[str, QAction | QWidget]) -> None:
         kind, obj = item
+        # Whatever the ring last aimed at. A settle callback queued for an
+        # earlier stop must not act once the ring has moved on: it would clear
+        # the menu highlight the newer stop had just set, so a quick Left then
+        # Tab left the menu bar with nothing highlighted at all.
+        self._pending_stop = obj
+
         if kind == "menu":
             self._window.menuBar().setActiveAction(obj)
             self._window.setFocus(Qt.FocusReason.OtherFocusReason)
@@ -326,6 +354,8 @@ class FocusCycleController(QObject):
         obj.setFocus(Qt.FocusReason.TabFocusReason)
 
         def _settle_focus() -> None:
+            if self._pending_stop is not obj:
+                return
             try:
                 self._window.menuBar().setActiveAction(None)
                 if QApplication.focusWidget() is not obj:

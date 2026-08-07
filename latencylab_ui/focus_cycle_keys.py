@@ -19,6 +19,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from latencylab_ui import focus_cycle_menu as menus
+from latencylab_ui.focus_cycle_widgets import is_text_entry
+
 # The pointer events that make a menu bar open a dropdown on its own.
 _HOVER_EVENTS = (
     QEvent.Type.Enter,
@@ -99,6 +102,75 @@ def activate_focused_button(window: QMainWindow) -> bool | None:
     except RuntimeError:  # pragma: no cover
         return True  # pragma: no cover
     return True
+
+
+def handle_space(window: QMainWindow, key: Qt.Key) -> bool:
+    """Make Space mean what it means everywhere else, inside the menus too.
+
+    Qt already fires a focused button on Space. What it does not do is activate
+    a highlighted MENU item (its Windows styles leave that hint off) or drop a
+    highlighted menu title, so Enter worked in the menus and Space silently did
+    nothing at all.
+
+    The title branch cannot be reached under the offscreen platform the tests
+    run on: activating a menu title there pops its menu open immediately, by
+    any route, so "highlighted but closed" is a state that cannot be built. The
+    work it delegates to is covered directly instead.
+    """
+
+    if key != Qt.Key.Key_Space:
+        return False
+
+    popup = menus.active_popup_menu()
+    if popup is not None:
+        return menus.trigger_highlighted_item(popup)
+    if window.menuBar().activeAction() is not None:
+        return menus.open_menu_under_title(window)  # pragma: no cover - see above
+    return False
+
+
+def handle_combo_box(key: Qt.Key) -> bool:
+    """Down drops a closed combo box open; it must never change its value.
+
+    Qt's default walks the selection with the arrows while the popup is shut,
+    so a user stepping the ring silently changes the current run just by
+    pressing Down on it. Down opens the list instead, and Up on a closed box is
+    swallowed rather than allowed to do the same damage in the other direction.
+
+    There is deliberately no "is the list already open" check. Opening a combo
+    box moves focus to its popup VIEW, so the focused widget is no longer the
+    box and this returns above; the arrows reach the open list untouched. A
+    guard for a case that cannot arise is a guard nobody can test.
+    """
+
+    if key not in (Qt.Key.Key_Down, Qt.Key.Key_Up):
+        return False
+
+    focused = QApplication.focusWidget()
+    if focused is None or is_text_entry(focused):
+        return False
+    if not isinstance(focused, QComboBox) or not focused.isEnabled():
+        return False
+    if key == Qt.Key.Key_Down:
+        focused.showPopup()
+    return True
+
+
+def horizontal_arrow_belongs_elsewhere(*, forward: bool) -> bool:
+    """Whether Left or Right means something other than stepping the ring.
+
+    Only two things can claim them. A text field owns them for the caret, and
+    Tab is how you leave one; taking them away would make the spin boxes
+    uneditable, which is a steep price for a traversal shortcut. An open menu
+    owns Right into a submenu and Left back out of one, and nothing else.
+    """
+
+    focused = QApplication.focusWidget()
+    if focused is not None and is_text_entry(focused):
+        return True
+
+    popup = menus.active_popup_menu()
+    return popup is not None and menus.should_yield_horizontal(popup, forward=forward)
 
 
 def dismiss_active_popup() -> None:

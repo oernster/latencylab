@@ -94,15 +94,32 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     for btn in w.findChildren(QPushButton):
         assert not btn.hasFocus(), f"Unexpected focused button pre-Tab: {btn.text()}"
 
-    # Arrow keys before first Tab should do nothing.
-    _send(Qt.Key_Right)
-    assert w.menuBar().activeAction() is None
-    assert all(not b.hasFocus() for b in w.findChildren(QPushButton))
+    def _wait_for_active_menu(expected: str) -> None:
+        # The menu-title highlight settles a turn later than the key press,
+        # exactly as widget focus does; see `_wait_for_focus_text`.
+        for _ in range(20):
+            active = w.menuBar().activeAction()
+            if active is not None and active.text() == expected:
+                return
+            app.processEvents()
+        active = w.menuBar().activeAction()
+        assert active is not None and active.text() == expected
 
-    # Start cycle: first Tab selects the first menu title.
+    # Right is an alias for Tab at EVERY stop, the neutral start included, so
+    # it enters the ring exactly as Tab does. It used to be inert until a Tab
+    # had "started" the cycle, which made the arrows mean one thing on a fresh
+    # window and another thereafter.
+    _send(Qt.Key_Right)
+    _wait_for_active_menu("File")
+
+    # Left from the first stop wraps backwards to the last rather than stalling
+    # at the start of the ring.
+    _send(Qt.Key_Left)
+    assert w.menuBar().activeAction() is None
+
+    # And forward again from the last stop wraps round to the first.
     _send(Qt.Key_Tab)
-    assert w.menuBar().activeAction() is not None
-    assert w.menuBar().activeAction().text() == "File"
+    _wait_for_active_menu("File")
 
     # Next Tab advances to the next menu title.
     _send(Qt.Key_Tab)
