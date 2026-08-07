@@ -1,13 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="LatencyLab stopwatch">
+  <!-- The case is deliberately NOT the application's `primary`. It used to be,
+       and the mark is drawn on a `primary`-filled button in the middle of the
+       toolbar, so the two matched and the case vanished: measured, 27 levels of
+       luminance apart at the top of the gradient and ZERO at the bottom, against
+       the 20 this repository treats as the threshold for a visible join. Warm
+       against the cool button rather than a lighter shade of it, so the two can
+       never drift back together when `primary` moves again. -->
   <defs>
     <linearGradient id="ll-body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#9575cd"/>
-      <stop offset="1" stop-color="#7e57c2"/>
+      <stop offset="0" stop-color="#e4502a"/>
+      <stop offset="1" stop-color="#c03a18"/>
     </linearGradient>
   </defs>
   <!-- crown / top button -->
-  <rect x="54" y="8" width="20" height="12" rx="3" fill="#7e57c2"/>
-  <rect x="60" y="18" width="8" height="10" rx="2" fill="#7e57c2"/>
+  <rect x="54" y="8" width="20" height="12" rx="3" fill="#e4502a"/>
+  <rect x="60" y="18" width="8" height="10" rx="2" fill="#e4502a"/>
   <!-- side start button -->
   <rect x="97" y="30" width="14" height="9" rx="3" transform="rotate(45 104 34)" fill="#ffe135"/>
   <!-- outer case -->
@@ -24,5 +31,5 @@
   <line x1="64" y1="76" x2="88" y2="54" stroke="#ffe135" stroke-width="5" stroke-linecap="round"/>
   <line x1="64" y1="76" x2="64" y2="58" stroke="#ffe135" stroke-width="4" stroke-linecap="round"/>
   <circle cx="64" cy="76" r="6" fill="#ffe135"/>
-  <circle cx="64" cy="76" r="2.5" fill="#7e57c2"/>
+  <circle cx="64" cy="76" r="2.5" fill="#e4502a"/>
 </svg>

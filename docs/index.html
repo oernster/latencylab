@@ -33,9 +33,9 @@
     <nav class="nav-links">
       <a href="#who">Who it's for</a>
       <a href="#what">What it does</a>
+      <a href="guide.html">Using it</a>
       <a href="reading.html">Reading the output</a>
       <a href="why.html">Why</a>
-      <a href="#ui">The UI</a>
       <a href="#start">Get started</a>
       <a href="https://github.com/oernster/latencylab">GitHub</a>
     </nav>
@@ -52,7 +52,7 @@
         prevent confident people from shipping bad architecture.</p>
       <div class="cta">
         <a class="btn btn-primary" href="https://github.com/oernster/latencylab">View on GitHub</a>
-        <a class="btn btn-ghost" href="https://www.crankthecode.com/posts/latencylab">Read the guide</a>
+        <a class="btn btn-ghost" href="guide.html">How to use it</a>
       </div>
       <p class="release-note">If the output surprises you, that is the point.</p>
       <div class="badges">
@@ -110,7 +110,39 @@
     </div>
   </section>
 
-  <section id="ui" class="alt">
+  <section id="docs" class="alt">
+    <div class="container">
+      <div class="eyebrow">The two panels the app ships</div>
+      <h2 class="section-title">What the application tells you, in short</h2>
+      <p class="section-sub">The desktop UI carries its own Guide and its own
+        information panel. Both are reproduced here, cut down to the parts worth
+        reading before you have installed anything.</p>
+      <div class="split">
+        <div class="panel is-for">
+          <h3>Using it</h3>
+          <ul>
+            <li>Your <b>first run in six steps</b>, using the shipped Checkout example.</li>
+            <li>What the <b>makespan distribution</b>, the <b>critical path</b> and the <b>path frequencies</b> each mean.</li>
+            <li>How to <b>change one thing and run it again</b>, and how to write a model from nothing.</li>
+            <li>Why you would pick each <b>runs, seed, concurrency</b> and <b>distribution</b> setting.</li>
+          </ul>
+          <p><a href="guide.html">Read Using LatencyLab &rarr;</a></p>
+        </div>
+        <div class="panel not-for">
+          <h3>Reading the output</h3>
+          <ul>
+            <li>Why <b>one run is not evidence</b> and percentiles describe exposure rather than goals.</li>
+            <li>Why a <b>critical path is not what was slow</b>.</li>
+            <li>Why a <b>dominant path is structure</b>, not a bug.</li>
+            <li>When the <b>long tail</b> can be left alone.</li>
+          </ul>
+          <p><a href="reading.html">Read How to read the output &rarr;</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ui">
     <div class="container">
       <div class="eyebrow">The UI is a client, not a comfort blanket</div>
       <h2 class="section-title">It shows what the model produced and nothing it did not</h2>
@@ -173,7 +205,7 @@ python -m pytest</pre>
     </div>
     <div class="footer-links">
       <a href="https://github.com/oernster/latencylab">GitHub</a>
-      <a href="https://www.crankthecode.com/posts/latencylab">The guide</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The long read</a>
       <a href="https://ernster.dev/">Project hub</a>
       <a href="https://www.crankthecode.com/">crankthecode.com</a>
     </div>

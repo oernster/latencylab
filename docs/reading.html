@@ -31,6 +31,7 @@
     <nav class="nav-links">
       <a href="index.html#who">Who it's for</a>
       <a href="index.html#what">What it does</a>
+      <a href="guide.html">Using it</a>
       <a href="reading.html">Reading the output</a>
       <a href="why.html">Why</a>
       <a href="index.html#start">Get started</a>
@@ -47,68 +48,39 @@
       <p class="section-sub">LatencyLab does not tell you what is slow.<br>
         It tells you why the user waited.</p>
 
-      <p>LatencyLab exists to make latency behaviour visible before code hardens and before
-        intuition becomes political. It does this by running explicit models many times and
-        showing how often different outcomes occur. The goal is not prediction. The goal is
-        understanding.</p>
+      <p>This is the application's own information panel, shortened. The full version ships
+        in the app, under the info button.</p>
 
-      <h3>Why many runs</h3>
+      <h3>Six things the output means</h3>
+      <ul>
+        <li><b>Many runs, because one run is not evidence.</b> Contention, scheduling and
+          coordination delays are not noise to be averaged away. They are the system.</li>
+        <li><b>Percentiles describe exposure, not goals.</b> p50 is what typically happens;
+          p90, p95 and p99 are how often it goes badly. The shape behind them matters more
+          than any one of them, and lowering one blind usually shifts the cost elsewhere.</li>
+        <li><b>A critical path is not what was slow.</b> It is the chain that prevented
+          progress in one run. Expensive work that was not on it delayed nobody, however bad
+          it looks in isolation.</li>
+        <li><b>A dominant path is structure, not a bug.</b> A path holding things up in a
+          large share of runs, conventionally more than a fifth, is a behavioural mode: how
+          the system usually behaves.</li>
+        <li><b>The long tail can usually be left alone</b>, unless you are designing to a
+          strict worst case. Optimising rare worst cases is how systems get complicated
+          without getting faster.</li>
+        <li><b>A representative run</b> is one run chosen to make a dominant mode concrete,
+          commonly its median or p95. It illustrates; it does not explain every outcome.</li>
+      </ul>
 
-      <p>Real systems are stochastic. Contention, scheduling, cache state, coordination delays
-        and external dependencies are not "noise" that can be averaged away. They are the
-        system. Multiple runs exist because a single run is not representative of user
-        experience.</p>
-
-      <h3>Percentiles, and the shape behind them</h3>
-
-      <p>Users do not experience averages. Averages hide risk. Percentiles describe experience
-        and exposure: p50 reflects what typically happens, while p90, p95 and p99 describe how
-        often the system behaves badly. The shape of the distribution matters more than any
-        single percentile. If you are arguing about whether p90 or p95 matters more, you are
-        already past the point where this tool helps.</p>
-
-      <p>The makespan distribution shows how long end-to-end work takes across many runs. It
-        should be read as a shape, not a target. Percentile markers annotate the distribution;
-        they are not goals to optimise toward. Lowering one percentile without understanding
-        the shape usually shifts cost elsewhere.</p>
-
-      <h3>What a critical path is, and is not</h3>
-
-      <p>A critical path is not "what was slow". It is the chain of work that prevented
-        progress in a single run. If work is not on the critical path, it did not delay the
-        user in that run, regardless of how expensive or visible it appears in isolation.
-        Expensive work that does not block progress is often irrelevant to perceived
-        latency.</p>
-
-      <h3>Dominant paths are structure, not bugs</h3>
-
-      <p>Some critical paths appear repeatedly. These are dominant paths: critical paths that
-        occur in a significant fraction of runs, typically more than twenty percent. Dominant
-        paths represent behavioural modes: recurring coordination patterns that describe how
-        the system usually behaves. They are not bugs by default. They are structure.</p>
-
-      <h3>The long tail, and when to ignore it</h3>
-
-      <p>Rare critical paths form a long tail. The long tail usually does not influence typical
-        user experience and can be ignored unless you are designing for strict worst-case
-        guarantees. Fixing long-tail behaviour often has no effect on how the system feels to
-        users.</p>
-
-      <p>A representative run is a single run chosen to illustrate a behavioural mode, commonly
-        the median or p95 run within that mode. Representative runs exist to make dominant
-        behaviour concrete, not to explain every outcome.</p>
-
-      <h3>How to use this</h3>
-
-      <p>Do not read every run. Name dominant behaviours before proposing fixes. If a task
-        never appears on a dominant path, it does not matter. Optimising rare worst cases often
-        makes systems more complex without making them feel faster.</p>
+      <h3>How to use it</h3>
+      <p>Do not read every run. Name the dominant behaviour before proposing any fix. If a
+        task never appears on a dominant path, making it faster changes nothing anybody
+        experiences.</p>
 
       <p class="section-sub">LatencyLab does not optimise systems.<br>
         It exposes structure.</p>
 
       <div class="cta" style="justify-content:flex-start;margin-top:30px;">
-        <a class="btn btn-primary" href="https://github.com/oernster/latencylab">View on GitHub</a>
+        <a class="btn btn-primary" href="guide.html">Using LatencyLab</a>
         <a class="btn btn-ghost" href="./">Back to overview</a>
       </div>
     </div>
@@ -122,7 +94,7 @@
     </div>
     <div class="footer-links">
       <a href="https://github.com/oernster/latencylab">GitHub</a>
-      <a href="https://www.crankthecode.com/posts/latencylab">The guide</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The long read</a>
       <a href="https://ernster.dev/">Project hub</a>
       <a href="https://www.crankthecode.com/">crankthecode.com</a>
     </div>

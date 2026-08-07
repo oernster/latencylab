@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using LatencyLab: first run, composing a model and choosing the settings</title>
+<meta name="description" content="How to use LatencyLab: run the shipped example in six steps, read the three panels, change one thing and run it again, write a model from nothing, and choose runs, seed, concurrency and distributions.">
+<meta name="author" content="Oliver Ernster">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#181818">
+<link rel="canonical" href="https://ernster.dev/latencylab/guide.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LatencyLab">
+<meta property="og:title" content="Using LatencyLab">
+<meta property="og:description" content="Run the shipped example in six steps, then change one thing and run it again. The same guide the application ships in its Guide dialog, shortened.">
+<meta property="og:url" content="https://ernster.dev/latencylab/guide.html">
+<meta property="og:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<meta property="og:image:alt" content="The LatencyLab UI showing a makespan distribution, critical-path frequencies and percentiles">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Using LatencyLab">
+<meta name="twitter:description" content="Run the shipped example in six steps, then change one thing and run it again.">
+<meta name="twitter:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<link rel="icon" type="image/svg+xml" href="assets/latencylab.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="./">
+      <img src="assets/latencylab.svg" alt="LatencyLab icon">LatencyLab</a>
+    <nav class="nav-links">
+      <a href="index.html#who">Who it's for</a>
+      <a href="index.html#what">What it does</a>
+      <a href="guide.html">Using it</a>
+      <a href="reading.html">Reading the output</a>
+      <a href="why.html">Why</a>
+      <a href="index.html#start">Get started</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section id="using">
+    <div class="container prose">
+      <div class="eyebrow">Using it</div>
+      <h2 class="section-title">Using LatencyLab</h2>
+
+      <p class="section-sub">This is the application's own Guide, shortened.<br>
+        The full version ships in the app, under the book button.</p>
+
+      <h3>Your first run, in six steps</h3>
+      <ol>
+        <li><b>Examples</b> menu, then <b>Checkout</b>. Run flashes twice to say it is ready.</li>
+        <li>Leave <b>Runs</b> at 200 and <b>Seed</b> at 1.</li>
+        <li>Press <b>Run</b>.</li>
+        <li>Read <b>Summary</b>: the percentiles of the makespan, which is how long the whole piece of work took.</li>
+        <li>Read <b>Critical path</b>: the chain of work that actually held the run up.</li>
+        <li>Press the <b>application mark</b> in the middle of the toolbar for <b>Distributions</b>, and look at the shape rather than any one number.</li>
+      </ol>
+      <p>That is the whole loop. Everything else is a variation on it.</p>
+
+      <h3>What the three panels mean</h3>
+      <ul>
+        <li><b>Makespan distribution.</b> A shape, not a target. A single run is not representative of anything; the spread is the finding.</li>
+        <li><b>Critical path.</b> Not what was slow, but the chain that prevented progress in that run. Expensive work off the path delayed nobody.</li>
+        <li><b>Critical-path frequency.</b> How often each chain was the one holding things up. A path that dominates is a behavioural mode, and the only kind worth designing against.</li>
+      </ul>
+
+      <h3>Change one thing, run it again</h3>
+      <ol>
+        <li>Press <b>Edit</b>. The composer opens with the loaded model already in it.</li>
+        <li>Change one thing. Raising a context's <b>concurrency</b> from 1 to 2 is the clearest first experiment.</li>
+        <li><b>Export + Load Into Main UI</b>, then <b>Run</b> again with the <b>same seed</b>.</li>
+        <li>Compare the percentiles and the dominant path against what you had.</li>
+      </ol>
+      <p>One change at a time. Two changes and a different answer tells you nothing about which one did it.</p>
+
+      <h3>Writing a model from nothing</h3>
+      <p>Press <b>Compose</b> and work down the four parts in order, because each uses the one before it.</p>
+      <ul>
+        <li><b>System</b> names the model and sets the entry event, which starts a run.</li>
+        <li><b>Contexts</b> are what work runs on: a thread pool, a database, a browser main thread. Their only setting is <b>concurrency</b>, which is where queueing comes from.</li>
+        <li><b>Tasks</b> are units of work: the context they run in, how long they take as a distribution, and the events they emit.</li>
+        <li><b>Wiring</b> connects events to tasks, optionally after a delay. Wiring is where the structure lives, so it is the part worth arguing about.</li>
+      </ul>
+      <p>Then <b>Validate</b>, and <b>Export</b> when it says so.</p>
+
+      <h3>Choosing the settings</h3>
+      <ul>
+        <li><b>Runs.</b> 200 is enough to see the shape and compare two structures. To say anything about p99, think in thousands.</li>
+        <li><b>Seed.</b> Same model and seed, same answer, every time. Hold it steady to compare structures, then change it to check the difference was not one lucky draw.</li>
+        <li><b>Concurrency.</b> The number of things that genuinely happen at once. A concurrency of 1 serialises everything sent to it, which is what a single database connection or UI thread actually is.</li>
+        <li><b>Distribution.</b> <b>Fixed</b> only when the duration truly does not vary. <b>Normal</b> for work that varies symmetrically. <b>Lognormal</b> for IO, network or contention: choosing normal there is how a model comes out far too optimistic at p99.</li>
+        <li><b>Delays on wiring.</b> Debounces, retry backoffs, poll intervals. Model them: they frequently own the median while everyone is looking at the database.</li>
+        <li><b>Stress multiplier.</b> Every duration multiplied, so you can ask what happens when everything is twice as slow.</li>
+      </ul>
+
+      <h3>Reading the answer honestly</h3>
+      <ul>
+        <li>Name the dominant behaviour before proposing any fix. A task that never appears on a dominant path changes nothing when you speed it up.</li>
+        <li>Percentiles describe exposure, not goals. Lowering one without understanding the shape moves the cost rather than removing it.</li>
+        <li>LatencyLab tells you what a model does, not whether the model is right. It makes an argument checkable; it does not spare you having one.</li>
+      </ul>
+
+      <div class="cta" style="justify-content:flex-start;margin-top:30px;">
+        <a class="btn btn-primary" href="reading.html">Reading the output</a>
+        <a class="btn btn-ghost" href="./">Back to overview</a>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
+      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.0<!--/VERSION-->
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The long read</a>
+      <a href="https://ernster.dev/">Project hub</a>
+      <a href="https://www.crankthecode.com/">crankthecode.com</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,4 +1,6 @@
-/* LatencyLab GitHub Pages site. Dark, violet-accented, matching the app theme. */
+/* LatencyLab GitHub Pages site. Dark, royal-blue-accented, matching the app
+   theme: `--accent` is the application's `primary` token, the fill every
+   filled control takes. */
 :root {
   --bg: #181818;
   --surface: #1e1e1e;
@@ -6,8 +8,8 @@
   --border: #2f2f33;
   --text: #e4e4e4;
   --muted: #9aa0aa;
-  --accent: #7e57c2;
-  --accent-bright: #9575cd;
+  --accent: #374fb0;
+  --accent-bright: #7fa2f5;
   /* The application's own accent. Banana yellow, matching latencylab_ui's
      `accent` token; `--banana-ink` is what goes on top of it, because the
      yellow is far too light to carry white. */
@@ -73,7 +75,7 @@ header.nav {
   inset: 0;
   background: radial-gradient(
     58% 50% at 50% 0,
-    rgba(126, 87, 194, 0.22),
+    rgba(55, 79, 176, 0.28),
     transparent 70%
   );
   pointer-events: none;
@@ -82,7 +84,7 @@ header.nav {
   width: 112px;
   height: 112px;
   margin-bottom: 22px;
-  filter: drop-shadow(0 10px 34px rgba(126, 87, 194, 0.34));
+  filter: drop-shadow(0 10px 34px rgba(55, 79, 176, 0.42));
 }
 .hero h1 {
   font-size: clamp(42px, 7vw, 70px);
@@ -193,6 +195,7 @@ section.alt {
 .panel ul { margin: 0; padding-left: 18px; }
 .panel li { color: var(--muted); margin-bottom: 8px; font-size: 15px; }
 .panel li b { color: var(--text); font-weight: 600; }
+.panel p { margin: 16px 0 0; font-size: 15px; font-weight: 600; }
 
 .shots { display: grid; gap: 44px; }
 .shot figure { margin: 0; }
@@ -292,3 +295,22 @@ footer {
   margin: 0 0 18px;
 }
 .prose p:last-child { margin-bottom: 0; }
+
+/* Step lists and definition lists (the Using it page), in the same voice as
+   the prose around them rather than the browser default. */
+.prose h3 {
+  margin: 40px 0 14px;
+  font-size: 20px;
+  color: var(--text);
+}
+.prose ol,
+.prose ul {
+  color: var(--muted);
+  font-size: 16.5px;
+  max-width: 820px;
+  margin: 0 0 18px;
+  padding-left: 22px;
+}
+.prose li { margin-bottom: 9px; }
+.prose li b,
+.prose p b { color: var(--text); font-weight: 600; }

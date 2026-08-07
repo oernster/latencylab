@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from latencylab_ui import main_window_actions as actions
-from latencylab_ui.glyphs import COMPOSE_BODY, EDIT_BODY, glyph_icon, guide_icon
+from latencylab_ui.glyphs import compose_body, edit_body, guide_body, two_tone_icon
 from latencylab_ui.guide_text import GUIDE_TITLE
 from latencylab_ui.icon_resolver import get_app_icon_png_path
 from latencylab_ui.theme import Theme, tokens_for
@@ -107,9 +107,13 @@ def _mark_icon(source: QPixmap) -> QIcon:
 
     The mark's hands and hub are banana and the checked fill is banana, so on
     its own the mark loses them at exactly the moment the button is saying
-    something: measured, 95% of it stands clear of the purple fill and only 25%
-    of the banana one. A stylesheet cannot reach inside an icon, so the second
-    rendering is the same answer the drawn glyphs already use, in the same ink.
+    something. Measured at the 24px the bar draws, the same 74% of the mark
+    clears both fills by luminance, but not the same 74%: on the blue fill the
+    quarter that does not clear is the case, which is warm against a cool fill
+    and so is separated by hue instead, while on the banana fill it is the
+    hands, which are that same yellow and therefore genuinely gone. A
+    stylesheet cannot reach inside an icon, so the second rendering is the same
+    answer the drawn glyphs already use, in the same ink.
     """
 
     icon = QIcon()
@@ -167,29 +171,30 @@ def _glyph_button(
 
 
 def _drawn_icon_button(
-    body: str,
+    body_of: Callable[..., str],
     *,
     tooltip: str,
     on_clicked: Callable[[], None],
     checkable: bool = False,
 ) -> QPushButton:
-    """A toolbar button carrying a drawn glyph rather than an emoji.
+    """A toolbar button carrying a drawn two-tone glyph rather than an emoji.
 
     The colours come from the dark theme's tokens because the button fill is
-    the same purple in both themes, so one rendering serves both and the glyph
+    the same blue in both themes, so one rendering serves both and the glyph
     never has to be redrawn on a theme switch.
     """
 
     tokens = tokens_for(Theme.DARK)
     return _glyph_button(
-        glyph_icon(
-            body,
-            stroke=tokens.primary_text,
-            disabled_stroke=tokens.muted_text,
+        two_tone_icon(
+            body_of,
+            ink=tokens.primary_text,
+            accent=tokens.accent,
+            disabled=tokens.muted_text,
             # A checked button's fill is the light accent, so its glyph takes
             # the accent's dark ink. Without it the icon stays near-white and
             # vanishes at the moment the button is saying something.
-            checked_stroke=tokens.accent_text if checkable else None,
+            checked_ink=tokens.accent_text if checkable else None,
             size=GLYPH_PX,
         ),
         tooltip=tooltip,
@@ -239,18 +244,9 @@ def build_top_bar(
 
     # Immediately left of the info button, because the pair is one idea in two
     # halves: this one says which button to press, that one says what the
-    # output means. Two-tone, unlike the rest of the tray: the book's covers
-    # take the button's ink and its ruled lines and page edge take the accent.
-    guide_tokens = tokens_for(Theme.DARK)
-    guide_btn = _glyph_button(
-        guide_icon(
-            ink=guide_tokens.primary_text,
-            accent=guide_tokens.accent,
-            disabled=guide_tokens.muted_text,
-            size=GLYPH_PX,
-        ),
-        tooltip=GUIDE_TITLE,
-        on_clicked=on_show_guide_clicked,
+    # output means.
+    guide_btn = _drawn_icon_button(
+        guide_body, tooltip=GUIDE_TITLE, on_clicked=on_show_guide_clicked
     )
     guide_btn.setObjectName("guide_btn")
     guide_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -265,7 +261,7 @@ def build_top_bar(
     layout.addWidget(how_to_read_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     compose_btn = _drawn_icon_button(
-        COMPOSE_BODY,
+        compose_body,
         tooltip=actions.COMPOSE_READY,
         on_clicked=on_toggle_model_composer_clicked,
     )
@@ -278,7 +274,7 @@ def build_top_bar(
     layout.addWidget(compose_btn, 0, Qt.AlignmentFlag.AlignTop)
 
     edit_btn = _drawn_icon_button(
-        EDIT_BODY,
+        edit_body,
         tooltip=actions.EDIT_NEEDS_MODEL,
         on_clicked=on_edit_model_clicked,
     )

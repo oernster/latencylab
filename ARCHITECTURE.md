@@ -577,11 +577,14 @@ immediately left of the info button so the pair reads as one idea in two
 halves, and its glyph is an open book precisely because it must share no shape
 with an "i" in a circle.
 
-That book is the only glyph drawn in TWO colours: covers in the button's own
-ink, ruled lines and the near page's edge in the accent
-([`guide_icon()`](latencylab_ui/glyphs.py:110)). A single-tone version of it was
-two blank curves, which said "a document" rather than "a manual with something
-in it". It carries two ruled lines per page rather than three because three
+Every drawn glyph in the tray is TWO colours, and they all split the same way
+([`two_tone_icon()`](latencylab_ui/glyphs.py:1)): the part that merely sits
+there takes the button's own ink, and the part that says what the button DOES
+takes the accent. The book's covers against its ruled lines and page edge, the
+event graph's edges against its nodes and its plus, the document against its
+pencil. A single-tone glyph on a filled button reads as a watermark; the book's
+single-tone version was two blank curves, which said "a document" rather than
+"a manual with something in it". The book carries two ruled lines per page rather than three because three
 were measured at the 20px the tray actually draws and blurred into each other,
 so the sense of several pages comes from the page edge instead, which has room
 to be seen. Disabled mutes BOTH tones: a glyph that kept its accent while the
@@ -743,7 +746,7 @@ Two delivery findings are load-bearing and are recorded here so they are not red
 
 ### Icon (single master, one-way from the site)
 
-- The mark is the purple stopwatch tile. Its origin is the SVG published on the profile site at `assets/latencylab.svg`; the repository-root `latencylab.png` is a 1024x1024 RGBA raster of that SVG rather than an independent drawing.
+- The mark is the amber-cased stopwatch. Its origin is the SVG published on the profile site at `assets/latencylab.svg`; the repository-root `latencylab.png` is a 1024x1024 RGBA raster of that SVG rather than an independent drawing. Its case is deliberately warm against the cool `primary` fill it is drawn on, rather than a shade of it: the two used to be the same colour, and the case disappeared.
 - **The direction is one-way.** A change to the mark is made to the site SVG first, then `latencylab.png` is re-rendered from it by `render_master_icon.py` (no new dependency: it uses `QSvgRenderer`, and PySide6 is already what the front end is built on), then `generate_icons.py` derives the platform set from that PNG. Editing the PNG directly leaves the two silently disagreeing, which is the failure this note exists to prevent. The renderer is a script rather than a documented habit for the same reason the version stamp is: a remembered step that nothing checks is one that eventually does not happen, and a forgotten re-render leaves the site showing one mark and the application another.
 - `latencylab.png` is the single master every platform asset derives from, via `generate_icons.py`: the PNG size set, the multi-size Windows `.ico`, the macOS `.icns` and the Flatpak hicolor set. Nothing paints an icon at runtime; the application asks [`latencylab_ui.icon_resolver`](latencylab_ui/icon_resolver.py:1) where the assets landed for the packaging it is running under.
 - The glyph is balanced in its tile, 7 units clear at the top and at the base on the SVG's 64-unit grid. The case must not approach y=60 or lower, where the tile's own 14-unit corner radius is already curving inward and the circle reads as clipped.

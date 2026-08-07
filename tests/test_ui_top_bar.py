@@ -163,6 +163,67 @@ def test_compose_button_is_reachable_and_is_not_a_toggle(window: MainWindow) -> 
     window._model_composer.reject()
 
 
+def _accent_pixels(widget, accent: QColor) -> int:
+    """How much of a rendered button is drawn in the accent."""
+
+    image = widget.grab().toImage()
+    return sum(
+        1
+        for y in range(image.height())
+        for x in range(image.width())
+        if _near(QColor(image.pixel(x, y)), accent)
+    )
+
+
+def _near(pixel: QColor, want: QColor) -> bool:
+    return (
+        abs(pixel.red() - want.red()) <= INK_TOLERANCE
+        and abs(pixel.green() - want.green()) <= INK_TOLERANCE
+        and abs(pixel.blue() - want.blue()) <= INK_TOLERANCE
+    )
+
+
+@pytest.mark.parametrize("name", ("_compose_btn", "_edit_btn"))
+def test_the_drawn_glyphs_are_two_tone(
+    app: QApplication, window: MainWindow, name: str
+) -> None:
+    """A single-tone glyph on a filled button reads as a watermark.
+
+    Compose and Edit both split the same way the Guide's book does: the part
+    that merely sits there takes the button's ink, and the part that says what
+    the button DOES takes the accent.
+    """
+
+    apply_theme(app, Theme.DARK)
+    app.processEvents()
+
+    button = getattr(window, name)
+    button.setEnabled(True)
+    app.processEvents()
+
+    assert _accent_pixels(button, QColor(tokens_for(Theme.DARK).accent)) > 0
+
+
+@pytest.mark.parametrize("name", ("_compose_btn", "_edit_btn"))
+def test_a_disabled_drawn_glyph_mutes_both_of_its_tones(
+    app: QApplication, window: MainWindow, name: str
+) -> None:
+    """A glyph that keeps its accent while the rest of it greys out reads as
+    half-available, which is not a state this application has."""
+
+    apply_theme(app, Theme.DARK)
+    accent = QColor(tokens_for(Theme.DARK).accent)
+
+    button = getattr(window, name)
+    button.setEnabled(False)
+    app.processEvents()
+
+    assert _accent_pixels(button, accent) == 0
+
+    button.setEnabled(True)
+    app.processEvents()
+
+
 @pytest.mark.parametrize("theme", (Theme.DARK, Theme.LIGHT))
 def test_distributions_button_looks_different_when_the_panel_is_open(
     app: QApplication, window: MainWindow, theme: Theme

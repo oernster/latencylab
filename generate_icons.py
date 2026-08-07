@@ -1,7 +1,7 @@
 """Derive every platform icon asset from the single master PNG.
 
 The master is `latencylab.png` at the repository root: a square 1024x1024 RGBA
-render of the purple stopwatch tile the site uses. Everything under `assets/`
+render of the stopwatch mark the site uses. Everything under `assets/`
 is generated from it and nothing else, so the Windows executable, the installer
 window, the macOS bundle and the Flatpak hicolor set cannot drift apart.
 

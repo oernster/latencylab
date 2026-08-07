@@ -114,14 +114,15 @@ def test_a_checked_button_repaints_its_glyph_in_the_accent_ink(
 
     from PySide6.QtGui import QIcon
 
-    from latencylab_ui.glyphs import COMPOSE_BODY, glyph_icon
+    from latencylab_ui.glyphs import compose_body, two_tone_icon
 
     tokens = tokens_for(Theme.DARK)
-    icon = glyph_icon(
-        COMPOSE_BODY,
-        stroke=tokens.primary_text,
-        disabled_stroke=tokens.muted_text,
-        checked_stroke=tokens.accent_text,
+    icon = two_tone_icon(
+        compose_body,
+        ink=tokens.primary_text,
+        accent=tokens.accent,
+        disabled=tokens.muted_text,
+        checked_ink=tokens.accent_text,
         size=20,
     )
 

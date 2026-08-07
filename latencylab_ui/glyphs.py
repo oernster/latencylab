@@ -19,6 +19,8 @@ The viewBox is 24 units and the strokes are round-capped, so the pair sit
 together at any size without one looking heavier than the other.
 """
 
+from collections.abc import Callable
+
 from PySide6.QtCore import QRectF, QSize, Qt
 from PySide6.QtGui import QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
@@ -32,31 +34,54 @@ _HEAD = (
     'stroke-linecap="round" stroke-linejoin="round">'
 )
 
-# Three nodes and the edges between them: the shape of the thing being made.
-_GRAPH = (
-    '<circle cx="5" cy="7" r="2.2"/>'
-    '<circle cx="5" cy="17" r="2.2"/>'
-    '<circle cx="15" cy="12" r="2.2"/>'
-    '<path d="M7.1 8.1 L12.9 11"/>'
-    '<path d="M7.1 15.9 L12.9 13"/>'
+# Every glyph here is two-tone, and they all split the same way: the part that
+# merely sits there takes the button's ink, and the part that says what the
+# button DOES takes the accent. The graph's nodes and its plus, the pencil, the
+# book's ruled lines. A single-tone glyph on a filled button reads as a
+# watermark, which is what these were before.
+
+# The edges between the nodes: structure, so they stay in the ink.
+_GRAPH_EDGES = '<path d="M7.1 8.1 L12.9 11"/><path d="M7.1 15.9 L12.9 13"/>'
+
+# Three nodes and a plus: the shape of the thing being made, and the making.
+_GRAPH_NODES = (
+    '<circle cx="5" cy="7" r="2.2" stroke="{accent}"/>'
+    '<circle cx="5" cy="17" r="2.2" stroke="{accent}"/>'
+    '<circle cx="15" cy="12" r="2.2" stroke="{accent}"/>'
 )
+_COMPOSE_PLUS = '<path d="M19 4.5v5M16.5 7h5" stroke="{accent}"/>'
 
-COMPOSE_BODY = _GRAPH + '<path d="M19 4.5v5M16.5 7h5"/>'
-
-EDIT_BODY = (
+# The document is the thing being changed and the pencil is the changing, so
+# the pencil is the half that carries the accent.
+_EDIT_DOCUMENT = (
     '<path d="M13 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11'
     'a1.5 1.5 0 0 0 1.5-1.5V11"/>'
-    '<path d="M19.8 2.8 L21.9 4.9 L14.6 12.2 L11.8 12.9 L12.5 10.1 Z"/>'
 )
+_EDIT_PENCIL = (
+    '<path d="M19.8 2.8 L21.9 4.9 L14.6 12.2 L11.8 12.9 L12.5 10.1 Z" '
+    'stroke="{accent}"/>'
+)
+
+
+def compose_body(*, accent: str) -> str:
+    """The event graph, with its nodes and its plus in `accent`."""
+
+    return _GRAPH_EDGES + (_GRAPH_NODES + _COMPOSE_PLUS).format(accent=accent)
+
+
+def edit_body(*, accent: str) -> str:
+    """The document, with its pencil in `accent`."""
+
+    return _EDIT_DOCUMENT + _EDIT_PENCIL.format(accent=accent)
+
 
 # An open book: a manual. It sits immediately left of the info button, so it
 # deliberately shares no shape with an "i" in a circle; and its spine plus two
 # curved pages read differently at 20px from Edit's rectangular document.
 #
-# It is the one glyph drawn in more than one colour. Covers in the button's own
-# ink and everything else in the accent, because a single-tone version came out
-# as two blank curves: it said "a document" where it needed to say "a manual
-# with something in it".
+# Covers in the button's own ink and everything else in the accent, because a
+# single-tone version came out as two blank curves: it said "a document" where
+# it needed to say "a manual with something in it".
 _GUIDE_COVERS = (
     '<path d="M12 7.2v12.4"/>'
     '<path d="M12 7.2C9.9 5.6 7 5.1 3.6 5.5v12.4c3.4-.4 6.3.1 8.4 1.7"/>'
@@ -107,26 +132,6 @@ def guide_body(*, accent: str) -> str:
     return _GUIDE_COVERS + _guide_marks(accent)
 
 
-def guide_icon(*, ink: str, accent: str, disabled: str, size: int) -> QIcon:
-    """The two-tone book, and a single-tone version of it for disabled.
-
-    Disabled mutes BOTH tones rather than only the covers. A glyph that keeps
-    its accent while the rest of it greys out reads as half-available, which is
-    not a state this application has.
-    """
-
-    icon = QIcon()
-    icon.addPixmap(
-        glyph_pixmap(guide_body(accent=accent), stroke=ink, size=size),
-        QIcon.Mode.Normal,
-    )
-    icon.addPixmap(
-        glyph_pixmap(guide_body(accent=disabled), stroke=disabled, size=size),
-        QIcon.Mode.Disabled,
-    )
-    return icon
-
-
 def glyph_svg(body: str, *, stroke: str) -> str:
     """One glyph's complete SVG, drawn in `stroke`."""
 
@@ -149,40 +154,50 @@ def glyph_pixmap(body: str, *, stroke: str, size: int) -> QPixmap:
     return pixmap
 
 
-def glyph_icon(
-    body: str,
+def two_tone_icon(
+    body_of: Callable[..., str],
     *,
-    stroke: str,
-    disabled_stroke: str,
+    ink: str,
+    accent: str,
+    disabled: str,
     size: int,
-    checked_stroke: str | None = None,
+    checked_ink: str | None = None,
 ) -> QIcon:
-    """An icon carrying every state, so Qt never invents one.
+    """A two-tone glyph carrying every state, so Qt never invents one.
 
     Left to itself Qt greys the normal pixmap, which on a disabled button that
     has ALSO changed its fill can land the glyph and the fill at nearly the same
-    lightness. Supplying the disabled pixmap keeps that decision with the theme.
+    lightness. Supplying the disabled pixmap keeps that decision with the theme,
+    and disabled mutes BOTH tones rather than only the structure: a glyph that
+    keeps its accent while the rest of it greys out reads as half-available,
+    which is not a state this application has.
 
-    `checked_stroke` exists because a stylesheet cannot reach inside an icon.
-    A checked button changes its fill to the accent and its TEXT to the accent's
-    dark ink, and a glyph baked in near-white simply stays near-white on top of
-    it. Anything checkable whose checked fill is light has to supply this or the
-    icon disappears at exactly the moment it means something.
+    `checked_ink` exists because a stylesheet cannot reach inside an icon. A
+    checked button changes its fill to the light accent and its TEXT to that
+    accent's dark ink; a glyph baked in near-white simply stays near-white on
+    top of it, and its accent half stops being an accent at all, because the
+    fill it was standing out against is now that same colour. So both tones
+    collapse to the one ink that reads there. Anything checkable whose checked
+    fill is light has to supply this or the icon disappears at exactly the
+    moment it means something.
     """
 
+    checked_stroke = ink if checked_ink is None else checked_ink
+    checked_accent = accent if checked_ink is None else checked_ink
+
     icon = QIcon()
-    normal = glyph_pixmap(body, stroke=stroke, size=size)
-    icon.addPixmap(normal, QIcon.Mode.Normal, QIcon.State.Off)
     icon.addPixmap(
-        (
-            normal
-            if checked_stroke is None
-            else glyph_pixmap(body, stroke=checked_stroke, size=size)
-        ),
+        glyph_pixmap(body_of(accent=accent), stroke=ink, size=size),
+        QIcon.Mode.Normal,
+        QIcon.State.Off,
+    )
+    icon.addPixmap(
+        glyph_pixmap(body_of(accent=checked_accent), stroke=checked_stroke, size=size),
         QIcon.Mode.Normal,
         QIcon.State.On,
     )
     icon.addPixmap(
-        glyph_pixmap(body, stroke=disabled_stroke, size=size), QIcon.Mode.Disabled
+        glyph_pixmap(body_of(accent=disabled), stroke=disabled, size=size),
+        QIcon.Mode.Disabled,
     )
     return icon
