@@ -5,20 +5,23 @@ from dataclasses import dataclass
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
-    QDialog,
     QDialogButtonBox,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
+    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
 
+from latencylab_ui.first_stop_dialog import FirstStopDialog
 from latencylab_ui.icon_resolver import get_app_icon_path, get_app_icon_png_path
 
 # The badge beside the title. Square, large enough to read as the product's
 # mark rather than as decoration.
 _BADGE_PX = 96
+_DIALOG_MIN_WIDTH = 540
+_BODY_MIN_HEIGHT = 320
 
 
 @dataclass(frozen=True)
@@ -27,7 +30,7 @@ class AboutDialogContent:
     body: str
 
 
-class AboutDialog(QDialog):
+class AboutDialog(FirstStopDialog):
     def __init__(self, parent: QWidget, *, content: AboutDialogContent) -> None:
         super().__init__(parent)
         # Keep short to avoid truncation on small dialogs / narrow screens.
@@ -44,6 +47,7 @@ class AboutDialog(QDialog):
         self.setSizeGripEnabled(False)
 
         self.setModal(True)
+        self.setMinimumWidth(_DIALOG_MIN_WIDTH)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(14, 14, 14, 14)
@@ -90,12 +94,14 @@ class AboutDialog(QDialog):
 
         root.addLayout(header)
 
-        body = QLabel(content.body)
+        # A browser rather than a label: the credits carry licence names and
+        # links, and a label can neither scroll them nor open one.
+        body = QTextBrowser()
         body.setObjectName("about_body")
-        body.setTextFormat(Qt.TextFormat.PlainText)
-        body.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        body.setWordWrap(True)
-        root.addWidget(body)
+        body.setOpenExternalLinks(True)
+        body.setMinimumHeight(_BODY_MIN_HEIGHT)
+        body.setHtml(content.body)
+        root.addWidget(body, 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         buttons.accepted.connect(self.accept)

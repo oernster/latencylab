@@ -16,9 +16,15 @@ def test_about_text_includes_versions_and_credits() -> None:
     assert "PySide6" in txt
     assert "Qt:" not in txt
 
-    # Credits
-    assert "Python (Python Software Foundation)" in txt
-    assert "PySide6 (Qt for Python)" in txt
+    # Credits: every shipped dependency named with its licence, because both
+    # licences the application is distributed under oblige it to say what it is
+    # built on. Pinned against the credit list rather than restated here, so a
+    # dependency added without a credit is caught by the test below.
+    from latencylab_ui.about_text import CREDITS
+
+    for credit in CREDITS:
+        assert credit.name in txt
+        assert credit.licence in txt
 
 
 def test_show_about_dialog_calls_message_box(monkeypatch) -> None:

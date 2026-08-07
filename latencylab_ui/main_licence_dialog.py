@@ -5,17 +5,18 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QTextOption
 from PySide6.QtWidgets import (
-    QDialog,
     QDialogButtonBox,
     QPlainTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
+from latencylab_ui.first_stop_dialog import FirstStopDialog
+
 from latencylab_ui.licence_dialog import LICENCE_UNAVAILABLE
 
 
-class MainLicenceDialog(QDialog):
+class MainLicenceDialog(FirstStopDialog):
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 

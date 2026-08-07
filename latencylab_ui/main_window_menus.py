@@ -6,9 +6,8 @@ from collections.abc import Callable
 import PySide6
 from PySide6.QtWidgets import QMainWindow, QWidget
 
-from latencylab.version import __version__
-
 from latencylab_ui.about_dialog import AboutDialog, AboutDialogContent
+from latencylab_ui.about_text import APP_NAME, about_html
 from latencylab_ui.how_to_read_dialog import HowToReadDialog
 
 
@@ -50,7 +49,7 @@ def show_about_dialog(parent: QWidget) -> None:
     # under some test / CI environments and is unnecessary for an About dialog.
     dlg = AboutDialog(
         parent,
-        content=AboutDialogContent(title="LatencyLab", body=_about_text()),
+        content=AboutDialogContent(title=APP_NAME, body=_about_text()),
     )
 
     # Keep a reference on the parent so the dialog isn't garbage-collected
@@ -83,20 +82,7 @@ def show_how_to_read_dialog(parent: QWidget) -> None:
 
 
 def _about_text() -> str:
-    py_ver = platform.python_version()
-    pyside_ver = getattr(PySide6, "__version__", "(unknown)")
-
-    # Keep this as plain text so tests can easily assert substrings.
-    return "\n".join(
-        [
-            f"Version: {__version__}",
-            "Author: Oliver Ernster",
-            "",
-            f"Python: {py_ver}",
-            f"PySide6 (Qt for Python): {pyside_ver}",
-            "",
-            "Credits:",
-            "- Python (Python Software Foundation)",
-            "- PySide6 (Qt for Python)",
-        ]
+    return about_html(
+        python_version=platform.python_version(),
+        pyside_version=getattr(PySide6, "__version__", "(unknown)"),
     )

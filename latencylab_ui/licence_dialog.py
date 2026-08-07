@@ -5,12 +5,13 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QTextOption
 from PySide6.QtWidgets import (
-    QDialog,
     QDialogButtonBox,
     QPlainTextEdit,
     QVBoxLayout,
     QWidget,
 )
+
+from latencylab_ui.first_stop_dialog import FirstStopDialog
 
 # Shown when a packaged build did not stage the licence text beside the module
 # that reads it. Also imported by main_licence_dialog, so both dialogs degrade
@@ -24,7 +25,7 @@ LICENCE_UNAVAILABLE = (
 )
 
 
-class LicenceDialog(QDialog):
+class LicenceDialog(FirstStopDialog):
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
