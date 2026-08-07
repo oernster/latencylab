@@ -43,7 +43,15 @@ def test_theme_toggle_emits() -> None:
     assert seen[-1] == Theme.DARK
 
 
-def test_theme_toggle_disables_current_theme_button() -> None:
+def test_theme_toggle_is_one_button_that_is_never_disabled() -> None:
+    """The pair it replaced disabled whichever theme was in force.
+
+    Under the three-state ring model that painted the ACTIVE theme with the
+    permanent red danger ring, and it put a control on the keyboard ring that
+    could never be reached. A single button that is never disabled has neither
+    problem.
+    """
+
     _ensure_qapp()
 
     from PySide6.QtWidgets import QPushButton
@@ -52,28 +60,40 @@ def test_theme_toggle_disables_current_theme_button() -> None:
     from latencylab_ui.theme_toggle import ThemeToggle
 
     t = ThemeToggle(default=Theme.DARK)
-    btns = t.findChildren(QPushButton)
-    assert len(btns) == 2
 
-    # Dark is current -> dark button disabled; light enabled.
-    t.set_theme(Theme.DARK)
-    dark = [b for b in btns if b.text() == "🌙"][0]
-    light = [b for b in btns if b.text() == "☀"][0]
-    assert not dark.isEnabled()
-    assert light.isEnabled()
+    assert isinstance(t, QPushButton)
+    assert t.findChildren(QPushButton) == []
+    assert t.isEnabled()
 
-    # Light is current -> light button disabled; dark enabled.
     t.set_theme(Theme.LIGHT)
-    assert not light.isEnabled()
-    assert dark.isEnabled()
+    assert t.isEnabled()
 
 
-def test_theme_toggle_space_switch_updates_enabled_state() -> None:
+def test_theme_toggle_names_the_theme_it_will_switch_to() -> None:
+    """A toggle captioned with its own current state reads as an indicator."""
+
+    _ensure_qapp()
+
+    from latencylab_ui.theme import Theme
+    from latencylab_ui.theme_toggle import ThemeToggle
+
+    t = ThemeToggle(default=Theme.DARK)
+    assert t.theme() == Theme.DARK
+    assert t.next_theme() == Theme.LIGHT
+    assert t.text() == "☀"
+    assert "light" in t.toolTip().lower()
+
+    t.set_theme(Theme.LIGHT)
+    assert t.next_theme() == Theme.DARK
+    assert t.text() == "🌙"
+    assert "dark" in t.toolTip().lower()
+
+
+def test_theme_toggle_space_switches_and_switches_back() -> None:
     app = _ensure_qapp()
 
     from PySide6.QtCore import Qt
     from PySide6.QtTest import QTest
-    from PySide6.QtWidgets import QPushButton
 
     from latencylab_ui.theme import Theme
     from latencylab_ui.theme_toggle import ThemeToggle
@@ -82,18 +102,18 @@ def test_theme_toggle_space_switch_updates_enabled_state() -> None:
     t.show()
     app.processEvents()
 
-    btns = t.findChildren(QPushButton)
-    dark = [b for b in btns if b.text() == "🌙"][0]
-    light = [b for b in btns if b.text() == "☀"][0]
+    seen: list[Theme] = []
+    t.theme_changed.connect(lambda theme: seen.append(theme))
 
-    # Initial: dark is selected/disabled.
-    assert not dark.isEnabled()
-    assert light.isEnabled()
-
-    # Focus and space-toggle light.
-    light.setFocus()
-    QTest.keyClick(light, Qt.Key_Space)
+    t.setFocus()
+    QTest.keyClick(t, Qt.Key_Space)
     app.processEvents()
+    assert t.theme() == Theme.LIGHT
+    assert seen[-1] == Theme.LIGHT
 
-    assert not light.isEnabled()
-    assert dark.isEnabled()
+    # The same key on the same control comes back: that is what makes it a
+    # toggle rather than a pair of one-way switches.
+    QTest.keyClick(t, Qt.Key_Space)
+    app.processEvents()
+    assert t.theme() == Theme.DARK
+    assert seen[-1] == Theme.DARK

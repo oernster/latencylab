@@ -1,98 +1,66 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QButtonGroup, QHBoxLayout, QPushButton, QWidget
+"""One button that switches between the light and the dark theme."""
+
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QPushButton, QWidget
 
 from latencylab_ui.theme import Theme
 
+# The button names the theme it will switch TO, not the one already in force. A
+# control captioned with its own current state reads as an indicator rather than
+# something to press, and there is nowhere for a single button to put both.
+_CAPTION = {Theme.DARK: "☀", Theme.LIGHT: "🌙"}
+_TOOLTIP = {
+    Theme.DARK: "Switch to the light theme",
+    Theme.LIGHT: "Switch to the dark theme",
+}
 
-class ThemeToggle(QWidget):
-    """Two-button Light/Dark toggle."""
+_OTHER = {Theme.DARK: Theme.LIGHT, Theme.LIGHT: Theme.DARK}
+
+
+class ThemeToggle(QPushButton):
+    """A single always-enabled toggle between the two themes.
+
+    It replaces a pair of buttons that disabled whichever theme was in force.
+    That made the ACTIVE theme the dead control, so under the three-state ring
+    model it wore the permanent red danger ring: the one thing on screen that
+    was working correctly was the one thing painted as broken. A single button
+    that is never disabled has no such state to get wrong, and it is one stop on
+    the keyboard ring instead of two, one of which could never be reached.
+    """
 
     theme_changed = Signal(Theme)
-    focus_advance_requested = Signal(object)
 
     def __init__(
         self, *, default: Theme = Theme.DARK, parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
+        self.setProperty("role", "theme-toggle")
+        self._theme = default
+        self._paint(default)
+        self.clicked.connect(self._on_clicked)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
-        # When this widget is placed in a taller row (e.g. top bar contains a
-        # larger logo/emoji), keep the buttons aligned to the top edge rather
-        # than vertically centered.
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+    def theme(self) -> Theme:
+        """The theme currently in force."""
 
-        self._btn_light = QPushButton("☀")
-        self._btn_light.setCheckable(True)
-        self._btn_light.setProperty("role", "theme-toggle")
-        self._btn_light.setToolTip("Light theme")
-        layout.addWidget(self._btn_light)
+        return self._theme
 
-        self._btn_dark = QPushButton("🌙")
-        self._btn_dark.setCheckable(True)
-        self._btn_dark.setProperty("role", "theme-toggle")
-        self._btn_dark.setToolTip("Dark theme")
-        layout.addWidget(self._btn_dark)
+    def next_theme(self) -> Theme:
+        """The theme this button will switch to, which is what it is captioned."""
 
-        # Keep the toggle compact; let the layout around it place it.
-        self.setContentsMargins(0, 0, 0, 0)
-
-        group = QButtonGroup(self)
-        group.setExclusive(True)
-        group.addButton(self._btn_light)
-        group.addButton(self._btn_dark)
-        self._group = group
-
-        self._btn_light.toggled.connect(
-            lambda checked: self._emit_if_checked(Theme.LIGHT, checked)
-        )
-        self._btn_dark.toggled.connect(
-            lambda checked: self._emit_if_checked(Theme.DARK, checked)
-        )
-
-        self.set_theme(default)
+        return _OTHER[self._theme]
 
     def set_theme(self, theme: Theme) -> None:
-        if theme == Theme.DARK:
-            self._btn_dark.setChecked(True)
-        else:
-            self._btn_light.setChecked(True)
-        self._update_enabled_state(theme)
+        """Adopt `theme` and announce it."""
 
-    def _update_enabled_state(self, theme: Theme) -> None:
-        """Disable the currently-selected theme button so it isn't tabbable."""
+        self._theme = theme
+        self._paint(theme)
+        self.theme_changed.emit(theme)
 
-        if theme == Theme.DARK:
-            self._btn_dark.setEnabled(False)
-            self._btn_light.setEnabled(True)
-        else:
-            self._btn_light.setEnabled(False)
-            self._btn_dark.setEnabled(True)
+    def _on_clicked(self) -> None:
+        self.set_theme(self.next_theme())
 
-    def _emit_if_checked(self, theme: Theme, checked: bool) -> None:
-        if checked:
-            # Keep enabled/disabled state in sync even when user toggles via
-            # keyboard (space) or mouse.
-            #
-            if theme == Theme.DARK:
-                # Request focus to advance to the next UI control (e.g.
-                # "Open model…") when dark is selected.
-                #
-                # This must happen *before* we disable the button, so the
-                # focus-cycle controller can advance relative to it.
-                self.focus_advance_requested.emit(self._btn_dark)
-
-            self._update_enabled_state(theme)
-
-            # Focus behavior:
-            # - Selecting Light keeps focus within the toggle by moving focus
-            #   to Dark (the next option).
-            # - Selecting Dark advances focus out of the toggle group.
-            if theme == Theme.LIGHT:
-                # After enabling Dark, move focus to it.
-                self._btn_dark.setFocus()
-
-            self.theme_changed.emit(theme)
+    def _paint(self, theme: Theme) -> None:
+        self.setText(_CAPTION[theme])
+        self.setToolTip(_TOOLTIP[theme])

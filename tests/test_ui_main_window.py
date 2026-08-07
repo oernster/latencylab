@@ -77,15 +77,18 @@ def test_main_window_core_paths(monkeypatch, tmp_path: Path) -> None:
     w.show()
     app.processEvents()
 
-    # Top-center clock emoji should exist and be non-interactive.
+    # The centre badge is the generated application mark, never a font glyph,
+    # and it is decoration rather than a control.
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QLabel
 
-    clock = w.findChild(QLabel, "top_clock_emoji")
-    assert clock is not None
-    assert clock.text() == "⏱️"
-    assert clock.focusPolicy() == Qt.FocusPolicy.NoFocus
-    assert clock.minimumWidth() >= 36
+    badge = w.findChild(QLabel, "top_app_badge")
+    assert badge is not None
+    assert badge.text() == ""
+    assert not badge.pixmap().isNull()
+    assert badge.focusPolicy() == Qt.FocusPolicy.NoFocus
+    assert badge.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    assert badge.minimumWidth() >= 36
 
     # Top bar: How-to-read info button should exist and be enabled.
     from PySide6.QtWidgets import QPushButton

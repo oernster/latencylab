@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMessageBox,
-    QPushButton,
     QProgressBar,
     QStatusBar,
     QVBoxLayout,
@@ -101,23 +100,22 @@ class MainWindow(QMainWindow):
         root_layout.setSpacing(0)
         self.setCentralWidget(root)
 
-        (
-            top_bar,
-            self._save_log_btn,
-            self._distributions_btn,
-            self._how_to_read_btn,
-            self._top_clock,
-            self._theme_toggle,
-        ) = build_top_bar(
+        top_bar = build_top_bar(
             self,
-            focus_cycle=self._focus_cycle,
             on_save_log_clicked=self._on_save_log_clicked,
             on_show_distributions_clicked=self._on_show_distributions_clicked,
             on_show_how_to_read_clicked=lambda: show_how_to_read_dialog(self),
             on_toggle_model_composer_clicked=self._on_toggle_model_composer_clicked,
+            on_theme_changed=self._on_theme_changed,
         )
+        self._save_log_btn = top_bar.save_log_btn
+        self._distributions_btn = top_bar.distributions_btn
+        self._how_to_read_btn = top_bar.how_to_read_btn
+        self._compose_btn = top_bar.compose_btn
+        self._top_badge = top_bar.badge
+        self._theme_toggle = top_bar.theme_toggle
 
-        root_layout.addWidget(top_bar)
+        root_layout.addWidget(top_bar.widget)
 
         # Right-side distributions panel (dockable, non-modal).
         self._distributions_dock = DistributionsDock(self)
@@ -200,10 +198,10 @@ class MainWindow(QMainWindow):
             return  # pragma: no cover
 
     def _on_model_composer_visibility_changed(self, visible: bool) -> None:
-        try:
-            self.findChild(QPushButton, "compose_model_btn").setChecked(visible)
-        except Exception:  # noqa: BLE001  # pragma: no cover
-            return  # pragma: no cover
+        # The button is held, not looked up. A findChild by name wrapped in a
+        # bare except cannot tell "the composer moved" from "the name changed",
+        # so a rename would have silently stopped the button tracking the dock.
+        self._compose_btn.setChecked(visible)
 
     def _show_distributions_dock(self) -> None:
         try:

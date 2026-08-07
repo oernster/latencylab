@@ -90,6 +90,11 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
     # Distributions button exists but is disabled until a successful run
     # completes, so it is intentionally skipped by the focus-cycle.
 
+    # Compose is a ring stop. It used to be NoFocus, which made it the one
+    # top-bar control the keyboard could not reach.
+    _send(Qt.Key_Tab)
+    _wait_for_focus_text("Compose Model")
+
     # Theme toggle is a single focus stop; it is toggled with Space, not Tab.
     _send(Qt.Key_Tab)
     _wait_for_focus_text("☀")
@@ -119,6 +124,9 @@ def test_focus_cycle_tab_order_and_arrow_keys(monkeypatch) -> None:
 
     _send(Qt.Key_Tab)
     assert _focused_widget_text() == "ℹ️"
+
+    _send(Qt.Key_Tab)
+    assert _focused_widget_text() == "Compose Model"
 
     _send(Qt.Key_Tab)
     assert _focused_widget_text() == "☀"
