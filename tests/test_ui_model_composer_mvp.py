@@ -13,7 +13,7 @@ def _ensure_qapp():
     return app
 
 
-def test_compose_button_exists_and_toggles_dock_visibility() -> None:
+def test_compose_button_exists_and_opens_the_composer() -> None:
     app = _ensure_qapp()
 
     from PySide6.QtCore import QObject, Signal
@@ -49,15 +49,22 @@ def test_compose_button_exists_and_toggles_dock_visibility() -> None:
     assert btn.text() == ""
     assert btn.icon().isNull() is False
     assert btn.toolTip() == actions.COMPOSE_READY
-    assert w._model_composer_dock.isVisible() is False
+    assert w._model_composer.isVisible() is False
 
     btn.click()
     app.processEvents()
-    assert w._model_composer_dock.isVisible() is True
+    assert w._model_composer.isVisible() is True
 
+    # Pressing it again does NOT close the composer. It used to toggle a dock
+    # that shared the window with the results; a modal dialog is closed by
+    # finishing with it, and the button is behind it in any case.
     btn.click()
     app.processEvents()
-    assert w._model_composer_dock.isVisible() is False
+    assert w._model_composer.isVisible() is True
+
+    w._model_composer.reject()
+    app.processEvents()
+    assert w._model_composer.isVisible() is False
 
     w.close()
     app.processEvents()
@@ -97,7 +104,7 @@ def test_export_and_export_load_use_deterministic_json(
     w.show()
     app.processEvents()
 
-    dock = w._model_composer_dock
+    dock = w._model_composer
     dock._system.model_name_edit.setText("m")  # noqa: SLF001
     dock._system.version_combo.setCurrentText("1")  # noqa: SLF001
     dock._system.entry_event_edit.setText("e0")  # noqa: SLF001

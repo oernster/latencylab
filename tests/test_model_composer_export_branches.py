@@ -14,14 +14,12 @@ def _ensure_qapp():
     return app
 
 
-def test_model_composer_dock_export_and_stress_branches(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_model_composer_export_and_stress_branches(tmp_path: Path, monkeypatch) -> None:
     _ensure_qapp()
 
     from PySide6.QtWidgets import QMessageBox, QWidget
 
-    from latencylab_ui.model_composer_dock import ModelComposerDock
+    from latencylab_ui.model_composer_dialog import ModelComposerDialog
 
     # Prevent modal dialogs from blocking/hanging.
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: None)
@@ -34,7 +32,7 @@ def test_model_composer_dock_export_and_stress_branches(
     host = QWidget()
     host._load_model = _spy_load  # type: ignore[attr-defined]
 
-    dock = ModelComposerDock(host)
+    dock = ModelComposerDialog(host)
     dock.show()
 
     # Keep state stable and bypass validate gate.

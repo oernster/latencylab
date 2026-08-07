@@ -128,14 +128,14 @@ def test_showing_the_panel_leaves_the_composer_where_it_is(
 
     window = _window(app)
     window._distributions_btn.setEnabled(True)
-    window._model_composer_dock.show()
+    window._model_composer.show()
     app.processEvents()
 
     window._on_show_distributions_clicked()
     app.processEvents()
 
     assert window._distributions_dock.isVisible() is True
-    assert window._model_composer_dock.isVisible() is True
+    assert window._model_composer.isVisible() is True
 
     window.close()
     window.deleteLater()

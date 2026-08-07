@@ -1,47 +1,44 @@
 from __future__ import annotations
 
-"""MainWindow dock switching helpers.
+"""MainWindow panel policies.
 
 This module exists to keep `main_window.py` small (see codebase size guardrails)
-and to isolate UI policies around mutually-exclusive docks.
+and to isolate the rules about which panel is showing.
 """
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMessageBox
 
 
-def toggle_or_switch_to_model_composer(window) -> None:
+def open_model_composer(window) -> None:
     """Handle the Compose Model button click.
 
     Policy:
-    - If the Model Composer dock is visible *and* Distributions is not, then this
-      behaves as a toggle-off (hide composer).
-    - Otherwise, this behaves as a "switch to compose" action:
-        - Optionally prompt to export if there are unexported outputs.
-        - Hide Distributions.
-        - Ensure the composer dock is shown, raised, and sized sanely.
+    - Optionally prompt to export if there are unexported outputs.
+    - Open the composer, modal, over the whole window.
+
+    There is no toggle-off case any more and no dock to hide. The composer used
+    to share the right-hand area with Distributions, so opening one was a
+    question about the other; a modal dialog answers that question by covering
+    the window while it is up and giving it straight back when it closes.
+
+    The export prompt stays, because it was never about the layout: it asks
+    whether to keep results that are about to stop being the thing on screen.
     """
-
-    composer_visible = window._model_composer_dock.isVisible()  # noqa: SLF001
-    dist_visible = window._distributions_dock.isVisible()  # noqa: SLF001
-
-    if composer_visible and not dist_visible:
-        window._model_composer_dock.hide()  # noqa: SLF001
-        return
 
     try:
         _prompt_export_if_needed(window)
     except _UserCancelledCompose:
         return
 
-    if window._distributions_dock.isVisible():  # noqa: SLF001
-        window._distributions_dock.hide()  # noqa: SLF001
-
-    if not window._model_composer_dock.isVisible():  # noqa: SLF001
-        window._model_composer_dock.show()  # noqa: SLF001
-    window._model_composer_dock.raise_()  # noqa: SLF001
-
-    _ensure_composer_sane_size(window)
+    # Shown rather than exec'd. Both are modal, because the dialog says it is;
+    # the difference is that `exec` also starts a nested event loop and does not
+    # return until the dialog closes, which turns opening a panel into a call
+    # that never comes back. Nothing here has anything to do after the composer
+    # opens, so the loop would buy nothing and cost the caller its stack.
+    composer = window._model_composer  # noqa: SLF001
+    composer.show()
+    composer.raise_()
+    composer.activateWindow()
 
 
 def toggle_distributions(window) -> None:
@@ -92,17 +89,6 @@ def _prompt_export_if_needed(window) -> None:
         if getattr(window, "_have_unexported_outputs", False):
             # Export was cancelled/failed.
             raise _UserCancelledCompose
-
-
-def _ensure_composer_sane_size(window) -> None:
-    dock = window._model_composer_dock  # noqa: SLF001
-
-    # Avoid becoming effectively invisible due to a previous split/collapse.
-    min_w = max(420, int(dock.minimumWidth()))
-    min_h = max(600, int(dock.minimumHeight()))
-
-    window.resizeDocks([dock], [min_w], Qt.Orientation.Horizontal)
-    window.resizeDocks([dock], [min_h], Qt.Orientation.Vertical)
 
 
 class _UserCancelledCompose(Exception):

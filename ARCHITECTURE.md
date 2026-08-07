@@ -70,8 +70,8 @@ The GUI code is intentionally split into smaller modules to keep individual file
 
 - Main window composition and behaviour:
   - Window class -> [`latencylab_ui.main_window.MainWindow`](latencylab_ui/main_window.py:46)
-  - Dock switching policy (Compose vs Distributions) ->
-    [`latencylab_ui.main_window_dock_switching.toggle_or_switch_to_model_composer()`](latencylab_ui/main_window_dock_switching.py:13)
+  - Panel policies (opening the composer, toggling Distributions) ->
+    [`latencylab_ui.main_window_dock_switching`](latencylab_ui/main_window_dock_switching.py:1)
   - File IO (open model / export last outputs) ->
     [`latencylab_ui.main_window_file_io.export_runs()`](latencylab_ui/main_window_file_io.py:28)
   - Top bar construction and deterministic button sizing ->
@@ -108,8 +108,10 @@ The GUI code is intentionally split into smaller modules to keep individual file
   - Qt-free aggregation -> [`latencylab_ui.distributions_agg`](latencylab_ui/distributions_agg.py:1)
   - Critical-path frequency chart -> [`latencylab_ui.critical_path_frequency_widget`](latencylab_ui/critical_path_frequency_widget.py:1)
 
-- Model Composer (authoring-only UI):
-  - Dock container -> [`latencylab_ui.model_composer_dock.ModelComposerDock`](latencylab_ui/model_composer_dock.py:35)
+- Model Composer (authoring UI, a modal two-pane dialog):
+  - Dialog and model state -> [`latencylab_ui.model_composer_dialog.ModelComposerDialog`](latencylab_ui/model_composer_dialog.py:59)
+  - Left pane, what the model is made of -> [`latencylab_ui.model_composer_tree.ComposerTree`](latencylab_ui/model_composer_tree.py:47)
+  - Pane assembly and dialog sizing -> [`latencylab_ui.model_composer_panes`](latencylab_ui/model_composer_panes.py:1)
   - Editors:
     - System -> [`latencylab_ui.model_composer_system_editor.SystemEditor`](latencylab_ui/model_composer_system_editor.py:9)
     - Contexts -> [`latencylab_ui.model_composer_contexts_editor.ContextsEditor`](latencylab_ui/model_composer_contexts_editor.py:22)
@@ -384,7 +386,7 @@ Invariant: metadata must never affect scheduling; it is only surfaced in summary
 Full keyboard reachability is built as one explicit focus ring rather than left to natural Tab traversal.
 
 - `Tab` and `Right` step forward, `Shift+Tab` and `Left` step back, and the ring wraps at both ends. The horizontal arrows are tested first, so they step the ring everywhere rather than being swallowed by the menu bar or a list.
-- Ring order is the menu titles, then the body widget stops, then the docks. Docks are siblings of `centralWidget()`, so they are collected explicitly by [`latencylab_ui.focus_cycle_widgets.collect_interactive_widgets_in_layout_order()`](latencylab_ui/focus_cycle_widgets.py:1); without that the Model Composer had none of its controls reachable.
+- Ring order is the menu titles, then the body widget stops, then the docks. Docks are siblings of `centralWidget()`, so they are collected explicitly by [`latencylab_ui.focus_cycle_widgets.collect_interactive_widgets_in_layout_order()`](latencylab_ui/focus_cycle_widgets.py:1). The Model Composer used to depend on that and no longer does: it is a dialog, which is a window of its own and owns its focus, so it is reached the way every other dialog is rather than by the main ring being taught to walk into it.
 - A disabled or hidden control is skipped by the ring and shows no ring colour, because every hover and focus rule is gated on `:enabled`.
 - The main window starts neutral: nothing is focused and no menu is open until the first `Tab` or `Right`. Dialogs do the opposite and open already focused on their first usable control ([`latencylab_ui.first_stop_dialog`](latencylab_ui/first_stop_dialog.py:1)), because a dialog was opened on purpose.
 - **Examples is a top-level menu rather than a submenu of File, and the ring is the reason.** The ring claims Left and Right to step between stops, which is the same pair Qt uses to open and close a submenu, so a submenu would be the one part of the menu bar the keyboard could not reach the usual way. A title of its own costs nothing and is walked like any other.
@@ -456,8 +458,7 @@ first ancestor that can consume it on the axis the wheel was turned.
 it.** Three constants that had never looked at the contents were stacked on top
 of each other here. Qt's size hint for a scroll area is fixed, and its minimum
 allows a squeeze to roughly two rows, so the Contexts table reserved the same
-height whether it held two contexts or twenty and collapsed when the dock was
-short. Its default column width is fixed, so a long name was clipped inside its
+height whether it held two contexts or twenty and collapsed when the panel was short. Its default column width is fixed, so a long name was clipped inside its
 cell while the room it needed sat empty in the same row and nothing scrolled,
 because the columns together were narrower than the viewport. And its default
 row height is fixed at less than the themed inputs ask for: a spin box wanting
@@ -489,6 +490,48 @@ that is itself scrolling is what silently absorbed the wheel meant for the outer
 **Anything that floats gets its own surface.** Menus, tooltips and combo popups are painted on `elevated`, outlined in `elevated_border` and highlight on `elevated_hover`. Without those the toolkit paints a popup in the window colour with no border, which is not a subtle contrast problem: measured in the dark theme, a dropped menu sat at zero luminance difference from the window behind it and its items read as text lying on the page. The rule is asserted against rendered pixels in [`tests/test_ui_menu_contrast.py`](tests/test_ui_menu_contrast.py:1), not against the stylesheet source.
 
 A combo popup cannot be styled the same way, because its colours are palette-driven on purpose (a CSS background on the popup view reintroduces the invisible-text bug that [`latencylab_ui.qt_style_helpers`](latencylab_ui/qt_style_helpers.py:1) exists to prevent). It reads `elevated` back out of the palette instead, where it rides on the `ToolTipBase` role: Qt has no "popup background" role, and the colour has to be read at the moment the popup opens rather than captured when it was built, or switching theme leaves the popup painted in the old one.
+
+### The composer names its parts rather than stacking them
+
+The composer was a dock down the right-hand side: one column, every section in
+it at once, scrolling. Measured with `examples/checkout.json` loaded, that
+column asked for **4,822px** of height in a viewport of about 880, the tasks
+alone accounting for 3,647 of it because each card is around 350px and there
+were eleven. Everything past the second task was found by scrolling and then
+remembering where it was.
+
+A model is not a document. It is a handful of named things, so
+[`ComposerTree`](latencylab_ui/model_composer_tree.py:47) lists them on the left
+and the right pane shows the one that is selected. The sections are fixed,
+because they are the parts a model HAS rather than anything the user creates;
+only Tasks has children, because tasks are the only part there can be many of
+and the only part that was long. Measured the same way afterwards, every section
+fits without scrolling at all: System 220px, Contexts 328, Wiring 368, one task
+453, against a 753px pane.
+
+Two details are load-bearing. The tree is relabelled rather than rebuilt when
+the task COUNT is unchanged, because a name is edited a keystroke at a time and
+every keystroke says the model changed: rebuilding on each one would take the
+selection and the keyboard away from the field being typed into. And the task
+rows come from `card_labels()` rather than `task_names()`, which drops the
+unnamed: right for a model, wrong for a list someone selects from, because the
+row positions would stop matching the cards the moment a task was half-typed.
+
+It is a dialog rather than a dock, and modal, because composing is something you
+go and do rather than keep half an eye on. That removed a policy rather than
+moving one: the composer and Distributions used to share the right-hand area, so
+opening either was a question about the other. Opening the composer is now
+[`open_model_composer()`](latencylab_ui/main_window_dock_switching.py:10), which
+asks nothing about layout. It is `show()` rather than `exec()`: both are modal,
+because the dialog says it is, and the difference is that `exec` also starts a
+nested event loop and does not return until the dialog closes, which turns
+opening a panel into a call that never comes back.
+
+The export prompt survived the change, because it was never about layout: it
+asks whether to keep results that are about to stop being the thing on screen.
+The compose button's checked state did not, because it existed to say which of
+two panels had the right-hand area, and a modal dialog IS the window while it is
+open.
 
 ### Composing and editing are one surface
 
@@ -530,8 +573,7 @@ the only way to undo one press. It is deliberately NOT the mirror of Compose.
 Compose carries a switch-to policy because it is going somewhere, away from
 results that may not have been exported; this one only says whether a panel is
 showing, so it leaves the composer alone. The two are allowed up together, and
-that is precisely the case `toggle_or_switch_to_model_composer` reads as
-"switch" rather than "off".
+the composer no longer competes for that area at all.
 
 Its checked state is driven from the DOCK's `visibilityChanged`, never set at
 the click, so the button still tells the truth when the dock is closed by its

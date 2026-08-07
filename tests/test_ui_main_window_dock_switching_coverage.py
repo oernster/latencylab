@@ -7,7 +7,7 @@ def test_switch_to_compose_no_prompt_when_no_outputs() -> None:
     from PySide6.QtWidgets import QApplication
 
     from latencylab_ui.main_window_dock_switching import (
-        toggle_or_switch_to_model_composer,
+        open_model_composer,
     )
     from latencylab_ui.main_window import MainWindow
 
@@ -39,9 +39,9 @@ def test_switch_to_compose_no_prompt_when_no_outputs() -> None:
     # No outputs => no prompt.
     w._have_unexported_outputs = False
     w._last_outputs = None
-    toggle_or_switch_to_model_composer(w)
+    open_model_composer(w)
     app.processEvents()
-    assert w._model_composer_dock.isVisible() is True
+    assert w._model_composer.isVisible() is True
 
     w.close()
     app.processEvents()
@@ -95,7 +95,7 @@ def test_switch_to_compose_prompt_yes_export_cancel_blocks_switch(monkeypatch) -
 
     from latencylab_ui.main_window import MainWindow
     from latencylab_ui.main_window_dock_switching import (
-        toggle_or_switch_to_model_composer,
+        open_model_composer,
     )
 
     app = QApplication.instance() or QApplication([])
@@ -123,8 +123,8 @@ def test_switch_to_compose_prompt_yes_export_cancel_blocks_switch(monkeypatch) -
 
     w._have_unexported_outputs = True
     w._last_outputs = object()  # type: ignore[assignment]
-    w._model_composer_dock.hide()
-    assert w._model_composer_dock.isVisible() is False
+    w._model_composer.hide()
+    assert w._model_composer.isVisible() is False
 
     # User chooses Yes -> triggers export attempt.
     monkeypatch.setattr(
@@ -133,9 +133,9 @@ def test_switch_to_compose_prompt_yes_export_cancel_blocks_switch(monkeypatch) -
 
     # Simulate export cancelled/failed by leaving the flag True.
     monkeypatch.setattr(w, "_on_save_log_clicked", lambda: None)
-    toggle_or_switch_to_model_composer(w)
+    open_model_composer(w)
     app.processEvents()
-    assert w._model_composer_dock.isVisible() is False
+    assert w._model_composer.isVisible() is False
 
     w.close()
     app.processEvents()
@@ -193,7 +193,7 @@ def test_switch_to_compose_prompt_cancel_blocks_switch(monkeypatch) -> None:
 
     from latencylab_ui.main_window import MainWindow
     from latencylab_ui.main_window_dock_switching import (
-        toggle_or_switch_to_model_composer,
+        open_model_composer,
     )
 
     app = QApplication.instance() or QApplication([])
@@ -221,14 +221,14 @@ def test_switch_to_compose_prompt_cancel_blocks_switch(monkeypatch) -> None:
 
     w._have_unexported_outputs = True
     w._last_outputs = object()  # type: ignore[assignment]
-    w._model_composer_dock.hide()
+    w._model_composer.hide()
 
     monkeypatch.setattr(
         QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.Cancel
     )
-    toggle_or_switch_to_model_composer(w)
+    open_model_composer(w)
     app.processEvents()
-    assert w._model_composer_dock.isVisible() is False
+    assert w._model_composer.isVisible() is False
 
     w.close()
     app.processEvents()

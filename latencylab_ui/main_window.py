@@ -34,10 +34,10 @@ from latencylab_ui import main_window_run as run_lifecycle
 from latencylab_ui import main_window_panels as panels
 from latencylab_ui.main_window_panels import build_left_panel
 from latencylab_ui.distributions_dock import DistributionsDock
-from latencylab_ui.model_composer_dock import ModelComposerDock
+from latencylab_ui.model_composer_dialog import ModelComposerDialog
 from latencylab_ui.main_window_dock_switching import (
+    open_model_composer,
     toggle_distributions,
-    toggle_or_switch_to_model_composer,
 )
 from latencylab_ui.main_window_editing import (
     open_loaded_model_for_editing,
@@ -143,15 +143,10 @@ class MainWindow(QMainWindow):
             self._on_distributions_visibility_changed
         )
 
-        # Right-side model composer dock (authoring-only; default hidden).
-        self._model_composer_dock = ModelComposerDock(self)
-        self.addDockWidget(
-            Qt.DockWidgetArea.RightDockWidgetArea, self._model_composer_dock
-        )
-        self._model_composer_dock.setVisible(False)
-        self._model_composer_dock.visibilityChanged.connect(
-            self._on_model_composer_visibility_changed
-        )
+        # The composer is a modal dialog over the whole window rather than a
+        # dock down one side. Built once and kept, so a model half-typed
+        # survives being closed and reopened.
+        self._model_composer = ModelComposerDialog(self)
 
         # Main content.
         #
@@ -219,18 +214,12 @@ class MainWindow(QMainWindow):
         toggle_distributions(self)
 
     def _on_toggle_model_composer_clicked(self) -> None:
-        # The dock is a held attribute owned by this window, so there is no
+        # The composer is a held attribute owned by this window, so there is no
         # deleted-object case to guard against here.
-        toggle_or_switch_to_model_composer(self)
+        open_model_composer(self)
 
     def _on_edit_model_clicked(self) -> None:
         open_loaded_model_for_editing(self)
-
-    def _on_model_composer_visibility_changed(self, visible: bool) -> None:
-        # The button is held, not looked up. A findChild by name wrapped in a
-        # bare except cannot tell "the composer moved" from "the name changed",
-        # so a rename would have silently stopped the button tracking the dock.
-        self._compose_btn.setChecked(visible)
 
     def _show_distributions_dock(self) -> None:
         self._distributions_dock.show()

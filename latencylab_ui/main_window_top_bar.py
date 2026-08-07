@@ -232,11 +232,12 @@ def build_top_bar(
         COMPOSE_BODY,
         tooltip=actions.COMPOSE_READY,
         on_clicked=on_toggle_model_composer_clicked,
-        checkable=True,
     )
     compose_btn.setObjectName("compose_model_btn")
-    # Checkable so the open composer is visible ON the button that opened it.
-    compose_btn.setCheckable(True)
+    # Not checkable. It was, back when it toggled a dock that shared the window
+    # with the results, so the button was the only thing saying which of the two
+    # was up. The composer is a modal dialog now: while it is open it IS the
+    # window, and a button reporting that from underneath it says nothing.
     compose_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
     layout.addWidget(compose_btn, 0, Qt.AlignmentFlag.AlignTop)
 

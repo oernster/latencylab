@@ -83,39 +83,42 @@ def test_badge_is_the_generated_icon_and_not_a_font_glyph(window: MainWindow) ->
     assert not pixmap.isNull()
 
 
-def test_compose_button_is_reachable_and_tracks_the_dock(window: MainWindow) -> None:
+def test_compose_button_is_reachable_and_is_not_a_toggle(window: MainWindow) -> None:
+    """It was checkable while the composer was a dock sharing the window with
+    the results, because the button was the only thing saying which of the two
+    was up. A modal dialog IS the window while it is open, so a button
+    reporting that from underneath it says nothing."""
+
     compose = window._compose_btn
 
-    assert compose.isCheckable()
+    assert compose.isCheckable() is False
     assert compose.focusPolicy() != compose.focusPolicy().NoFocus
-    assert not compose.isChecked()
 
-    window._model_composer_dock.setVisible(True)
-    assert compose.isChecked()
+    window._model_composer.show()
+    assert compose.isChecked() is False
 
-    window._model_composer_dock.setVisible(False)
-    assert not compose.isChecked()
+    window._model_composer.reject()
 
 
 @pytest.mark.parametrize("theme", (Theme.DARK, Theme.LIGHT))
-def test_compose_button_looks_different_when_the_composer_is_open(
+def test_distributions_button_looks_different_when_the_panel_is_open(
     app: QApplication, window: MainWindow, theme: Theme
 ) -> None:
-    """Checked was already being SET. What was missing was any way to see it.
+    """Checked being SET is not the same as checked being SHOWN.
 
-    Neither stylesheet had a rule for the checked state of this button, so open
-    and closed rendered identically. Asserting the rendered pixels is the only
-    way to tell a state that is set from a state that is shown.
+    A stylesheet with no rule for a button's checked state renders open and
+    closed identically, which is a state nobody can see. Asserting the rendered
+    pixels is the only way to tell the two apart.
     """
 
     apply_theme(app, theme)
     app.processEvents()
 
-    compose = window._compose_btn
+    button = window._distributions_btn
     accent = QColor(tokens_for(theme).accent).rgb()
 
     def accent_pixels() -> int:
-        image = compose.grab().toImage()
+        image = button.grab().toImage()
         return sum(
             1
             for y in range(image.height())
@@ -123,12 +126,12 @@ def test_compose_button_looks_different_when_the_composer_is_open(
             if image.pixel(x, y) == accent
         )
 
-    window._model_composer_dock.setVisible(False)
+    window._distributions_dock.setVisible(False)
     app.processEvents()
     assert accent_pixels() == 0
 
-    window._model_composer_dock.setVisible(True)
+    window._distributions_dock.setVisible(True)
     app.processEvents()
     assert accent_pixels() > 0
 
-    window._model_composer_dock.setVisible(False)
+    window._distributions_dock.setVisible(False)

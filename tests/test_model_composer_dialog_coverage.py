@@ -14,21 +14,21 @@ def _ensure_qapp():
     return app
 
 
-def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> None:
+def test_model_composer_remaining_branches(tmp_path: Path, monkeypatch) -> None:
     app = _ensure_qapp()
 
     from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
     from latencylab.model import Model
-    from latencylab_ui.model_composer_dock import ModelComposerDock
+    from latencylab_ui.model_composer_dialog import ModelComposerDialog
 
-    import latencylab_ui.model_composer_dock as _dock_mod
+    import latencylab_ui.model_composer_dialog as _dock_mod
 
     # Never allow modal dialogs to hang tests.
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: None)
 
     host = QWidget()
-    dock = ModelComposerDock(host)
+    dock = ModelComposerDialog(host)
     dock.show()
     app.processEvents()
 
@@ -54,13 +54,13 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
     assert dock._valid_label.text() == "Invalid"  # noqa: SLF001
 
     # Restore real `_validate_now` implementation for subsequent branch tests.
-    dock._validate_now = _dock_mod.ModelComposerDock._validate_now.__get__(dock, ModelComposerDock)  # type: ignore[method-assign]
+    dock._validate_now = _dock_mod.ModelComposerDialog._validate_now.__get__(dock, ModelComposerDialog)  # type: ignore[method-assign]
 
     # With no model loaded there is no sibling directory to prefer, so the
     # export dialog falls back to where every other dialog starts.
     # The host is held, because a dock whose parent is collected goes with it.
     host2 = QWidget()
-    dock2 = ModelComposerDock(host2)
+    dock2 = ModelComposerDialog(host2)
     assert str(export_mod.default_export_dir(dock2))
 
     # _prompt_save_path cancel branch.
@@ -75,7 +75,7 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
     dock._on_export_clicked(load_after=False)  # noqa: SLF001
 
     # Restore real `_validate_now` implementation for subsequent branch tests.
-    dock._validate_now = _dock_mod.ModelComposerDock._validate_now.__get__(dock, ModelComposerDock)  # type: ignore[method-assign]
+    dock._validate_now = _dock_mod.ModelComposerDialog._validate_now.__get__(dock, ModelComposerDialog)  # type: ignore[method-assign]
 
     # Stress generation failure branch.
     monkeypatch.setattr(
@@ -103,7 +103,7 @@ def test_model_composer_dock_remaining_branches(tmp_path: Path, monkeypatch) -> 
     dock._on_export_stress_clicked()  # noqa: SLF001
 
     # Ensure we call the real method (not a monkeypatched lambda).
-    dock._validate_now = _dock_mod.ModelComposerDock._validate_now.__get__(dock, ModelComposerDock)  # type: ignore[method-assign]
+    dock._validate_now = _dock_mod.ModelComposerDialog._validate_now.__get__(dock, ModelComposerDialog)  # type: ignore[method-assign]
 
     # Validate show_dialog=True error branches.
     monkeypatch.setattr(dock, "_sync_from_ui", lambda: None)

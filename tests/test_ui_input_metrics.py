@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractSpinBox,
     QApplication,
@@ -19,7 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from latencylab_ui.model_composer_dock import ModelComposerDock
+from latencylab_ui.model_composer_dialog import ModelComposerDialog
 from latencylab_ui.model_composer_load import load_raw_model
 from latencylab_ui.theme import Theme, apply_theme
 
@@ -69,17 +68,19 @@ def _nested_in_an_input(widget: QWidget) -> bool:
     return False
 
 
-def _loaded_composer(app: QApplication) -> tuple[QMainWindow, ModelComposerDock]:
+def _loaded_composer(app: QApplication) -> tuple[QMainWindow, ModelComposerDialog]:
     window = QMainWindow()
-    dock = ModelComposerDock(window)
-    window.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
     window.resize(1200, 900)
     window.show()
+    composer = ModelComposerDialog(window)
+    # Shown rather than exec'd: a modal event loop would never hand the test
+    # back, and the geometry being measured is the same either way.
+    composer.show()
     with EXAMPLE.open(encoding="utf-8") as handle:
         raw = json.load(handle)
-    load_raw_model(dock, raw, model_name="checkout")
-    _settle(app, dock)
-    return window, dock
+    load_raw_model(composer, raw, model_name="checkout")
+    _settle(app, composer)
+    return window, composer
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -91,12 +92,12 @@ def test_no_input_is_drawn_smaller_than_it_asks_for(
     the Params arrows came out squashed."""
 
     apply_theme(app, theme)
-    window, dock = _loaded_composer(app)
+    window, composer = _loaded_composer(app)
 
     squeezed = [
         (type(w).__name__, w.height(), w.minimumSizeHint().height())
-        for w in _inputs(dock)
-        if w.isVisibleTo(dock)
+        for w in _inputs(composer)
+        if w.isVisibleTo(composer)
         and not _nested_in_an_input(w)
         and w.height() < w.minimumSizeHint().height()
     ]

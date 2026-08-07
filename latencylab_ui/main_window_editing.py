@@ -3,15 +3,15 @@ from __future__ import annotations
 """Opening the loaded model in the composer, and keeping it in step.
 
 Composing and editing are the same surface reached from two ends, so there is
-no second dock here: editing is the compose action with the loaded model put
+no second composer here: editing is the compose action with the loaded model put
 into the editors first. This lives beside the window for the same reason the
-dock switching does, which is that the window is at its size limit and this is
+panel policies do, which is that the window is at its size limit and this is
 one cohesive job with a rule worth stating.
 """
 
 import json
 
-from latencylab_ui.main_window_dock_switching import toggle_or_switch_to_model_composer
+from latencylab_ui.main_window_dock_switching import open_model_composer
 
 
 def open_loaded_model_for_editing(window) -> None:
@@ -19,12 +19,15 @@ def open_loaded_model_for_editing(window) -> None:
 
     Silent when nothing is loaded. The control that reaches this is disabled
     and wearing a red ring that says why, so there is nothing left to tell.
+
+    Filling comes first and opening second, so the composer is never on screen
+    showing the previous model for the instant it takes to load the new one.
     """
 
     if not load_into_composer(window):
         return
-    if not window._model_composer_dock.isVisible():  # noqa: SLF001
-        toggle_or_switch_to_model_composer(window)
+    if not window._model_composer.isVisible():  # noqa: SLF001
+        open_model_composer(window)
 
 
 def load_into_composer(window) -> bool:
@@ -41,7 +44,7 @@ def load_into_composer(window) -> bool:
         return False
 
     raw = json.loads(loaded.path.read_text(encoding="utf-8"))
-    window._model_composer_dock.load_raw_model(  # noqa: SLF001
+    window._model_composer.load_raw_model(  # noqa: SLF001
         raw, model_name=loaded.path.stem
     )
     return True
@@ -58,6 +61,6 @@ def refresh_open_editor(window) -> None:
     replacing that would be data loss rather than a refresh.
     """
 
-    dock = window._model_composer_dock  # noqa: SLF001
-    if dock.isVisible() and dock.is_showing_loaded_model():
+    composer = window._model_composer  # noqa: SLF001
+    if composer.isVisible() and composer.is_showing_loaded_model():
         load_into_composer(window)

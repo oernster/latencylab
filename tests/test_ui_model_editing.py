@@ -68,7 +68,7 @@ def test_editing_a_loaded_model_fills_the_composer_and_opens_it(
     window._on_edit_model_clicked()
     app.processEvents()
 
-    dock = window._model_composer_dock
+    dock = window._model_composer
     assert dock.isVisible() is True
 
     raw = json.loads(checkout.read_text(encoding="utf-8"))
@@ -98,7 +98,7 @@ def test_edit_is_inert_and_says_why_until_a_model_is_loaded(
     # Triggering it anyway is silent rather than an error: the control is
     # disabled, so this can only be reached programmatically.
     window._on_edit_model_clicked()
-    assert window._model_composer_dock.isVisible() is False
+    assert window._model_composer.isVisible() is False
 
     window.close()
     window.deleteLater()
@@ -116,12 +116,12 @@ def test_editing_an_already_open_composer_does_not_toggle_it_shut(
     window._load_model(examples / "checkout.json")
     window._on_toggle_model_composer_clicked()
     app.processEvents()
-    assert window._model_composer_dock.isVisible() is True
+    assert window._model_composer.isVisible() is True
 
     window._on_edit_model_clicked()
     app.processEvents()
 
-    assert window._model_composer_dock.isVisible() is True
+    assert window._model_composer.isVisible() is True
 
     window.close()
     window.deleteLater()
@@ -139,12 +139,12 @@ def test_opening_another_model_updates_an_open_editor(app: QApplication) -> None
     window._load_model(examples / "checkout.json")
     window._on_edit_model_clicked()
     app.processEvents()
-    assert window._model_composer_dock._system.get_model_name() == "checkout"
+    assert window._model_composer._system.get_model_name() == "checkout"
 
     window._load_model(examples / "interactive.json")
     app.processEvents()
 
-    dock = window._model_composer_dock
+    dock = window._model_composer
     assert dock.isVisible() is True
     assert dock._system.get_model_name() == "interactive"
 
@@ -170,7 +170,7 @@ def test_a_composer_holding_typed_work_is_not_overwritten_by_a_load(
     # Opened via Compose, so it holds authored state rather than a loaded model.
     window._on_toggle_model_composer_clicked()
     app.processEvents()
-    dock = window._model_composer_dock
+    dock = window._model_composer
     assert dock.isVisible() is True
     assert dock.is_showing_loaded_model() is False
 
@@ -201,18 +201,20 @@ def test_a_closed_editor_is_not_refreshed_behind_the_users_back(
     window._on_edit_model_clicked()
     app.processEvents()
 
-    window._on_toggle_model_composer_clicked()  # close it
+    # Closed the way a dialog is closed, rather than by pressing Compose again:
+    # that used to toggle a dock and now only ever opens.
+    window._model_composer.reject()
     app.processEvents()
-    assert window._model_composer_dock.isVisible() is False
+    assert window._model_composer.isVisible() is False
 
     window._load_model(examples / "interactive.json")
     app.processEvents()
-    assert window._model_composer_dock._system.get_model_name() == "checkout"
+    assert window._model_composer._system.get_model_name() == "checkout"
 
     # Reopening via Edit shows the model that is actually loaded.
     window._on_edit_model_clicked()
     app.processEvents()
-    assert window._model_composer_dock._system.get_model_name() == "interactive"
+    assert window._model_composer._system.get_model_name() == "interactive"
 
     window.close()
     window.deleteLater()
@@ -243,7 +245,7 @@ def test_editing_a_v1_model_hides_the_v2_only_field(
     window._on_edit_model_clicked()
     app.processEvents()
 
-    assert window._model_composer_dock._system.get_version() == 1
+    assert window._model_composer._system.get_version() == 1
 
     window.close()
     window.deleteLater()

@@ -27,7 +27,7 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
     from latencylab.model import Model
 
     from latencylab_ui.model_composer_contexts_editor import ContextsEditor
-    from latencylab_ui.model_composer_dock import ModelComposerDock
+    from latencylab_ui.model_composer_dialog import ModelComposerDialog
     from latencylab_ui.model_composer_system_editor import SystemEditor
     from latencylab_ui.model_composer_tasks_editor import TasksEditor
     from latencylab_ui.model_composer_wiring_editor import WiringEditor
@@ -114,7 +114,7 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
 
     # Dock: exercise validate/export/stress branches and exception paths.
     host = QWidget()
-    dock = ModelComposerDock(host)
+    dock = ModelComposerDialog(host)
     dock.show()
     app.processEvents()
 
@@ -141,7 +141,7 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
     assert dock._valid_label.text() == "Valid"  # noqa: SLF001
 
     # Validate: TypeError branch.
-    import latencylab_ui.model_composer_dock as _dock_mod
+    import latencylab_ui.model_composer_dialog as _dock_mod
 
     monkeypatch.setattr(
         _dock_mod,
@@ -239,6 +239,6 @@ def test_model_composer_editors_and_dock_branches(tmp_path: Path, monkeypatch) -
 
 
 """Additional Model Composer coverage lives in
-[`tests.test_model_composer_dock_coverage`](tests/test_model_composer_dock_coverage.py:1)
+[`tests.test_model_composer_coverage`](tests/test_model_composer_coverage.py:1)
 to keep each test module <= 400 lines.
 """

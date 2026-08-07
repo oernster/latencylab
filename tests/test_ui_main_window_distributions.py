@@ -110,37 +110,30 @@ def test_distributions_button_disabled_until_success_then_finished_enables_and_a
 
     monkeypatch.setattr(QMessageBox, "question", _question)
 
-    # Cancel should keep the existing results layout.
+    # Cancel should leave everything as it was, composer included.
     w._on_toggle_model_composer_clicked()
     app.processEvents()
     assert called["question"] == 1
     assert w._distributions_dock.isVisible() is True
+    assert w._model_composer.isVisible() is False
 
-    # Now allow the switch (No = don't export, but proceed).
+    # Now allow it (No = don't export, but proceed).
     monkeypatch.setattr(
         QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No
     )
     w._on_toggle_model_composer_clicked()
     app.processEvents()
-    assert w._distributions_dock.isVisible() is False
-    assert w._model_composer_dock.isVisible() is True
+    assert w._model_composer.isVisible() is True
 
-    # If distributions is shown while composer is already visible, clicking
-    # Compose should still switch to composer (hide distributions), not toggle off.
-    w._on_show_distributions_clicked()
+    # The results panel is left exactly where it was. The composer used to take
+    # the right-hand area from it; a modal dialog covers the window instead, so
+    # closing it gives back whatever was underneath rather than a layout the
+    # composer rearranged on the way in.
+    assert w._distributions_dock.isVisible() is True
+
+    w._model_composer.reject()
     app.processEvents()
     assert w._distributions_dock.isVisible() is True
-    assert w._model_composer_dock.isVisible() is True
-
-    # No prompt now (we already chose No, leaving outputs as "unexported", but
-    # for test determinism we accept either path by forcing No again).
-    monkeypatch.setattr(
-        QMessageBox, "question", lambda *_a, **_k: QMessageBox.StandardButton.No
-    )
-    w._on_toggle_model_composer_clicked()
-    app.processEvents()
-    assert w._distributions_dock.isVisible() is False
-    assert w._model_composer_dock.isVisible() is True
 
     w.close()
     app.processEvents()

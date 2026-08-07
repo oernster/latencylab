@@ -155,6 +155,11 @@ class _TaskCard(QFrame):
 class TasksEditor(QWidget):
     changed = Signal()
 
+    # The position of a card that has just been added. `changed` says the model
+    # moved; this says where to look, which is what a list beside the editor
+    # needs in order to land on the thing the user just asked for.
+    task_added = Signal(int)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
@@ -196,6 +201,35 @@ class TasksEditor(QWidget):
             if nm:
                 names.append(nm)
         return names
+
+    def card_labels(self) -> list[str]:
+        """One label per card, in card order, unlike `task_names`.
+
+        `task_names` drops the unnamed, which is right for a model and wrong for
+        a list someone is going to select from: the positions would stop
+        matching the cards the moment a task was half-typed. A card with no name
+        yet is still a card, so it gets a placeholder and keeps its place.
+        """
+
+        labels: list[str] = []
+        for index, card in enumerate(self._iter_cards()):
+            name = card.name_edit.text().strip()
+            labels.append(name or f"(unnamed task {index + 1})")
+        return labels
+
+    def card_count(self) -> int:
+        return len(self._iter_cards())
+
+    def show_only(self, index: int | None) -> None:
+        """Show one task and hide the rest, or hide them all for None.
+
+        The editor still OWNS every card either way. Showing one is a question
+        of what is on screen, not of what is being edited, so nothing about the
+        model changes when the selection does.
+        """
+
+        for position, card in enumerate(self._iter_cards()):
+            card.setVisible(index is not None and position == index)
 
     def to_tasks_dict(self, *, version: int) -> dict[str, dict[str, object]]:
         out: dict[str, dict[str, object]] = {}
@@ -248,6 +282,7 @@ class TasksEditor(QWidget):
         card.name_edit.setText(f"task_{idx}")
         self._cards_col.addWidget(card)
         self.changed.emit()
+        self.task_added.emit(len(self._iter_cards()) - 1)
 
     def _remove_card(self, card: _TaskCard) -> None:
         card.setParent(None)

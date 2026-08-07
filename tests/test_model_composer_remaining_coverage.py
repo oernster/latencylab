@@ -4,7 +4,7 @@ from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QApplication, QMainWindow
 
-from latencylab_ui.model_composer_dock import ModelComposerDock
+from latencylab_ui.model_composer_dialog import ModelComposerDialog
 from latencylab_ui.model_composer_tasks_editor import TasksEditor
 from latencylab_ui.model_composer_wiring_editor import WiringEditor
 
@@ -21,7 +21,7 @@ def test_dock_refresh_wiring_events_includes_task_emits_and_strips() -> None:
 
     _ensure_qapp()
     mw = QMainWindow()
-    dock = ModelComposerDock(mw)
+    dock = ModelComposerDialog(mw)
 
     captured: dict[str, object] = {}
 
@@ -48,7 +48,7 @@ def test_dock_autowires_entry_event_to_first_task_and_tracks_rename() -> None:
     _ensure_qapp()
 
     mw = QMainWindow()
-    dock = ModelComposerDock(mw)
+    dock = ModelComposerDialog(mw)
 
     # Ensure stable entry event.
     dock._system.entry_event_edit.setText("start")  # noqa: SLF001
@@ -80,7 +80,7 @@ def test_dock_autowire_entry_event_early_return_guards() -> None:
 
     _ensure_qapp()
     mw = QMainWindow()
-    dock = ModelComposerDock(mw)
+    dock = ModelComposerDialog(mw)
 
     # Guard 1: empty entry event.
     # Can't use `entry_event_edit.setText("")` because SystemEditor.get_entry_event()
@@ -111,7 +111,7 @@ def test_dock_autowire_single_edge_task_sync_preserves_delay_ms() -> None:
 
     _ensure_qapp()
     mw = QMainWindow()
-    dock = ModelComposerDock(mw)
+    dock = ModelComposerDialog(mw)
 
     dock._system.entry_event_edit.setText("start")  # noqa: SLF001
     dock._wiring.set_wiring({"start": [{"task": "old", "delay_ms": 5}]})  # noqa: SLF001
