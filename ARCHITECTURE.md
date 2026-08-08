@@ -25,7 +25,7 @@ The intent is to keep the core deterministic, stdlib-only and testable, while ke
 6. **A cancelled run set is never aggregated.** Stopping early raises rather than returning fewer runs, because percentiles over a truncated set are indistinguishable from real ones.
    - The refusal lives in [`latencylab.cancellation.RunCancelled`](latencylab/cancellation.py:29) and is covered by [`tests/test_cancellation.py`](tests/test_cancellation.py:1).
 7. **Every shipped example validates.** The examples are discovered from disk rather than named, so adding one to `examples/` opts it into the check automatically.
-   - Enforced by [`tests/test_examples.py`](tests/test_examples.py:1).
+   - Enforced by [`tests/test_validation.py`](tests/test_validation.py:70).
 8. **One version string exists in the repository**, the root `VERSION` file.
    - Enforced by [`tests/test_version_single_source.py`](tests/test_version_single_source.py:1).
 
@@ -275,7 +275,7 @@ disk in all three places rather than listed, so adding a model to that directory
 opts it into the validation test and puts it on the menu, with no second place to
 update:
 
-- Validation: [`tests/test_examples.py`](tests/test_examples.py:1) walks the directory.
+- Validation: [`tests/test_validation.py`](tests/test_validation.py:70) walks the directory.
 - Menu: [`latencylab_ui.example_models.list_examples()`](latencylab_ui/example_models.py:1) walks the same directory, wherever the packaging put it, deriving each label from the file name. A caption per file would read better and would be a mapping keyed on file names, which is the drift this avoids.
 - Packaging: all three delivery paths stage `examples/` beside the application, so a fresh install has something to open before the user has a model of their own.
 
