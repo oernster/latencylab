@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LatencyLab: Design-Time Latency Exploration for Event-Driven Systems</title>
-<meta name="description" content="LatencyLab is a local, design-time latency exploration tool for event-driven interactive systems. Simulate explicit models of tasks, events, queues and contention to find where perceived latency comes from before code is written.">
+<meta name="description" content="LatencyLab simulates explicit models of your software architecture (tasks, events, queues, contention) thousands of times, to show where users would wait and why, before the code exists.">
 <meta name="keywords" content="latency, simulation, design-time, event-driven systems, architecture, critical path, percentiles, queue wait, deterministic scheduling, software architecture, CTO, principal engineer, Python">
 <meta name="author" content="Oliver Ernster">
 <meta name="robots" content="index, follow">
@@ -13,17 +13,17 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="LatencyLab">
 <meta property="og:title" content="LatencyLab: Design-Time Latency Exploration for Event-Driven Systems">
-<meta property="og:description" content="A local, design-time latency exploration tool. It is not a profiler, tracer or runtime observer. It exists to prevent confident people from shipping bad architecture.">
+<meta property="og:description" content="LatencyLab simulates explicit models of your software architecture (tasks, events, queues, contention) thousands of times, to show where users would wait and why, before the code exists.">
 <meta property="og:url" content="https://ernster.dev/latencylab/">
 <meta property="og:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
 <meta property="og:image:alt" content="The LatencyLab UI showing a makespan distribution, critical-path frequencies and percentiles">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="LatencyLab: Design-Time Latency Exploration">
-<meta name="twitter:description" content="Find the latency problem before it is politically expensive. A design-time simulation engine for event-driven systems.">
+<meta name="twitter:description" content="Simulate your architecture's latency before you build it. Models of tasks, events, queues and contention, run thousands of times to show where users would wait and why.">
 <meta name="twitter:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
 <link rel="icon" type="image/svg+xml" href="assets/latencylab.svg">
 <link rel="stylesheet" href="styles.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "LatencyLab", "applicationCategory": "DeveloperApplication", "operatingSystem": "Windows, macOS, Linux", "description": "LatencyLab is a local, design-time latency exploration tool for event-driven interactive systems. It simulates explicit models of tasks, events, queues, delays and resource contention to make perceived latency visible before code is written.", "url": "https://ernster.dev/latencylab/", "image": "https://ernster.dev/latencylab/assets/latencylab-ui.png", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "GBP"}, "author": {"@type": "Person", "name": "Oliver Ernster", "url": "https://www.crankthecode.com/"}, "audience": {"@type": "Audience", "audienceType": "Senior engineers, software architects, CTOs and technical leaders"}, "keywords": "latency, simulation, design-time, event-driven systems, architecture, critical path, percentiles, deterministic scheduling", "license": "https://www.gnu.org/licenses/gpl-3.0.html"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "LatencyLab", "applicationCategory": "DeveloperApplication", "operatingSystem": "Windows, macOS, Linux", "description": "LatencyLab simulates explicit models of your software architecture (tasks, events, queues, contention) thousands of times, to show where users would wait and why, before the code exists.", "url": "https://ernster.dev/latencylab/", "image": "https://ernster.dev/latencylab/assets/latencylab-ui.png", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "GBP"}, "author": {"@type": "Person", "name": "Oliver Ernster", "url": "https://www.crankthecode.com/"}, "audience": {"@type": "Audience", "audienceType": "Senior engineers, software architects, CTOs and technical leaders"}, "keywords": "latency, simulation, design-time, event-driven systems, architecture, critical path, percentiles, deterministic scheduling", "license": "https://www.gnu.org/licenses/gpl-3.0.html"}</script>
 </head>
 <body>
 <header class="nav">
@@ -47,9 +47,13 @@
       <img class="logo" src="assets/latencylab.svg" alt="LatencyLab icon">
       <h1>LatencyLab</h1>
       <div class="tagline">Design-Time Latency Exploration</div>
-      <p class="lede">A local latency exploration tool for event-driven interactive
-        systems. It is not a profiler, tracer or runtime observer. It exists to
-        prevent confident people from shipping bad architecture.</p>
+      <p class="lede">Simulate your architecture's latency before you build it.
+        Describe the design as a small explicit model, run it thousands of
+        simulated times and see which chain of work users would actually wait
+        on. It is not a profiler, tracer or runtime observer: it works on the
+        design rather than the code, so it applies to any event-driven software.
+        It exists to prevent confident people from shipping bad
+        architecture.</p>
       <div class="cta">
         <a class="btn btn-primary" href="download.html">Download</a>
         <a class="btn btn-ghost" href="guide.html">How to use it</a>
@@ -63,13 +67,59 @@
     </div>
   </section>
 
+  <section id="onepass">
+    <div class="container">
+      <div class="eyebrow">What it is, in one pass</div>
+      <h2 class="section-title">A design-time latency simulator</h2>
+      <p class="section-sub">You describe a planned or existing architecture as
+        a small, explicit model: the units of work, the events that trigger them
+        and the shared resources they queue behind. LatencyLab executes that
+        model thousands of times with realistic timing variation and out come
+        the numbers a whiteboard cannot give you: how long the flow takes across
+        percentiles, which chain of work actually held each run up and how often
+        each chain is the culprit. The whole workflow is a loop:</p>
+      <div class="features">
+        <div class="feature"><div class="fnum">01</div><h3>Model</h3><p>Write the architecture down small enough to argue about: tasks, the events that trigger them and the resources they queue behind. Plain JSON, written by hand or built in the composer with no JSON at all. A useful model is often 10 to 20 tasks.</p></div>
+        <div class="feature"><div class="fnum">02</div><h3>Run</h3><p>The entry event fires, tasks run on their contexts, queues form where concurrency is exhausted and durations are drawn from the distributions you chose. Hundreds or thousands of times, every run seeded and reproducible.</p></div>
+        <div class="feature"><div class="fnum">03</div><h3>Read</h3><p>Every run records the makespan (how long the user waited) and the critical path (the chain of tasks and waits that set the finish time). One run tells you nothing; the spread across runs is the finding.</p></div>
+        <div class="feature"><div class="fnum">04</div><h3>Change one thing</h3><p>Raise a context's concurrency, remove a debounce, split a queue. One change at a time, because two changes and a different answer tells you nothing about which one did it.</p></div>
+        <div class="feature"><div class="fnum">05</div><h3>Compare</h3><p>Run again on the same seed. The randomness is identical, so a shift in the percentiles or the dominant path is the cost or benefit of the design change, isolated from luck.</p></div>
+      </div>
+      <div class="split">
+        <div class="panel">
+          <h3>What a model is</h3>
+          <ul>
+            <li><b>System.</b> A name and the entry event that kicks off a run, such as "user clicks Pay".</li>
+            <li><b>Contexts.</b> The things work runs on: a thread pool, a database connection, a browser main thread. Each has one property, <b>concurrency</b>: how many things it can genuinely do at once. Concurrency 1 means everything sent to it waits in line, which is exactly what a single database connection or a UI thread is. This is where queueing (and therefore most surprising latency) comes from.</li>
+            <li><b>Tasks.</b> The units of work: which context each runs on, how long it takes (as a distribution, because real durations vary) and which event it emits when it finishes.</li>
+            <li><b>Wiring.</b> Which events trigger which tasks, optionally after a delay: debounces, retry backoffs, poll intervals. The wiring is the architecture.</li>
+          </ul>
+          <p>You are not modelling your code. You are modelling the shape of the design: what happens, what waits for what and what competes for what.</p>
+        </div>
+        <div class="panel">
+          <h3>Any event-driven software</h3>
+          <ul>
+            <li>Because it simulates the <b>design rather than the code</b>, the domain does not matter.</li>
+            <li>The same tool models a <b>web checkout</b> calling four backends, a <b>desktop app's UI thread</b>, a <b>fan-out of microservice calls</b>, a <b>mobile flow</b> behind a debounce or an <b>embedded event pipeline</b>.</li>
+            <li>It is for anyone making <b>structural decisions</b> about such software: senior engineers, architects, tech leads, at the point where those decisions are still cheap to change.</li>
+            <li>If it can be described as <b>work triggered by events, competing for shared resources</b>, it can be modelled.</li>
+          </ul>
+          <p>Change the model, run again on the same seed and you can see exactly what an architectural decision costs before a line of it is written.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="who" class="alt">
     <div class="container">
       <div class="eyebrow">Who it is for</div>
       <h2 class="section-title">For the people who own structural decisions</h2>
       <p class="section-sub">LatencyLab is aimed at the roles that make structural
-        decisions which are expensive to undo. If you have ever said "we will
-        profile it later", this is what later should have looked like.</p>
+        decisions which are expensive to undo. It is domain-agnostic: because it
+        simulates the design rather than instrumenting code, the same tool
+        models a web backend, a desktop or mobile UI, a microservice fan-out or
+        an embedded pipeline. If you have ever said "we will profile it later",
+        this is what later should have looked like.</p>
       <div class="split">
         <div class="panel is-for">
           <h3>It is for you if</h3>
@@ -103,10 +153,10 @@
         deterministic scheduling and reproducible randomness, then runs them
         many times to produce concrete metrics.</p>
       <div class="features">
-        <div class="feature"><div class="fnum">01</div><h3>Explicit models</h3><p>Tasks, events, queues, delays and feedback paths must be named. Nothing is inferred and nothing is hidden. The model is what you reason about.</p></div>
-        <div class="feature"><div class="fnum">02</div><h3>Many seeded runs</h3><p>Every run is seeded, so behaviour stays reproducible across versions. At scale the dominant behaviours become clearer, not noisier.</p></div>
-        <div class="feature"><div class="fnum">03</div><h3>Critical paths and percentiles</h3><p>Concrete critical paths name the work; percentiles are split for UI events and overall makespan because they answer different questions.</p></div>
-        <div class="feature"><div class="fnum">04</div><h3>Yours, on your machine</h3><p>A local CLI plus an optional desktop UI. No account, no server, no instrumentation of production code. Nothing leaves your machine.</p></div>
+        <div class="feature"><div class="fnum">01</div><h3>Explicit models</h3><p>A model is your architecture written down: tasks, the events that trigger them and the resources they queue behind. Nothing is inferred and nothing is hidden. The model is what you reason about.</p></div>
+        <div class="feature"><div class="fnum">02</div><h3>Many seeded runs</h3><p>One run tells you nothing; the spread across hundreds is the finding. Every run is seeded, so behaviour stays reproducible across versions. At scale the dominant behaviours become clearer, not noisier.</p></div>
+        <div class="feature"><div class="fnum">03</div><h3>Critical paths and percentiles</h3><p>The critical path is the chain of tasks and waits that decided how long the user waited in one run. Concrete critical paths name the work; percentiles are split for UI events and overall makespan because they answer different questions.</p></div>
+        <div class="feature"><div class="fnum">04</div><h3>Yours, on your machine</h3><p>The model is a plain JSON file and every output is a plain file beside it. A local CLI plus an optional desktop UI. No account, no server, no instrumentation of production code. Nothing leaves your machine.</p></div>
       </div>
     </div>
   </section>
@@ -156,9 +206,12 @@
           <div class="frame">
             <img loading="lazy" src="assets/latencylab-ui.png" alt="The LatencyLab UI showing a makespan distribution, critical-path frequencies, percentiles and the dominant critical path">
           </div>
-          <figcaption><b>A real model, run many times.</b> This is the shipped
+          <figcaption><b>A real model, run many times.</b> This is the result of
+            running one model 200 times: the histogram counts runs by how long
+            the whole flow took and the chart on the right counts how often each
+            chain of work was the bottleneck. The model is the shipped
             checkout example: a user clicks, four back ends are asked at once, two
-            of them queue behind a database that serves one caller at a time, and
+            of them queue behind a database that serves one caller at a time and
             a short debounce sits on a fifth. Most people predict the slowest back
             end dominates perceived latency. They are usually wrong. The debounce,
             added so the interface would feel calm, is the critical path in most
@@ -169,7 +222,9 @@
           <div class="frame">
             <img loading="lazy" src="assets/latencylab-compose.png" alt="The Model Composer showing the System pane, with the model name, schema version and entry event, with the validate and export controls below">
           </div>
-          <figcaption><b>Writing a model from nothing.</b> The composer lists the
+          <figcaption><b>Writing a model from nothing.</b> This is where a model
+            is written: your architecture as four small parts, exported as plain
+            JSON without hand-writing any. The composer lists the
             four parts of a model down the left and you work down them in order,
             because each uses the one before it. System names the model and sets
             the entry event that starts a run; Contexts are what work runs on and
@@ -181,7 +236,9 @@
           <div class="frame">
             <img loading="lazy" src="assets/latencylab-edit.png" alt="The Model Composer showing the Tasks pane with one task selected, its context, lognormal distribution parameters, emitted event and category">
           </div>
-          <figcaption><b>Changing one thing, to see what it was worth.</b> Editing
+          <figcaption><b>Changing one thing, to see what it was worth.</b> This
+            is the loop in action: edit the loaded model, export, run again on
+            the same seed and compare. Editing
             a loaded model opens the same composer with that model in it. One task
             here, its context, its duration as a lognormal distribution and the
             event it emits when it finishes. Change one of them, export and load,

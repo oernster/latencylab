@@ -48,6 +48,23 @@
       <p class="section-sub">This is the application's own Guide, shortened.<br>
         The full version ships in the app, under the book button.</p>
 
+      <h3>Before the six steps: what you are looking at</h3>
+      <p>LatencyLab is a design-time latency simulator. You describe an
+        architecture, planned or existing, as a small explicit <b>model</b>: the
+        units of work, the events that trigger them and the shared resources
+        they queue behind. A model is your architecture written down small
+        enough to argue about; you are not modelling your code, you are
+        modelling the shape of the design. Models are plain JSON and the
+        composer builds them without hand-writing any.</p>
+      <p>Running the model executes it as a simulation, hundreds or thousands
+        of times, each run seeded so the whole experiment is reproducible. For
+        every run it records the <b>makespan</b> (how long the whole flow took,
+        which is how long the user waited) and the <b>critical path</b> (the
+        chain of tasks and waits that prevented the run finishing sooner).
+        Because it works on the design rather than the code, it applies to any
+        event-driven software: web backends, desktop and mobile UIs,
+        microservices and embedded pipelines.</p>
+
       <h3>Your first run, in six steps</h3>
       <ol>
         <li><b>Examples</b> menu, then <b>Checkout</b>. Run flashes twice to say it is ready.</li>

@@ -51,6 +51,45 @@
       <p>This is the application's own information panel, shortened. The full version ships
         in the app, under the info button.</p>
 
+      <h3>The screen, element by element</h3>
+      <ul>
+        <li><b>The histogram (makespan distribution).</b> Each bar counts runs by
+          how long the whole flow took. Read the shape: a tight cluster means
+          predictable latency; a long right tail means some runs go badly; two
+          humps mean the system has two distinct behavioural modes, which is a
+          structural fact worth explaining before you optimise anything.</li>
+        <li><b>The percentiles (p50 / p90 / p95 / p99).</b> p50 is the typical
+          experience; p99 is what 1 in 100 users hits. They describe exposure,
+          not targets to game.</li>
+        <li><b>The critical path.</b> The named chain of tasks, queue waits and
+          delays that set the finish time of a run. Read it left to right as
+          "this is literally why the user waited". Critical does not mean slow:
+          a fast task on the path matters and a slow task off it does not.</li>
+        <li><b>The critical-path frequency chart.</b> How often each distinct
+          chain was the bottleneck across all runs. A path dominating, say more
+          than a fifth of runs, is how your design behaves rather than a fluke:
+          that is the thing to design against. This chart is the tool's real
+          answer; the histogram is context for it.</li>
+      </ul>
+
+      <h3>A worked example: the shipped Checkout model</h3>
+      <p>Load <b>Examples &rarr; Checkout</b> and press <b>Run</b>. The model:
+        a click fires <code>user.checkout_clicked</code>, a UI task handles it
+        and emits <code>checkout.started</code>, which fans out to four backend
+        tasks at once. Two of them (<code>db.load_cart</code> and
+        <code>db.load_saved_cards</code>) share a database context with
+        concurrency 1, so one always queues behind the other. A fixed 150&nbsp;ms
+        delay sits on the wiring to <code>net.fetch_promotions</code>: a
+        debounce, added for politeness.</p>
+      <p>Intuition says the slowest backend, the shipping quote around
+        165&nbsp;ms, dominates. Now read the screen: the histogram shows where
+        the runs landed, the percentiles say what typical and unlucky users got
+        and the frequency chart says the chain through the 150&nbsp;ms debounce
+        and the totals render is the critical path in most runs. A politeness
+        feature owns the median latency; no profiler could have told you
+        that before the system existed. That is the kind of finding the tool
+        exists to produce.</p>
+
       <h3>Six things the output means</h3>
       <ul>
         <li><b>Many runs, because one run is not evidence.</b> Contention, scheduling and

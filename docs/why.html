@@ -44,6 +44,16 @@
     <div class="container prose">
       <div class="eyebrow">The reasoning</div>
       <h2 class="section-title">Why this exists</h2>
+      <p>First, what it is. LatencyLab is a design-time latency simulator: you
+        describe a planned or existing architecture as a small explicit model
+        (the units of work, the events that trigger them and the shared
+        resources they queue behind) and LatencyLab executes that model
+        thousands of times with realistic timing variation. Out come the numbers
+        a whiteboard cannot give you: how long the flow takes across
+        percentiles, which chain of work actually held each run up and how often
+        each chain is the culprit. It works on the design rather than the code,
+        so it applies to any event-driven software: web backends, desktop and
+        mobile UIs, microservices and embedded pipelines.</p>
       <p>Latency discussions are dominated by intuition, confidence and post hoc profiling. By the
         time a real system can be measured, the decisions about concurrency, feedback, sequencing
         and delay have already hardened and are expensive to undo. Profilers explain where the time
