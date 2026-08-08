@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The LatencyLab application: explicit models, seeded runs and literal output</title>
+<meta name="description" content="The LatencyLab desktop application and CLI: explicit models of tasks, events, queues and contention, many seeded runs, critical paths and percentiles, with screenshots and the plain-file outputs every run writes.">
+<meta name="author" content="Oliver Ernster">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#181818">
+<link rel="canonical" href="https://ernster.dev/latencylab/app.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LatencyLab">
+<meta property="og:title" content="The LatencyLab application">
+<meta property="og:description" content="Explicit models, many seeded runs, critical paths and percentiles. The UI shows what the model produced and nothing it did not.">
+<meta property="og:url" content="https://ernster.dev/latencylab/app.html">
+<meta property="og:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<meta property="og:image:alt" content="The LatencyLab UI showing a makespan distribution, critical-path frequencies and percentiles">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The LatencyLab application">
+<meta name="twitter:description" content="Explicit models, many seeded runs, critical paths and percentiles.">
+<meta name="twitter:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<link rel="icon" type="image/svg+xml" href="assets/latencylab.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="./">
+      <img src="assets/latencylab.svg" alt="LatencyLab icon">LatencyLab</a>
+    <nav class="nav-links">
+      <a href="who.html">Who it's for</a>
+      <a href="app.html">The application</a>
+      <a href="guide.html">Using it</a>
+      <a href="reading.html">Reading the output</a>
+      <a href="why.html">Why</a>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section id="what">
+    <div class="container">
+      <div class="eyebrow">The idea</div>
+      <h2 class="section-title">Find the latency problem before it is politically expensive</h2>
+      <p class="section-sub">Profilers explain what happened in a running system.
+        They rarely explain why the user waited. LatencyLab executes explicit
+        models of tasks, events, queues, delays and resource contention using
+        deterministic scheduling and reproducible randomness, then runs them
+        many times to produce concrete metrics.</p>
+      <div class="features">
+        <div class="feature"><div class="fnum">01</div><h3>Explicit models</h3><p>A model is your architecture written down: tasks, the events that trigger them and the resources they queue behind. Nothing is inferred and nothing is hidden. The model is what you reason about.</p></div>
+        <div class="feature"><div class="fnum">02</div><h3>Many seeded runs</h3><p>One run tells you nothing; the spread across hundreds is the finding. Every run is seeded, so behaviour stays reproducible across versions. At scale the dominant behaviours become clearer, not noisier.</p></div>
+        <div class="feature"><div class="fnum">03</div><h3>Critical paths and percentiles</h3><p>The critical path is the chain of tasks and waits that decided how long the user waited in one run. Concrete critical paths name the work; percentiles are split for UI events and overall makespan because they answer different questions.</p></div>
+        <div class="feature"><div class="fnum">04</div><h3>Yours, on your machine</h3><p>The model is a plain JSON file and every output is a plain file beside it. A local CLI plus an optional desktop UI. No account, no server, no instrumentation of production code. Nothing leaves your machine.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ui" class="alt">
+    <div class="container">
+      <div class="eyebrow">The UI is a client, not a comfort blanket</div>
+      <h2 class="section-title">It shows what the model produced and nothing it did not</h2>
+      <p class="section-sub">The UI exists because text output alone was not enough
+        to reason about timing, ordering and consequence. It is intentionally
+        literal: it shows what ran, how often it ran and where time accumulated.
+        Full keyboard navigation is treated as a constraint, not polish.</p>
+      <div class="shots">
+        <figure class="shot">
+          <div class="frame">
+            <img loading="lazy" src="assets/latencylab-ui.png" alt="The LatencyLab UI showing a makespan distribution, critical-path frequencies, percentiles and the dominant critical path">
+          </div>
+          <figcaption><b>A real model, run many times.</b> This is the result of
+            running one model 200 times: the histogram counts runs by how long
+            the whole flow took and the chart on the right counts how often each
+            chain of work was the bottleneck. The model is the shipped
+            checkout example: a user clicks, four back ends are asked at once, two
+            of them queue behind a database that serves one caller at a time and
+            a short debounce sits on a fifth. Most people predict the slowest back
+            end dominates perceived latency. They are usually wrong. The debounce,
+            added so the interface would feel calm, is the critical path in most
+            runs; the critical-path frequency on the right names the work and the
+            percentiles show how often it decides the outcome.</figcaption>
+        </figure>
+        <figure class="shot narrow">
+          <div class="frame">
+            <img loading="lazy" src="assets/latencylab-compose.png" alt="The Model Composer showing the System pane, with the model name, schema version and entry event, with the validate and export controls below">
+          </div>
+          <figcaption><b>Writing a model from nothing.</b> This is where a model
+            is written: your architecture as four small parts, exported as plain
+            JSON without hand-writing any. The composer lists the
+            four parts of a model down the left and you work down them in order,
+            because each uses the one before it. System names the model and sets
+            the entry event that starts a run; Contexts are what work runs on and
+            carry the concurrency that queues form behind; Tasks are the units of
+            work; Wiring connects events to tasks. Nothing is inferred, so the
+            model is the thing you argue about.</figcaption>
+        </figure>
+        <figure class="shot narrow">
+          <div class="frame">
+            <img loading="lazy" src="assets/latencylab-edit.png" alt="The Model Composer showing the Tasks pane with one task selected, its context, lognormal distribution parameters, emitted event and category">
+          </div>
+          <figcaption><b>Changing one thing, to see what it was worth.</b> This
+            is the loop in action: edit the loaded model, export, run again on
+            the same seed and compare. Editing
+            a loaded model opens the same composer with that model in it. One task
+            here, its context, its duration as a lognormal distribution and the
+            event it emits when it finishes. Change one of them, export and load,
+            then run again on the same seed: the difference you see is the
+            structure rather than the draw.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="container">
+      <div class="eyebrow">Get started</div>
+      <h2 class="section-title">Install it and run the shipped example</h2>
+      <p class="section-sub">One installer per platform, per-user on Windows, no
+        administrator rights and no toolchain. Open the Examples menu, choose
+        Checkout, press Run: you have a distribution and a critical path inside a
+        minute, before you have written a model of your own.</p>
+      <div class="cta" style="justify-content:flex-start;margin-bottom:34px;">
+        <a class="btn btn-primary" href="download.html">Download for Windows, macOS or Linux</a>
+        <a class="btn btn-ghost" href="guide.html">Read the guide first</a>
+      </div>
+      <p class="section-sub">Underneath the desktop application is a Python
+        library with a CLI in front of it, reading a JSON execution model. Every
+        run writes plain files you can plot or diff, whichever way you drove it.</p>
+      <div class="outputs">
+        <div class="output"><code>summary.json</code><p>Aggregate latency and contention statistics for the whole run.</p></div>
+        <div class="output"><code>runs.csv</code><p>Per-run metrics, suitable for analysis or plotting.</p></div>
+        <div class="output"><code>trace.csv</code><p>Optional per-task-instance timing and causality data.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
+      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.3<!--/VERSION-->
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/oernster/latencylab/releases">Releases</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The long read</a>
+      <a href="https://ernster.dev/">Project hub</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

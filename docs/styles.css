@@ -189,6 +189,11 @@ section.alt {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
 }
+/* A grid that follows another grid inside one section needs its own breathing
+   room: the grids carry gaps between their own cells but no outer margin, so
+   stacked they sit flush against each other. */
+.features + .split { margin-top: 44px; }
+.split + .split { margin-top: 18px; }
 .feature {
   background: var(--surface);
   border: 1px solid var(--border);

@@ -31,8 +31,8 @@
     <a class="brand" href="#top">
       <img src="assets/latencylab.svg" alt="LatencyLab icon">LatencyLab</a>
     <nav class="nav-links">
-      <a href="#who">Who it's for</a>
-      <a href="#what">What it does</a>
+      <a href="who.html">Who it's for</a>
+      <a href="app.html">The application</a>
       <a href="guide.html">Using it</a>
       <a href="reading.html">Reading the output</a>
       <a href="why.html">Why</a>
@@ -86,7 +86,7 @@
         <div class="feature"><div class="fnum">05</div><h3>Compare</h3><p>Run again on the same seed. The randomness is identical, so a shift in the percentiles or the dominant path is the cost or benefit of the design change, isolated from luck.</p></div>
       </div>
       <div class="split">
-        <div class="panel is-for">
+        <div class="panel">
           <h3>What a model is</h3>
           <ul>
             <li><b>System.</b> A name and the entry event that kicks off a run, such as "user clicks Pay".</li>
@@ -96,7 +96,7 @@
           </ul>
           <p>You are not modelling your code. You are modelling the shape of the design: what happens, what waits for what and what competes for what.</p>
         </div>
-        <div class="panel not-for">
+        <div class="panel">
           <h3>Any event-driven software</h3>
           <ul>
             <li>Because it simulates the <b>design rather than the code</b>, the domain does not matter.</li>
@@ -110,164 +110,47 @@
     </div>
   </section>
 
-  <section id="who" class="alt">
+  <section id="explore" class="alt">
     <div class="container">
-      <div class="eyebrow">Who it is for</div>
-      <h2 class="section-title">For the people who own structural decisions</h2>
-      <p class="section-sub">LatencyLab is aimed at the roles that make structural
-        decisions which are expensive to undo. It is domain-agnostic: because it
-        simulates the design rather than instrumenting code, the same tool
-        models a web backend, a desktop or mobile UI, a microservice fan-out or
-        an embedded pipeline. If you have ever said "we will profile it later",
-        this is what later should have looked like.</p>
+      <div class="eyebrow">The rest of the site</div>
+      <h2 class="section-title">One page per question</h2>
+      <p class="section-sub">Everything else lives on its own page, one question
+        each, so nothing here is a wall.</p>
       <div class="split">
         <div class="panel is-for">
-          <h3>It is for you if</h3>
+          <h3>Who it's for</h3>
           <ul>
-            <li>You are a <b>senior engineer, architect or CTO</b> validating an architecture before it hardens.</li>
-            <li>You want to see <b>where perceived latency actually comes from</b>, not where you assume it does.</li>
-            <li>You need to know <b>which causal paths dominate</b> latency most often and how contention shapes responsiveness.</li>
-            <li>You want to test <b>which architectural changes help</b> before any code is written.</li>
+            <li>The roles that make <b>structural decisions</b> which are expensive to undo.</li>
+            <li>Stated both ways: <b>for you if</b> and <b>not for you if</b>.</li>
           </ul>
+          <p><a class="btn btn-panel" href="who.html">Read Who it's for &rarr;</a></p>
         </div>
         <div class="panel not-for">
-          <h3>It is not for you if</h3>
+          <h3>The application</h3>
           <ul>
-            <li>You want to <b>tune code that already exists</b>. Use a profiler.</li>
-            <li>You want a dashboard that <b>reassures you</b> everything is fine.</li>
-            <li>You want <b>generated recommendations</b>. It does not tell you how to make a function faster.</li>
-            <li>You want to reason about latency <b>without committing to explicit structure</b>. This will feel uncomfortable; that is intentional.</li>
+            <li>The <b>idea in four cards</b>, screenshots of a real run and the composer.</li>
+            <li>The <b>plain-file outputs</b> every run writes and how to get started.</li>
           </ul>
+          <p><a class="btn btn-panel" href="app.html">See The application &rarr;</a></p>
         </div>
       </div>
-    </div>
-  </section>
-
-  <section id="what">
-    <div class="container">
-      <div class="eyebrow">The idea</div>
-      <h2 class="section-title">Find the latency problem before it is politically expensive</h2>
-      <p class="section-sub">Profilers explain what happened in a running system.
-        They rarely explain why the user waited. LatencyLab executes explicit
-        models of tasks, events, queues, delays and resource contention using
-        deterministic scheduling and reproducible randomness, then runs them
-        many times to produce concrete metrics.</p>
-      <div class="features">
-        <div class="feature"><div class="fnum">01</div><h3>Explicit models</h3><p>A model is your architecture written down: tasks, the events that trigger them and the resources they queue behind. Nothing is inferred and nothing is hidden. The model is what you reason about.</p></div>
-        <div class="feature"><div class="fnum">02</div><h3>Many seeded runs</h3><p>One run tells you nothing; the spread across hundreds is the finding. Every run is seeded, so behaviour stays reproducible across versions. At scale the dominant behaviours become clearer, not noisier.</p></div>
-        <div class="feature"><div class="fnum">03</div><h3>Critical paths and percentiles</h3><p>The critical path is the chain of tasks and waits that decided how long the user waited in one run. Concrete critical paths name the work; percentiles are split for UI events and overall makespan because they answer different questions.</p></div>
-        <div class="feature"><div class="fnum">04</div><h3>Yours, on your machine</h3><p>The model is a plain JSON file and every output is a plain file beside it. A local CLI plus an optional desktop UI. No account, no server, no instrumentation of production code. Nothing leaves your machine.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="docs" class="alt">
-    <div class="container">
-      <div class="eyebrow">The two panels the app ships</div>
-      <h2 class="section-title">What the application tells you, in short</h2>
-      <p class="section-sub">The desktop UI carries its own Guide and its own
-        information panel. Both are reproduced here, cut down to the parts worth
-        reading before you have installed anything.</p>
       <div class="split">
         <div class="panel is-for">
           <h3>Using it</h3>
           <ul>
             <li>Your <b>first run in six steps</b>, using the shipped Checkout example.</li>
-            <li>What the <b>makespan distribution</b>, the <b>critical path</b> and the <b>path frequencies</b> each mean.</li>
-            <li>How to <b>change one thing and run it again</b>, then how to write a model from nothing.</li>
-            <li>Why you would pick each <b>runs, seed, concurrency</b> and <b>distribution</b> setting.</li>
+            <li>Then <b>change one thing and run it again</b>, plus why you would pick each setting.</li>
           </ul>
           <p><a class="btn btn-panel" href="guide.html">Read Using LatencyLab &rarr;</a></p>
         </div>
         <div class="panel not-for">
           <h3>Reading the output</h3>
           <ul>
-            <li>Why <b>one run is not evidence</b> and percentiles describe exposure rather than goals.</li>
-            <li>Why a <b>critical path is not what was slow</b>.</li>
-            <li>Why a <b>dominant path is structure</b>, not a bug.</li>
-            <li>When the <b>long tail</b> can be left alone.</li>
+            <li>The screen <b>element by element</b>: histogram, percentiles, critical path, frequency chart.</li>
+            <li>The <b>Checkout example narrated</b> end to end, then the six principles.</li>
           </ul>
           <p><a class="btn btn-panel" href="reading.html">Read How to read the output &rarr;</a></p>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="ui">
-    <div class="container">
-      <div class="eyebrow">The UI is a client, not a comfort blanket</div>
-      <h2 class="section-title">It shows what the model produced and nothing it did not</h2>
-      <p class="section-sub">The UI exists because text output alone was not enough
-        to reason about timing, ordering and consequence. It is intentionally
-        literal: it shows what ran, how often it ran and where time accumulated.
-        Full keyboard navigation is treated as a constraint, not polish.</p>
-      <div class="shots">
-        <figure class="shot">
-          <div class="frame">
-            <img loading="lazy" src="assets/latencylab-ui.png" alt="The LatencyLab UI showing a makespan distribution, critical-path frequencies, percentiles and the dominant critical path">
-          </div>
-          <figcaption><b>A real model, run many times.</b> This is the result of
-            running one model 200 times: the histogram counts runs by how long
-            the whole flow took and the chart on the right counts how often each
-            chain of work was the bottleneck. The model is the shipped
-            checkout example: a user clicks, four back ends are asked at once, two
-            of them queue behind a database that serves one caller at a time and
-            a short debounce sits on a fifth. Most people predict the slowest back
-            end dominates perceived latency. They are usually wrong. The debounce,
-            added so the interface would feel calm, is the critical path in most
-            runs; the critical-path frequency on the right names the work and the
-            percentiles show how often it decides the outcome.</figcaption>
-        </figure>
-        <figure class="shot narrow">
-          <div class="frame">
-            <img loading="lazy" src="assets/latencylab-compose.png" alt="The Model Composer showing the System pane, with the model name, schema version and entry event, with the validate and export controls below">
-          </div>
-          <figcaption><b>Writing a model from nothing.</b> This is where a model
-            is written: your architecture as four small parts, exported as plain
-            JSON without hand-writing any. The composer lists the
-            four parts of a model down the left and you work down them in order,
-            because each uses the one before it. System names the model and sets
-            the entry event that starts a run; Contexts are what work runs on and
-            carry the concurrency that queues form behind; Tasks are the units of
-            work; Wiring connects events to tasks. Nothing is inferred, so the
-            model is the thing you argue about.</figcaption>
-        </figure>
-        <figure class="shot narrow">
-          <div class="frame">
-            <img loading="lazy" src="assets/latencylab-edit.png" alt="The Model Composer showing the Tasks pane with one task selected, its context, lognormal distribution parameters, emitted event and category">
-          </div>
-          <figcaption><b>Changing one thing, to see what it was worth.</b> This
-            is the loop in action: edit the loaded model, export, run again on
-            the same seed and compare. Editing
-            a loaded model opens the same composer with that model in it. One task
-            here, its context, its duration as a lognormal distribution and the
-            event it emits when it finishes. Change one of them, export and load,
-            then run again on the same seed: the difference you see is the
-            structure rather than the draw.</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
-
-  <section id="start">
-    <div class="container">
-      <div class="eyebrow">Get started</div>
-      <h2 class="section-title">Install it and run the shipped example</h2>
-      <p class="section-sub">One installer per platform, per-user on Windows, no
-        administrator rights and no toolchain. Open the Examples menu, choose
-        Checkout, press Run: you have a distribution and a critical path inside a
-        minute, before you have written a model of your own.</p>
-      <div class="cta" style="justify-content:flex-start;margin-bottom:34px;">
-        <a class="btn btn-primary" href="download.html">Download for Windows, macOS or Linux</a>
-        <a class="btn btn-ghost" href="guide.html">Read the guide first</a>
-      </div>
-      <p class="section-sub">Underneath the desktop application is a Python
-        library with a CLI in front of it, reading a JSON execution model. Every
-        run writes plain files you can plot or diff, whichever way you drove it.</p>
-      <div class="outputs">
-        <div class="output"><code>summary.json</code><p>Aggregate latency and contention statistics for the whole run.</p></div>
-        <div class="output"><code>runs.csv</code><p>Per-run metrics, suitable for analysis or plotting.</p></div>
-        <div class="output"><code>trace.csv</code><p>Optional per-task-instance timing and causality data.</p></div>
       </div>
     </div>
   </section>

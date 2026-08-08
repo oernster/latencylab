@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who LatencyLab is for: the people who own structural decisions</title>
+<meta name="description" content="LatencyLab is for senior engineers, architects and CTOs making structural decisions about event-driven software, at the point where those decisions are still cheap to change. It is not for tuning code that already exists.">
+<meta name="author" content="Oliver Ernster">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#181818">
+<link rel="canonical" href="https://ernster.dev/latencylab/who.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LatencyLab">
+<meta property="og:title" content="Who LatencyLab is for">
+<meta property="og:description" content="For the people who own structural decisions about event-driven software. Not for tuning code that already exists.">
+<meta property="og:url" content="https://ernster.dev/latencylab/who.html">
+<meta property="og:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<meta property="og:image:alt" content="The LatencyLab UI showing a makespan distribution, critical-path frequencies and percentiles">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Who LatencyLab is for">
+<meta name="twitter:description" content="For the people who own structural decisions about event-driven software.">
+<meta name="twitter:image" content="https://ernster.dev/latencylab/assets/latencylab-ui.png">
+<link rel="icon" type="image/svg+xml" href="assets/latencylab.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="./">
+      <img src="assets/latencylab.svg" alt="LatencyLab icon">LatencyLab</a>
+    <nav class="nav-links">
+      <a href="who.html">Who it's for</a>
+      <a href="app.html">The application</a>
+      <a href="guide.html">Using it</a>
+      <a href="reading.html">Reading the output</a>
+      <a href="why.html">Why</a>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section id="who" class="alt">
+    <div class="container">
+      <div class="eyebrow">Who it is for</div>
+      <h2 class="section-title">For the people who own structural decisions</h2>
+      <p class="section-sub">LatencyLab is aimed at the roles that make structural
+        decisions which are expensive to undo. It is domain-agnostic: because it
+        simulates the design rather than instrumenting code, the same tool
+        models a web backend, a desktop or mobile UI, a microservice fan-out or
+        an embedded pipeline. If you have ever said "we will profile it later",
+        this is what later should have looked like.</p>
+      <div class="split">
+        <div class="panel is-for">
+          <h3>It is for you if</h3>
+          <ul>
+            <li>You are a <b>senior engineer, architect or CTO</b> validating an architecture before it hardens.</li>
+            <li>You want to see <b>where perceived latency actually comes from</b>, not where you assume it does.</li>
+            <li>You need to know <b>which causal paths dominate</b> latency most often and how contention shapes responsiveness.</li>
+            <li>You want to test <b>which architectural changes help</b> before any code is written.</li>
+          </ul>
+        </div>
+        <div class="panel not-for">
+          <h3>It is not for you if</h3>
+          <ul>
+            <li>You want to <b>tune code that already exists</b>. Use a profiler.</li>
+            <li>You want a dashboard that <b>reassures you</b> everything is fine.</li>
+            <li>You want <b>generated recommendations</b>. It does not tell you how to make a function faster.</li>
+            <li>You want to reason about latency <b>without committing to explicit structure</b>. This will feel uncomfortable; that is intentional.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cta" style="justify-content:flex-start;margin-top:34px;">
+        <a class="btn btn-primary" href="app.html">See the application</a>
+        <a class="btn btn-ghost" href="./">Back to overview</a>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
+      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.3<!--/VERSION-->
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/oernster/latencylab/releases">Releases</a>
+      <a href="https://github.com/oernster/latencylab">GitHub</a>
+      <a href="https://www.crankthecode.com/posts/latencylab">The long read</a>
+      <a href="https://ernster.dev/">Project hub</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
