@@ -96,7 +96,11 @@ def build_left_panel(window) -> QWidget:
     summary_layout = QVBoxLayout(summary_box)
     window._summary_text = QPlainTextEdit()
     window._summary_text.setReadOnly(True)
-    window._summary_text.setPlaceholderText("Run a simulation to see summary metrics.")
+    window._summary_text.setPlaceholderText(
+        "Open Examples, choose Checkout, press Run. You will get a latency "
+        "distribution and the chain of work that caused it, from a simulated "
+        "architecture, in under a minute."
+    )
     summary_layout.addWidget(window._summary_text)
 
     crit_box = QGroupBox("Critical path")

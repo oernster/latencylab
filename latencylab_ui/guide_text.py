@@ -3,16 +3,16 @@ from __future__ import annotations
 """The Guide's text: how to use LatencyLab, shortest path first.
 
 Separate from the dialog for the same reason `about_text` is separate from
-`about_dialog`: the words change far more often than the widget does, and a
+`about_dialog`: the words change far more often than the widget does; a
 change to the words should not be a change to a file full of Qt.
 
 HTML rather than plain text, because this is a structured document with an
-order that matters, and because `auto_scroller` needs a surface that scrolls in
+order that matters and because `auto_scroller` needs a surface that scrolls in
 PIXELS: a QTextBrowser does, a QPlainTextEdit scrolls in lines.
 
 Written shortest-path-first on purpose. Somebody opening this has the
 application in front of them and wants to make it do something in the next
-minute, so the first section is six steps with no explanation attached, and
+minute, so the first section is six steps with no explanation attached;
 every reason for anything comes later, once there is something to attach the
 reason to.
 """
@@ -23,11 +23,23 @@ GUIDE_TITLE = "Guide to LatencyLab"
 # between the reader and the first instruction.
 _INTRO = """
 <h2>Guide to LatencyLab</h2>
-<p>LatencyLab runs an explicit model of a system many times over and shows you
-how long the user waited, and why. It does not measure your code. It lets you
-argue about structure before there is any code to measure.</p>
+<p>LatencyLab is a design-time latency simulator. You describe a planned or
+existing software architecture as a small, explicit <b>model</b>: the units of
+work, the events that trigger them and the shared resources they queue behind.
+LatencyLab executes that model thousands of times with realistic timing
+variation and shows you how long the user waited and why: how long the flow
+takes across percentiles, which chain of work actually held each run up and
+how often each chain is the culprit. It does not measure your code. It lets you
+argue about structure before there is any code to measure, which is why it
+applies to any event-driven software: web backends, desktop and mobile UIs,
+microservices, embedded pipelines.</p>
+<p>A model is your architecture written down small enough to argue about. It
+has four parts: a <b>system</b> (a name and the entry event that kicks off a
+run), <b>contexts</b> (the things work runs on, each with a concurrency),
+<b>tasks</b> (the units of work) and <b>wiring</b> (which events trigger which
+tasks). Section 4 walks through each; you do not need them yet.</p>
 <p>If you have never opened it before, do the six steps below first. Everything
-after them is reasons, and reasons are easier once something has run.</p>
+after them is reasons; they are easier once something has run.</p>
 """
 
 _FIRST_RUN = """
@@ -42,7 +54,7 @@ how long the whole piece of work took.</li>
 <li>Read <b>Critical path</b> beside it: the chain of work that actually held
 the run up.</li>
 <li>Press the <b>application mark</b> in the middle of the toolbar to open
-<b>Distributions</b>, and look at the shape rather than at any one number.</li>
+<b>Distributions</b>, then look at the shape rather than at any one number.</li>
 </ol>
 <p>That is the whole loop. Everything else is variations on it.</p>
 """
@@ -57,10 +69,10 @@ prevented progress in that run. Expensive work that was not on it did not delay
 anyone, however costly it looks in isolation.</p>
 <p><b>Critical path frequency</b> counts how often each chain was the one
 holding things up. A path that dominates is a behavioural mode: it describes how
-the system usually behaves, and it is the only kind of path worth designing
+the system usually behaves; it is the only kind of path worth designing
 against. The rest are a long tail.</p>
 <p>The <b>info</b> button next to this one opens a longer piece on reading the
-output, and it is worth reading once you have a run in front of you.</p>
+output; it is worth reading once you have a run in front of you.</p>
 """
 
 _CHANGE_SOMETHING = """
@@ -88,15 +100,15 @@ left; work down them in order, because each one uses the one before it.</p>
 thing that starts a run. Everything that happens is downstream of it.</p>
 <p><b>Contexts</b> are what work runs on: a thread pool, a database, a browser
 main thread. The only setting is <b>concurrency</b>, meaning how many tasks in
-that context can be in flight at once. This is where queueing comes from, and
+that context can be in flight at once. This is where queueing comes from;
 it is the single most under-modelled thing in most systems.</p>
 <p><b>Tasks</b> are units of work. Each one names the context it runs in, how
-long it takes as a <b>distribution</b>, and the events it <b>emits</b> when it
+long it takes as a <b>distribution</b> and the events it <b>emits</b> when it
 finishes.</p>
 <p><b>Wiring</b> connects events to tasks: when this event happens, run that
 task, optionally after a <b>delay</b>. Wiring is where the structure lives, so
 it is the part worth arguing about.</p>
-<p>Then <b>Validate</b>, and <b>Export</b> when it says so. Export writes the
+<p>Then <b>Validate</b>, then <b>Export</b> when it says so. Export writes the
 JSON; Export and Load runs it straight away.</p>
 """
 
@@ -106,7 +118,7 @@ _WHY_SETTINGS = """
 <p><b>Runs.</b> Each run is one draw from the model. 200 is enough to see the
 shape and to compare two structures. If you intend to say something about p99,
 you need enough runs that the tail is not three lucky samples: think in
-thousands, and remember the tail is the part that moves most between run sets.</p>
+thousands; remember the tail is the part that moves most between run sets.</p>
 
 <p><b>Seed.</b> The same model and the same seed give the same answer, every
 time, on any machine. Hold the seed steady while you compare two structures, so
@@ -115,8 +127,8 @@ difference was not an artefact of one draw.</p>
 
 <p><b>Concurrency.</b> Set it to the number of things that genuinely happen at
 once. A concurrency of 1 is a resource that serialises everything sent to it,
-which is what a single database connection or a single UI thread actually is,
-and it is where queues form. Raising it is the cheapest experiment in the tool
+which is what a single database connection or a single UI thread actually is;
+it is where queues form. Raising it is the cheapest experiment in the tool
 and often the most revealing.</p>
 
 <p><b>Which distribution.</b> <b>Fixed</b> when the duration genuinely does not
@@ -140,7 +152,7 @@ up.</p>
 <p><b>Stress multiplier.</b> Generates a variant with every duration multiplied,
 so you can ask what happens when everything is twice as slow. Structure that
 holds up under stress is different from structure that only works when nothing
-goes wrong, and the difference does not show at normal speed.</p>
+goes wrong; the difference does not show at normal speed.</p>
 """
 
 _HONESTY = """

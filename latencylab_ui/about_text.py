@@ -3,12 +3,12 @@ from __future__ import annotations
 """What the About dialog says.
 
 Separated from the dialog that shows it so the credits can be asserted without
-a QApplication, and so the dialog stays a layout rather than a layout plus a
+a QApplication and so the dialog stays a layout rather than a layout plus a
 bill of materials.
 
 Every dependency the application actually ships is named here with its licence.
 The point is not decoration: LatencyLab is distributed under the GPL and the
-LGPL, and both oblige it to say what it is built on. A credits list that drifts
+LGPL; both oblige it to say what it is built on. A credits list that drifts
 from the real dependency set is worse than none, so the test pins it against
 the project's own requirements.
 """
@@ -18,7 +18,12 @@ from dataclasses import dataclass
 from latencylab.version import __version__
 
 APP_NAME = "LatencyLab"
-APP_TAGLINE = "Design-time latency exploration for event-driven systems"
+APP_TAGLINE = "Simulate your architecture's latency before you build it"
+APP_SUMMARY = (
+    "LatencyLab simulates explicit models of your software architecture "
+    "(tasks, events, queues, contention) thousands of times, to show where "
+    "users would wait and why, before the code exists."
+)
 APP_AUTHOR = "Oliver Ernster"
 APP_URL = "https://oernster.github.io/latencylab/"
 
@@ -31,7 +36,7 @@ LICENCE_SUMMARY = (
 
 @dataclass(frozen=True, slots=True)
 class Credit:
-    """One dependency, its licence, and why it is here.
+    """One dependency, its licence and why it is here.
 
     `distributions` names the packages on PyPI that this credit accounts for.
     It is what lets a test read the project's own requirement files and prove
@@ -88,6 +93,7 @@ def about_html(*, python_version: str, pyside_version: str) -> str:
     return (
         f"<h2>{APP_NAME}</h2>"
         f"<p><b>{APP_TAGLINE}</b></p>"
+        f"<p>{APP_SUMMARY}</p>"
         f"<p><b>Version:</b> {__version__}</p>"
         f"<p><b>Author:</b> {APP_AUTHOR}</p>"
         f'<p><a href="{APP_URL}">{APP_URL}</a></p>'

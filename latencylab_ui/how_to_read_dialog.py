@@ -18,9 +18,23 @@ It tells you why the user waited.
 
 LatencyLab exists to make latency behavior visible before code hardens and before intuition becomes political. It does this by running explicit models many times and showing how often different outcomes occur. The goal is not prediction. The goal is understanding.
 
-Real systems are stochastic. Contention, scheduling, cache state, coordination delays, and external dependencies are not “noise” that can be averaged away. They are the system. Multiple runs exist because a single run is not representative of user experience.
+The screen, element by element.
 
-Users do not experience averages. Averages hide risk. Percentiles describe experience and exposure: p50 reflects what typically happens, while p90, p95, and p99 describe how often the system behaves badly. The shape of the distribution matters more than any single percentile. If you are arguing about whether p90 or p95 matters more, you are already past the point where this tool helps.
+The histogram is the makespan distribution: each bar counts runs by how long the whole flow took. Read the shape. A tight cluster means predictable latency; a long right tail means some runs go badly; two humps mean the system has two distinct behavioural modes, which is a structural fact worth explaining before you optimise anything.
+
+The percentiles, p50 through p99, annotate that shape. p50 is the typical experience; p99 is what 1 in 100 users hits. They describe exposure, not targets to game.
+
+The critical path is the named chain of tasks, queue waits and delays that set the finish time of a run. Read it left to right as "this is literally why the user waited". Critical does not mean slow: a fast task on the path matters and a slow task off it does not.
+
+The critical-path frequency chart counts how often each distinct chain was the bottleneck across all runs. A path dominating, say more than a fifth of runs, is how your design behaves rather than a fluke: that is the thing to design against. This chart is the tool's real answer; the histogram is context for it.
+
+A worked example, using the shipped Checkout model. A click fires user.checkout_clicked, a UI task handles it and emits checkout.started, which fans out to four backend tasks at once. Two of them, db.load_cart and db.load_saved_cards, share a database context with concurrency 1, so one always queues behind the other. A fixed 150 ms delay sits on the wiring to net.fetch_promotions: a debounce, added for politeness. Intuition says the slowest backend, the shipping quote, dominates. The frequency chart says the chain through the debounce and the totals render is the critical path in most runs. A politeness feature owns the median latency; no profiler could have told you that before the system existed. That is the kind of finding this tool exists to produce.
+
+What follows is why the output is shaped this way.
+
+Real systems are stochastic. Contention, scheduling, cache state, coordination delays and external dependencies are not “noise” that can be averaged away. They are the system. Multiple runs exist because a single run is not representative of user experience.
+
+Users do not experience averages. Averages hide risk. Percentiles describe experience and exposure: p50 reflects what typically happens, while p90, p95 and p99 describe how often the system behaves badly. The shape of the distribution matters more than any single percentile. If you are arguing about whether p90 or p95 matters more, you are already past the point where this tool helps.
 
 The makespan distribution shows how long end-to-end work takes across many runs. It should be read as a shape, not a target. Percentile markers annotate the distribution; they are not goals to optimise toward. Lowering one percentile without understanding the shape usually shifts cost elsewhere.
 
