@@ -151,6 +151,13 @@ header.nav {
   background: var(--banana-bright);
   transform: translateY(1px);
 }
+/* The cross-page pill row every inner page ends with: the title-bar links
+   repeated as visible, pressable pills, so no page is reachable only from the
+   navigation bar. Colours and hover are btn-panel's, so the site keeps one
+   hover language; only the shape differs. */
+.pillnav { display: flex; flex-wrap: wrap; gap: 12px; }
+.pillnav .btn { border-radius: 999px; }
+
 .badges {
   margin-top: 24px;
   color: var(--muted);
