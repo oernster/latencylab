@@ -1,4 +1,4 @@
-# LatencyLab
+# <img width="64" height="64" alt="latencylab" src="https://github.com/user-attachments/assets/cb5045c5-8ba7-4d01-889b-944ccc336001" /> LatencyLab
 
 Simulate your architecture's latency before you build it.
 
