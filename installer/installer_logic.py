@@ -21,7 +21,7 @@ APP_NAME = "LatencyLab"
 APP_DISPLAY_NAME = "LatencyLab"
 APP_TAGLINE = "Design-time latency exploration for event-driven systems"
 APP_PUBLISHER = "Oliver Ernster"
-APP_URL = "https://oernster.github.io/latencylab/"
+APP_URL = "https://ernster.dev/latencylab/"
 
 # Payload layout produced by buildinstaller.py: payload/LatencyLab/ holds the
 # bundle's non-binary files (read by the installer window), payload/LatencyLab.zip

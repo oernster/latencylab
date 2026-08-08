@@ -25,7 +25,7 @@ APP_SUMMARY = (
     "users would wait and why, before the code exists."
 )
 APP_AUTHOR = "Oliver Ernster"
-APP_URL = "https://oernster.github.io/latencylab/"
+APP_URL = "https://ernster.dev/latencylab/"
 
 LICENCE_SUMMARY = (
     "Distributed under the GNU General Public License version 3 (the model and "
