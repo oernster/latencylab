@@ -62,12 +62,16 @@
         queues, delays, resource contention: everything named, nothing inferred) and the engine
         executes it with deterministic scheduling and seeded randomness, thousands of times. Out
         come concrete critical paths that name the work, queue-wait figures and percentiles split
-        between UI events and overall makespan, because those answer different questions. When
+        between UI events and overall makespan, because those answer different questions: UI-event
+        percentiles describe when the interface responded to the user; makespan percentiles
+        describe when the whole piece of work finished. When
         numbers change it is because the model changed, never because the measurement drifted.</p>
       <p>The results routinely betray intuition. In the shipped checkout model most people predict
         the slowest back end dominates perceived latency; instead a short debounce, added so the
         interface would feel calm, is the critical path in most runs. The same
-        engine is one of the two instruments behind Relativistic Decision Architecture: it produced
+        engine is one of the two instruments behind
+        <a href="https://www.crankthecode.com/books">Relativistic Decision Architecture</a>
+        (the author's book on organisational structure): it produced
         the book's hierarchy-depth and authority-placement numbers from published models and seeds,
         so every quantitative claim there can be rerun.</p>
       <p>What works now is a local Python CLI reading a JSON execution model, with a desktop UI as
