@@ -1,10 +1,16 @@
 # LatencyLab
 
-LatencyLab is a local, design time latency exploration tool for event driven interactive systems.
+Simulate your architecture's latency before you build it.
+
+LatencyLab is a design-time latency simulator. You describe a planned (or existing) software architecture as a small, explicit model: the units of work, the events that trigger them and the shared resources they queue behind. LatencyLab executes that model thousands of times with realistic timing variation. Out come the numbers you cannot get from a whiteboard: how long the flow takes across percentiles, which chain of work actually held each run up and how often each chain is the culprit. It works on the design, not the code, so it applies to any event-driven software: web backends, desktop and mobile UIs, microservices and embedded pipelines. Change the model, run again on the same seed and you can see exactly what an architectural decision costs before a line of it is written.
 
 It is not a profiler, tracer or runtime observer. It exists to prevent confident people from shipping bad architecture.
 
-LatencyLab simulates many independent executions from a declarative JSON model to answer questions that usually get postponed until it is too late:
+## The workflow
+
+The workflow is a loop: model, run, read, change one thing, run again on the same seed, compare. If the dominant critical path moved or the percentiles shifted, that difference is the cost or benefit of your design change, isolated from luck, because the randomness was identical.
+
+Each run answers questions that usually get postponed until it is too late:
 
 - where perceived latency actually comes from  
 - which causal paths dominate latency most often  
@@ -13,11 +19,57 @@ LatencyLab simulates many independent executions from a declarative JSON model t
 
 If this output surprises you, that is the point.
 
+## What is a model?
+
+A model is your architecture written down small enough to argue about. It has four parts:
+
+- **System.** A name and the entry event that kicks off a run (for the shipped example, `user.checkout_clicked`).
+- **Contexts.** The things work runs on: a thread pool, a database connection, a browser main thread, a worker queue. Each has one property, **concurrency**: how many things it can genuinely do at once. Concurrency 1 means everything sent to it waits in line, which is exactly what a single database connection or a UI thread is. This is where queueing (and therefore most surprising latency) comes from.
+- **Tasks.** The units of work: which context each runs on, how long it takes (as a distribution, not a single number, because real durations vary) and which event it emits when it finishes.
+- **Wiring.** Which events trigger which tasks, optionally after a delay (debounces, retry backoffs, poll intervals). The wiring is the architecture.
+
+You are not modelling your code. You are modelling the shape of the design: what happens, what waits for what and what competes for what. A useful model is often 10 to 20 tasks. Models are plain JSON; the desktop app's Composer builds them without hand-writing any.
+
+This excerpt from the shipped [Checkout example](examples/checkout.json) is a complete round trip through all four parts (the full model has ten tasks):
+
+```json
+{
+  "schema_version": 2,
+  "entry_event": "user.checkout_clicked",
+  "contexts": {
+    "ui": { "concurrency": 1 },
+    "db": { "concurrency": 1 }
+  },
+  "tasks": {
+    "ui.handle_click": {
+      "context": "ui",
+      "duration_ms": { "dist": "fixed", "value": 4.0 },
+      "emit": ["checkout.started"]
+    },
+    "db.load_cart": {
+      "context": "db",
+      "duration_ms": { "dist": "lognormal", "mu": 4.4, "sigma": 0.45 },
+      "emit": ["cart.loaded"]
+    },
+    "ui.render_cart": {
+      "context": "ui",
+      "duration_ms": { "dist": "normal", "mean": 18.0, "std": 4.0, "min": 1.0 },
+      "emit": ["ui.section_rendered"]
+    }
+  },
+  "wiring": {
+    "user.checkout_clicked": ["ui.handle_click"],
+    "checkout.started": ["db.load_cart"],
+    "cart.loaded": ["ui.render_cart"]
+  }
+}
+```
+
 ## Who this is for
 
-LatencyLab is aimed at senior engineers, architects and CTOs who make structural decisions that are expensive to undo.
+LatencyLab is for anyone making structural decisions about event-driven software: senior engineers, architects and CTOs, at the point where those decisions are still cheap to change. It is domain-agnostic: because it simulates the design rather than instrumenting code, the same tool models a web checkout, a desktop app's UI thread, a fan-out of microservice calls or an embedded event pipeline.
 
-If you have ever said “we will profile it later”, this is what later should have looked like.
+If you have ever said "we will profile it later", this is what later should have looked like.
 
 LatencyLab is not for tuning code.  
 It is for validating architectural decisions before they harden.
@@ -39,11 +91,11 @@ The motivation, philosophy and trade offs behind the tool are described in more 
 
 Reading that is not required to use the tool. It explains why the tool exists and what kinds of problems it is intended to make visible.
 
-## What it does
+## What running it actually does
 
-Instead of attaching to running production code, LatencyLab executes explicit models of tasks, events, queues, delays and resource contention using deterministic scheduling and seeded randomness.
+LatencyLab executes the model as a simulation: the entry event fires, tasks run on their contexts, queues form where concurrency is exhausted and durations are drawn from the distributions you chose. It does this hundreds or thousands of times, each run seeded, so the whole experiment is reproducible bit for bit. One run tells you nothing; the spread across runs is the finding.
 
-Models are executed many times to produce concrete outputs such as critical paths, queue wait, UI timing and percentiles.
+For every run it records the **makespan** (how long the whole flow took, which is how long the user waited) and the **critical path** (the specific chain of tasks and waits that prevented the run finishing sooner; expensive work off that chain delayed nobody).
 
 This is how you find the latency problem before it is politically expensive.
 
