@@ -653,7 +653,7 @@ or the button would claim a panel that never opened.
 The installer registers a shortcut carrying an Application User Model ID; the
 application never claimed the same one, so Windows had no way to know the
 shortcut and the running window were the same program. The pinned icon and the
-window were two different taskbar items: clicking the pinned one did nothing,
+window were two different taskbar items: clicking the pinned one did nothing
 and the jump list opened a second copy beside the first.
 
 [`latencylab_ui.windows_identity`](latencylab_ui/windows_identity.py:1) claims

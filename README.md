@@ -126,7 +126,7 @@ The same engine is available behind a PySide6 desktop front end, which adds insp
 |---|---|
 | Language | Python 3.10 or newer |
 | Core engine | Standard library only, no Qt and no third party runtime dependency |
-| Legacy v1 engine | NumPy, optional and lazily imported, kept only as a frozen oracle |
+| Legacy v1 engine | NumPy, optional and lazily imported; the live execution path for `schema_version: 1` models and the frozen oracle the snapshot test pins |
 | Desktop UI | PySide6, a client of the headless core |
 | Tests | pytest with pytest-cov, gate configured in `pyproject.toml` |
 | Style | black and flake8 at 88 columns |
