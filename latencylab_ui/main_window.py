@@ -16,29 +16,12 @@ from PySide6.QtWidgets import (
 )
 
 from latencylab.model import Model
-
-from latencylab_ui.main_window_file_io import (
-    load_model as _load_model,
-    on_save_log_clicked as _on_save_log_clicked,
-    open_model_dialog as _open_model_dialog,
-)
-
-from latencylab_ui.attention_flash import AttentionFlash
-from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
-from latencylab_ui.focus_cycle import FocusCycleController
-from latencylab_ui.main_window_menus import (
-    build_menus,
-    show_guide_dialog,
-    show_how_to_read_dialog,
-)
-from latencylab_ui.theme import Theme, apply_theme
-from latencylab_ui.main_window_top_bar import build_top_bar
 from latencylab_ui import main_window_actions as actions
-from latencylab_ui import main_window_run as run_lifecycle
 from latencylab_ui import main_window_panels as panels
-from latencylab_ui.main_window_panels import build_left_panel
+from latencylab_ui import main_window_run as run_lifecycle
+from latencylab_ui.attention_flash import AttentionFlash
 from latencylab_ui.distributions_dock import DistributionsDock
-from latencylab_ui.model_composer_dialog import ModelComposerDialog
+from latencylab_ui.focus_cycle import FocusCycleController
 from latencylab_ui.main_window_dock_switching import (
     open_model_composer,
     toggle_distributions,
@@ -47,6 +30,26 @@ from latencylab_ui.main_window_editing import (
     open_loaded_model_for_editing,
     refresh_open_editor,
 )
+from latencylab_ui.main_window_file_io import (
+    load_model as _load_model,
+)
+from latencylab_ui.main_window_file_io import (
+    on_save_log_clicked as _on_save_log_clicked,
+)
+from latencylab_ui.main_window_file_io import (
+    open_model_dialog as _open_model_dialog,
+)
+from latencylab_ui.main_window_menus import (
+    build_menus,
+    show_guide_dialog,
+    show_how_to_read_dialog,
+)
+from latencylab_ui.main_window_panels import build_left_panel
+from latencylab_ui.main_window_top_bar import build_top_bar
+from latencylab_ui.model_composer_dialog import ModelComposerDialog
+from latencylab_ui.run_controller import RunController, RunOutputs, RunRequest
+from latencylab_ui.theme import Theme, apply_theme
+from latencylab_ui import update_check
 
 
 @dataclass
@@ -109,6 +112,7 @@ class MainWindow(QMainWindow):
             on_compose_model=self._on_toggle_model_composer_clicked,
             on_edit_model=self._on_edit_model_clicked,
             on_exit=self.close,
+            on_check_updates=lambda: update_check.manual_check(self),
         )
 
     def _build_ui(self) -> None:

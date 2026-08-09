@@ -124,6 +124,12 @@ The GUI code is intentionally split into smaller modules to keep individual file
   - Icons -> [`latencylab_ui.icon_resolver`](latencylab_ui/icon_resolver.py:1)
   - Example models and the labels the menu shows -> [`latencylab_ui.example_models`](latencylab_ui/example_models.py:1)
 
+- Update check (GitHub releases, calm failure):
+  - DTOs, version comparison, platform asset selection and the service -> [`latencylab_ui.update_core`](latencylab_ui/update_core.py:1)
+  - GitHub releases adapter over stdlib urllib, opener injected -> [`latencylab_ui.update_github`](latencylab_ui/update_github.py:1)
+  - Skipped-version persistence in `~/.latencylab/settings.json` -> [`latencylab_ui.update_settings`](latencylab_ui/update_settings.py:1)
+  - Prompt dialog, timers, worker thread and the install helper -> [`latencylab_ui.update_check`](latencylab_ui/update_check.py:1)
+
 ## Overview diagrams
 
 ### CLI call flow and executor selection
@@ -381,6 +387,15 @@ Invariant: metadata must never affect scheduling; it is only surfaced in summary
   - emits Qt signals back to the UI thread
 
 `succeeded` arrives BEFORE `finished`, so the controller is still running when the first is handled. Anything that depends on "the run is over" belongs on `finished`.
+
+### Update check
+
+The application asks `https://api.github.com/repos/oernster/latencylab/releases/latest` whether a newer published release exists: once about 3 seconds after the window shows and again every 24 hours while running, plus on demand from Help > Check for Updates. The endpoint returns only published, non-draft, non-prerelease releases, so a tag pushed mid-development can never prompt. The request is anonymous, times out after 5 seconds and any failure is silent on the automatic paths.
+
+- The pure logic (version tuple comparison, platform asset selection by filename suffix, the check itself) lives in [`latencylab_ui.update_core`](latencylab_ui/update_core.py:1) behind a `ReleaseSource` Protocol; [`latencylab_ui.update_github`](latencylab_ui/update_github.py:1) is the urllib adapter with the opener injected so tests never touch the network.
+- Threading follows the run controller's shape: the HTTP call runs on a `threading.Thread` and the result comes back through a Signal connected to a bound method of [`latencylab_ui.update_check.UpdateCheckController`](latencylab_ui/update_check.py:1), a QObject living on the UI thread, so delivery is a queued connection and the slot runs where widgets are safe to touch.
+- The prompt dialog is shown with `open()`, never `exec()`, per the repo-wide no-nested-event-loop rule. Download opens the platform-matched asset URL (falling back to the release page); Skip This Version persists the offered tag in `~/.latencylab/settings.json` through [`latencylab_ui.update_settings`](latencylab_ui/update_settings.py:1) and that version never prompts again on the automatic paths; the manual check ignores the skip and reports every outcome.
+- The composition root in [`latencylab_ui.app`](latencylab_ui/app.py:1) builds the service and calls `install_update_check(window, service)`; the main window contributes only a lambda for the Help menu action.
 
 ### Keyboard navigation
 
@@ -716,7 +731,7 @@ The wheel is the library. The desktop application is delivered separately, one e
 |---|---|
 | `buildexe.py` | The Nuitka standalone bundle, staged into `installer/payload/`. It smoke tests the result by starting it headless and failing the build with the child's traceback if it exits. |
 | `buildinstaller.py` | `dist-installer/LatencyLabSetup.exe`: the payload zipped, then wrapped in the bespoke installer as a Nuitka onefile. |
-| `build_flatpak.sh` / `clean_flatpak.sh` | The Linux Flatpak, manifest generated rather than committed, wheels pre-downloaded and installed offline in-sandbox. |
+| `build_flatpak.sh` / `clean_flatpak.sh` | The Linux Flatpak, manifest generated rather than committed, wheels pre-downloaded and installed offline in-sandbox. Its finish-args now grant `--share=network` so the update check can reach GitHub. |
 | `builddmg.py` | The macOS disk image, with the stray `*.o` strip, codesign, notarise and staple flow. |
 | `generate_icons.py` | Every platform icon asset, from the single master `latencylab.png`. |
 | `stamp_version.py` | The version tokens in the GitHub Pages site under `docs/`. |

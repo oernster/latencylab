@@ -118,6 +118,7 @@ The same engine is available behind a PySide6 desktop front end, which adds insp
 - **Cancel that cancels.** Stopping a run stops the work at the boundary between one run and the next, then reports how many runs completed. It never aggregates a partial set.
 - **Full keyboard navigation.** One explicit focus ring: Tab and Right forward, Shift+Tab and Left back, wrapping at both ends. A disabled control is skipped and wears a red ring rather than lighting up.
 - **Light and dark themes**, both built from one token set.
+- **Update check.** Shortly after launch and once a day while running, the application asks GitHub anonymously whether a newer published release exists; Help > Check for Updates runs the same check on demand. If one is found you choose Download, Skip This Version or Later; a skipped version never prompts again. Only formally published releases count and a failed check stays silent.
 - Open and Export both start in your Downloads folder.
 
 ## Stack

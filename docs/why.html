@@ -76,8 +76,10 @@
         so every quantitative claim there can be rerun.</p>
       <p>What works now is a local Python CLI reading a JSON execution model, with a desktop UI as
         a client of the same headless core and plain-file outputs you can plot or diff. Fully
-        keyboard navigable, 100% coverage gated, no account, no server and nothing leaving your
-        machine. It does not tune code and it does not reassure; it exists so the latency problem
+        keyboard navigable, 100% coverage gated, no account and no server. Your models and
+        results never leave your machine; the desktop app's only outbound call is an anonymous
+        daily ask to GitHub releases for whether a newer version exists. It does not tune code
+        and it does not reassure; it exists so the latency problem
         is found before it is politically expensive.</p>
       <p>Full reasoning at <a href="https://www.crankthecode.com/posts/latencylab">crankthecode.com</a>.</p>
       <div class="cta" style="justify-content:flex-start;margin-top:30px;">
@@ -108,7 +110,7 @@
   <div class="container footer-inner">
     <div>
       <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
-      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.3<!--/VERSION-->
+      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.1.0<!--/VERSION-->
     </div>
     <div class="footer-links">
       <a href="https://github.com/oernster/latencylab/releases">Releases</a>

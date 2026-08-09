@@ -9,6 +9,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMenu, QWidget
 
 from latencylab_ui import main_window_actions as actions
+from latencylab_ui import update_check
 from latencylab_ui.about_dialog import AboutDialog, AboutDialogContent
 from latencylab_ui.about_text import APP_NAME, about_html
 from latencylab_ui.example_models import ExampleModel, list_examples
@@ -41,6 +42,7 @@ def build_menus(
     on_edit_model: Callable[[], None],
     on_exit: Callable[[], None],
     examples: tuple[ExampleModel, ...] | None = None,
+    on_check_updates: Callable[[], None] | None = None,
 ) -> QAction:
     """Create the app menu bar, returning the Edit action.
 
@@ -87,6 +89,11 @@ def build_menus(
 
     main_licence_action = help_menu.addAction("Main Licence…")
     main_licence_action.triggered.connect(lambda: show_main_licence_dialog(window))
+
+    if on_check_updates is not None:
+        help_menu.addSeparator()
+        updates_action = help_menu.addAction(update_check.MENU_ITEM_TEXT)
+        updates_action.triggered.connect(on_check_updates)
 
     return edit_action
 

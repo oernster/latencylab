@@ -76,6 +76,9 @@ def test_ui_app_run_app_no_event_loop(monkeypatch) -> None:
     monkeypatch.setattr(ui_app, "another_instance_is_running", lambda: False)
     monkeypatch.setattr(ui_app, "InstanceServer", lambda *_a, **_k: None)
     monkeypatch.setattr(ui_app, "install_wheel_guard", lambda _app: None)
+    # The update controller needs a real QObject window and a real QApplication;
+    # both are fakes here, and the controller has its own tests.
+    monkeypatch.setattr(ui_app, "install_update_check", lambda *_a, **_k: None)
 
     assert ui_app.run_app(argv=["x"]) == 0
     assert calls["apply_theme"] == 1
@@ -139,6 +142,7 @@ def test_ui_app_starts_without_a_generated_icon(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(ui_app, "another_instance_is_running", lambda: False)
     monkeypatch.setattr(ui_app, "InstanceServer", lambda *_a, **_k: None)
     monkeypatch.setattr(ui_app, "install_wheel_guard", lambda _app: None)
+    monkeypatch.setattr(ui_app, "install_update_check", lambda *_a, **_k: None)
 
     assert ui_app.run_app(argv=["x"]) == 0
     assert shown["count"] == 1

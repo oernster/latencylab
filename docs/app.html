@@ -53,7 +53,7 @@
         <div class="feature"><div class="fnum">01</div><h3>Explicit models</h3><p>A model is your architecture written down: tasks, the events that trigger them and the resources they queue behind. Nothing is inferred and nothing is hidden. The model is what you reason about.</p></div>
         <div class="feature"><div class="fnum">02</div><h3>Many seeded runs</h3><p>One run tells you nothing; the spread across hundreds is the finding. Every run is seeded, so behaviour stays reproducible across versions. At scale the dominant behaviours become clearer, not noisier.</p></div>
         <div class="feature"><div class="fnum">03</div><h3>Critical paths and percentiles</h3><p>The critical path is the chain of tasks and waits that decided how long the user waited in one run. Concrete critical paths name the work; percentiles are split for UI events and overall makespan because they answer different questions: UI-event percentiles describe when the interface responded to the user; makespan percentiles describe when the whole piece of work finished.</p></div>
-        <div class="feature"><div class="fnum">04</div><h3>Yours, on your machine</h3><p>The model is a plain JSON file and every output is a plain file beside it. A local CLI plus an optional desktop UI. No account, no server, no instrumentation of production code. Nothing leaves your machine.</p></div>
+        <div class="feature"><div class="fnum">04</div><h3>Yours, on your machine</h3><p>The model is a plain JSON file and every output is a plain file beside it. A local CLI plus an optional desktop UI. No account, no server, no instrumentation of production code. Your models and results never leave your machine; the desktop app's one outbound call is an anonymous daily check of GitHub releases for a newer version, with an update prompt you can download, skip or defer.</p></div>
       </div>
     </div>
   </section>
@@ -158,7 +158,7 @@
   <div class="container footer-inner">
     <div>
       <strong>LatencyLab</strong>: design-time latency exploration for event-driven systems<br>
-      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.0.3<!--/VERSION-->
+      (c) Oliver Ernster · Local-first · GPL-3.0 + LGPL-3.0 · v<!--VERSION-->3.1.0<!--/VERSION-->
     </div>
     <div class="footer-links">
       <a href="https://github.com/oernster/latencylab/releases">Releases</a>

@@ -438,8 +438,11 @@ finish-args:
   - --socket=fallback-x11
   - --socket=wayland
   - --device=dri
-  # Models are opened and saved from the user's own files. No --share=network:
-  # LatencyLab simulates locally and talks to nothing.
+  # Models are opened and saved from the user's own files. The one outbound
+  # call is the in-app update check against GitHub's releases API; without
+  # --share=network the sandbox blocks the socket and every check reports
+  # unreachable.
+  - --share=network
   - --filesystem=home
 
 modules:

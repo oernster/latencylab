@@ -10,7 +10,7 @@ Nothing is open. The two sections below record the standing decisions that keep 
 
 ## Looks like debt, not worth touching
 
-- The eighteen `except Exception` blocks in `latencylab_ui`. Each carries a `# noqa: BLE001` and most sit on Qt style, dialog or file-dialog paths where an exception is worse than a degraded widget. Narrowing them individually is churn on the least valuable surface in the repo. The ones worth narrowing have been: the main window catches nothing it cannot name.
+- The fourteen `except Exception` blocks in `latencylab_ui`, including the one in the update-check worker where a failed check must stay silent. Each carries a `# noqa: BLE001` and most sit on Qt style, dialog or file-dialog paths where an exception is worse than a degraded widget. Narrowing them individually is churn on the least valuable surface in the repo. The ones worth narrowing have been: the main window catches nothing it cannot name.
 - The `main_window_*.py` family (`bindings`, `dock_switching`, `file_io`, `menus`, `panels`, `top_bar`) and the `model_composer_*.py` family look like one class shattered across seven files. That is the 400-line cap doing its job and each part is cohesive.
 - The `test_*_coverage.py` and `test_*_remaining_coverage.py` files are named after the gate rather than after behaviour. Ugly, honest and harmless; renaming them changes nothing that runs.
 - `sim.py` at 29 lines is a facade that only dispatches. That is the executor seam working, not an anaemic module.

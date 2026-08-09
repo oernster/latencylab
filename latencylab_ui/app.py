@@ -5,6 +5,7 @@ import sys
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
+from latencylab.version import __version__
 from latencylab_ui.icon_resolver import get_app_icon_path
 from latencylab_ui.main_window import MainWindow
 from latencylab_ui.run_controller import RunController
@@ -14,6 +15,9 @@ from latencylab_ui.single_instance import (
     raise_window,
 )
 from latencylab_ui.theme import Theme, apply_theme
+from latencylab_ui.update_check import install_update_check
+from latencylab_ui.update_core import UpdateService, platform_key_for
+from latencylab_ui.update_github import GitHubReleaseSource
 from latencylab_ui.wheel_guard import install_wheel_guard
 from latencylab_ui.windows_identity import claim_app_identity
 
@@ -53,6 +57,12 @@ def run_app(argv: list[str] | None = None) -> int:
     # Ensure we don't tear down while a simulation worker thread is still running.
     app.aboutToQuit.connect(controller.shutdown)
     window = MainWindow(run_controller=controller)
+    install_update_check(
+        window,
+        UpdateService(
+            GitHubReleaseSource(), __version__, platform_key_for(sys.platform)
+        ),
+    )
     # Default width provides enough horizontal space for the docked Distributions
     # panel while keeping the left-side Run/Summary/Critical Path panel readable.
     window.resize(1400, 720)
