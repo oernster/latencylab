@@ -124,6 +124,11 @@ header.nav {
 .btn-primary:hover { background: var(--banana); color: var(--banana-ink); }
 .btn-ghost { border-color: var(--border); color: var(--text); }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent-bright); }
+/* The donate button carries artwork before its label. The mark is sized in em
+   against the button's own type; at one line box the artwork could not be read,
+   so it takes 2.7em and the button is deliberately taller than a text-only one. */
+.btn-donate { display: inline-flex; align-items: center; gap: 10px; }
+.btn-donate img { display: block; height: 2.7em; width: auto; }
 /* A call to action inside a panel. It was a line of text that happened to be a
    link, which asks the reader to discover it; this is a pressable that says so
    before the click. It lifts under the pointer and sits back down while held.
