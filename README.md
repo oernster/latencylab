@@ -6,6 +6,8 @@ LatencyLab is a design-time latency simulator. You describe a planned (or existi
 
 It is not a profiler, tracer or runtime observer. It exists to prevent confident people from shipping bad architecture.
 
+> **Commercial licences available.** LatencyLab is free and open source under GPL-3.0, with its interface layer under LGPL-3.0. If those terms do not suit what you are building, such as a closed-source product, a commercial licence can be bought from me separately. It covers my own code; PySide6 keeps its own LGPL-3.0 licence. See [commercial licensing](https://ernster.dev/commercial-licensing.html).
+
 ## The workflow
 
 The workflow is a loop: model, run, read, change one thing, run again on the same seed, compare. If the dominant critical path moved or the percentiles shifted, that difference is the cost or benefit of your design change, isolated from luck, because the randomness was identical.
@@ -252,3 +254,7 @@ Help:
   distribution) is **GPL-3.0**. The full text is in [LICENSE](LICENSE).
 - The PySide6 desktop front end in `latencylab_ui/` is **LGPL-3.0**. The full
   text is in [`latencylab_ui/LGPL3.txt`](latencylab_ui/LGPL3.txt).
+
+A commercial licence for my own code is also available, separately from the
+open-source licences: see
+[commercial licensing](https://ernster.dev/commercial-licensing.html).
